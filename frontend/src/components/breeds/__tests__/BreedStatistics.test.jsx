@@ -75,6 +75,12 @@ describe("BreedInfo", () => {
     expect(screen.getByText("Sporting Group")).toBeInTheDocument();
   });
 
+  it("gives a type like Hound no group badge, which would call it a breed (#669)", () => {
+    render(<BreedInfo breedData={{ ...mockBreedData, primary_breed: "Hound", breed_slug: "hound", breed_group: "Hound" }} />);
+
+    expect(screen.queryByText("Hound Group")).not.toBeInTheDocument();
+  });
+
   it("should render description when available", () => {
     const dataWithDesc = {
       ...mockBreedData,

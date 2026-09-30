@@ -22,6 +22,7 @@ import {
   transformApiDogsToDogs,
 } from "../utils/dogTransformer";
 import { getBreedDescription } from "../utils/breedDescriptions";
+import { breedTypeDescription, isBreedType } from "../utils/breedTypes";
 
 interface CacheEntry {
   data: unknown;
@@ -614,9 +615,10 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
     count: breedData.count,
     average_age_months: breedData.average_age_months,
     topDogs: pickGalleryDogs(candidateDogs, `"${breedData.primary_breed}"`),
-    description:
-      getBreedDescription(breedData.primary_breed) ||
-      `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
+    description: isBreedType(breedData.primary_breed)
+      ? breedTypeDescription(breedData.primary_breed)
+      : getBreedDescription(breedData.primary_breed) ||
+        `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,
   };
 });
 

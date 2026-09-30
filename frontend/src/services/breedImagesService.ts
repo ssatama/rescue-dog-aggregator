@@ -3,6 +3,7 @@ import { getApiUrl } from "../utils/apiConfig";
 import { logger, reportError } from "../utils/logger";
 import { stripNulls } from "../utils/api";
 import { fallbackInBuildWithoutApi, fetchWithRetry } from "../utils/serverFetch";
+import { isBreedType } from "../utils/breedTypes";
 import {
   BreedWithImagesSchema,
   BreedStatsSchema,
@@ -218,7 +219,8 @@ async function fetchBreedGroups(): Promise<BreedGroupDisplay[]> {
     .slice(0, 8)
     .map((group) => {
       const groupBreeds = (stats.qualifying_breeds || [])
-        .filter((breed) => breed.breed_group === group.name)
+        // A group's breeds, not the type named after it (#669)
+        .filter((breed) => breed.breed_group === group.name && !isBreedType(breed.primary_breed))
         .slice(0, 5)
         .map((breed) => ({
           name: breed.primary_breed,

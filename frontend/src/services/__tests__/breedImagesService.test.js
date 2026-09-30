@@ -344,7 +344,10 @@ describe("breedImagesService", () => {
     const stats = {
       total_dogs: 12,
       breed_groups: [{ name: "Hound", count: 6 }],
-      qualifying_breeds: [{ primary_breed: "Greyhound", breed_slug: "greyhound", breed_group: "Hound", count: 6 }],
+      qualifying_breeds: [
+        { primary_breed: "Hound", breed_slug: "hound", breed_group: "Hound", count: 16 },
+        { primary_breed: "Greyhound", breed_slug: "greyhound", breed_group: "Hound", count: 6 },
+      ],
     };
 
     it("throws when the breed stats fail, rather than cache a hub without groups", async () => {
@@ -378,7 +381,8 @@ describe("breedImagesService", () => {
       const groups = await getBreedGroupsWithTopBreeds();
 
       expect(groups).toHaveLength(1);
-      expect(groups[0].top_breeds[0]).toMatchObject({ slug: "greyhound", image_url: null });
+      // The Hound type is not one of the Hound group's breeds (#669)
+      expect(groups[0].top_breeds).toEqual([expect.objectContaining({ slug: "greyhound", image_url: null })]);
     });
   });
 });

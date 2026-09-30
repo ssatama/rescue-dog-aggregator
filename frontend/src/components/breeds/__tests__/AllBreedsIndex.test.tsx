@@ -18,6 +18,24 @@ describe("AllBreedsIndex", () => {
     expect(hrefs).toEqual(["/breeds/beagle", "/breeds/greyhound"]);
   });
 
+  it("lists types like Hound apart from the breeds, as types (#669)", () => {
+    const { container, getByRole } = render(
+      <AllBreedsIndex
+        breeds={[
+          ...breeds,
+          { primary_breed: "Hound", breed_slug: "hound", breed_type: "crossbreed", count: 16 },
+          { primary_breed: "Livestock Guardian Dog", breed_slug: "livestock-guardian-dog", breed_type: "crossbreed", count: 20 },
+        ]}
+      />,
+    );
+
+    const hrefsIn = (id: string) =>
+      Array.from(container.querySelectorAll(`#${id} a`)).map((a) => a.getAttribute("href"));
+    expect(hrefsIn("all-breeds")).toEqual(["/breeds/beagle", "/breeds/greyhound"]);
+    expect(hrefsIn("breed-types")).toEqual(["/breeds/hound", "/breeds/livestock-guardian-dog"]);
+    expect(getByRole("heading", { name: "Breed types" })).toBeInTheDocument();
+  });
+
   it("renders nothing without breeds", () => {
     const { container } = render(<AllBreedsIndex breeds={[]} />);
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { CardPhoto } from "@/components/dogs/DogCard";
+import { isBreedType } from "@/utils/breedTypes";
 import type { PopularBreedsSectionProps } from "@/types/breeds";
 import type { BreedWithImages } from "@/schemas/animals";
 
@@ -52,7 +53,7 @@ function BreedTile({ tile, priority }: { tile: Tile; priority: boolean }): React
  */
 export default function PopularBreedsSection({ popularBreeds, mixedBreed }: PopularBreedsSectionProps) {
   const tiles: Tile[] = (popularBreeds ?? [])
-    .filter((breed) => !isMixedOrUnknown(breed) && breed.breed_slug)
+    .filter((breed) => !isMixedOrUnknown(breed) && !isBreedType(breed.primary_breed) && breed.breed_slug)
     .slice(0, mixedBreed ? POPULAR_TILES : POPULAR_TILES + 1)
     .map((breed) => ({
       name: breed.primary_breed,

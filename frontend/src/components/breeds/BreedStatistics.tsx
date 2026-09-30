@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import ExpandableText from "@/components/ui/ExpandableText";
 import AdoptableToYouCount from "@/components/location/AdoptableToYouCount";
 import { formatAverageAge } from "@/utils/breedMetadata";
+import { isBreedType } from "@/utils/breedTypes";
 import useShowAdoptable from "@/hooks/dogs/useShowAdoptable";
 import type { BreedData } from "@/types/breeds";
 import type { FilterCount } from "@/schemas/common";
@@ -67,8 +68,12 @@ export function BreedInfo({ breedData, adoptableOptions, className = "" }: Breed
         </h1>
 
         <div className="flex flex-wrap gap-2">
-          {/* On /breeds/mixed, "Mixed Group" under "Mixed Breed" would only repeat it */}
-          {breedData.breed_group && breedData.breed_group !== "Unknown" && breedData.breed_slug !== "mixed" && (
+          {/* On /breeds/mixed, "Mixed Group" under "Mixed Breed" would only repeat
+              it, and "Hound Group" under "Hound" would claim a breed (#669) */}
+          {breedData.breed_group &&
+            breedData.breed_group !== "Unknown" &&
+            breedData.breed_slug !== "mixed" &&
+            !isBreedType(breedData.primary_breed) && (
             <Badge variant="secondary" className="text-sm">
               {breedData.breed_group} Group
             </Badge>
