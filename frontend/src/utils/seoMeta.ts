@@ -20,6 +20,19 @@ export function clampDescription(text: string): string {
   return clamp(text, MAX_DESCRIPTION_LENGTH);
 }
 
+/**
+ * The most of these segments, in order, that fits in 65 characters: a
+ * title drops whole phrases (" | 45 Available") rather than end on
+ * "| 45…". Only a first segment too long on its own is clamped.
+ */
+export function fitTitle(...segments: string[]): string {
+  for (let n = segments.length; n > 0; n--) {
+    const title = segments.slice(0, n).join("").replace(/\s+/g, " ").trim();
+    if (title.length <= MAX_TITLE_LENGTH) return title;
+  }
+  return clampTitle(segments[0] ?? "");
+}
+
 /** At most 65 characters, cut at a word boundary. */
 export function clampTitle(text: string): string {
   return clamp(text, MAX_TITLE_LENGTH);

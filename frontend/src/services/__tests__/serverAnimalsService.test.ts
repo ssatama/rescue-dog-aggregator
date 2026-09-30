@@ -11,6 +11,7 @@ import {
   getAnimalsByCuration,
   getAnimalBySlug,
   getListCounts,
+  getMixedBreedPageData,
   clearCache,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
@@ -370,6 +371,72 @@ describe("Server Animals Service", () => {
     });
   });
 
+  describe("getMixedBreedPageData", () => {
+    it("takes the Mixed group's own count and age, with one fetch for photos (#667)", async () => {
+      const stats = {
+        total_dogs: 1264,
+        unique_breeds: 94,
+        // The group's age covers the same dogs as its count; a breed row's doesn't
+        breed_groups: [{ name: "Mixed", count: 534, average_age_months: 51 }],
+        qualifying_breeds: [
+          { primary_breed: "Mixed Breed", breed_slug: "mixed-breed", breed_group: "Mixed", count: 500, average_age_months: 54 },
+        ],
+        purebred_count: 0,
+        crossbreed_count: 0,
+      };
+      const dogs = [
+        { id: 1, name: "Alfie", slug: "alfie-1", primary_image_url: "https://images.rescuedogs.me/alfie.jpg" },
+        { id: 2, name: "No Photo", slug: "no-photo-2" },
+      ];
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : dogs),
+      }));
+
+      const mixed = await getMixedBreedPageData();
+
+      expect(mixed).toMatchObject({ breed_slug: "mixed", count: 534, average_age_months: 51 });
+      expect(mixed?.topDogs).toEqual([
+        { name: "Alfie", slug: "alfie-1", primary_image_url: "https://images.rescuedogs.me/alfie.jpg" },
+      ]);
+      expect(mixed).not.toHaveProperty("personality_metrics");
+      expect(fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("getBreedBySlug's fields", () => {
+    it("passes the page only what it uses, not the stats row's distributions (#676 review)", async () => {
+      const stats = {
+        total_dogs: 100,
+        unique_breeds: 5,
+        breed_groups: [],
+        qualifying_breeds: [
+          {
+            primary_breed: "Labrador",
+            breed_slug: "labrador",
+            breed_group: "Sporting",
+            count: 50,
+            average_age_months: 40,
+            personality_metrics: { energy_level: { percentage: 60, label: "Medium" } },
+            size_distribution: { large: 50 },
+          },
+        ],
+      };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : []),
+      }));
+
+      const labrador = await getBreedBySlug("labrador");
+
+      expect(labrador).toMatchObject({ primary_breed: "Labrador", breed_group: "Sporting", count: 50, average_age_months: 40 });
+      expect(labrador).not.toHaveProperty("personality_metrics");
+      expect(labrador).not.toHaveProperty("size_distribution");
+    });
+  });
+
   describe("strict variants for ISR pages", () => {
     it("getAnimals.orThrow rejects where getAnimals falls back to []", async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
@@ -388,18 +455,15 @@ describe("Server Animals Service", () => {
       );
     });
 
-    it("leaves the mixed page's age out when its 200 dogs can't be fetched, never 36 months", async () => {
-      const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Mixed", count: 534 }], qualifying_breeds: [] };
-      (fetch as jest.Mock).mockImplementation(async (url: string) => {
-        if (url.includes("/breeds/stats")) return { ok: true, status: 200, json: async () => stats };
-        if (url.includes("limit=200")) return { ok: false, status: 503, statusText: "Service Unavailable", headers: new Headers() };
-        return { ok: true, status: 200, json: async () => [] };
-      });
+    it("has no mixed page, rather than '0 available', when a good stats response has no Mixed group", async () => {
+      const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Hound", count: 3 }], qualifying_breeds: [] };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : []),
+      }));
 
-      const mixed = await getBreedBySlug("mixed");
-
-      expect(mixed?.average_age_months).toBeUndefined();
-      expect(mixed?.count).toBe(534);
+      await expect(getMixedBreedPageData()).resolves.toBeNull();
     });
   });
 

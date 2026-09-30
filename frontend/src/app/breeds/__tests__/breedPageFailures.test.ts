@@ -3,6 +3,7 @@ import { getAllMetadata, getAnimals, getBreedBySlug, getBreedStats, getListCount
 
 jest.mock("@/services/serverAnimalsService", () => ({
   getBreedBySlug: jest.fn(),
+  getMixedBreedPageData: jest.fn(),
   getBreedStats: Object.assign(jest.fn(), { orThrow: jest.fn() }),
   getAnimals: Object.assign(jest.fn(), { orThrow: jest.fn() }),
   getListCounts: Object.assign(jest.fn(), { orThrow: jest.fn() }),
@@ -39,11 +40,9 @@ describe("a breed page whose data fails (#659)", () => {
     await expect(BreedDetailPage(params)).rejects.toThrow("API unreachable");
   });
 
-  it("fails the build rather than prerender no breed pages", async () => {
-    mock(getBreedStats).mockResolvedValue({ qualifying_breeds: [] });
-    mock(getBreedStats.orThrow).mockRejectedValue(new Error("API unreachable"));
-
-    await expect(generateStaticParams()).rejects.toThrow("API unreachable");
+  it("prerenders nothing, so no breed fetch can fail a deploy", async () => {
+    await expect(generateStaticParams()).resolves.toEqual([]);
+    expect(getBreedStats.orThrow).not.toHaveBeenCalled();
   });
 
   it("takes the filter options strictly", async () => {

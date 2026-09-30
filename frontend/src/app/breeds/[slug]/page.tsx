@@ -8,12 +8,14 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import BreedStructuredData from "@/components/seo/BreedStructuredData";
 import {
   getBreedBySlug,
+  getMixedBreedPageData,
   getAnimals,
-  getBreedStats,
   getListCounts,
   getAllMetadata,
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
+import { averageAgeSentence } from "@/utils/breedMetadata";
+import { clampDescription, fitTitle } from "@/utils/seoMeta";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -21,11 +23,35 @@ interface BreedPageProps {
 
 export const revalidate = 604800;
 
+const MIXED = "mixed";
+
+// /breeds/mixed is the Mixed group, every other slug a breed
+function getBreedPageData(slug: string) {
+  return slug === MIXED ? getMixedBreedPageData() : getBreedBySlug(slug);
+}
+
+const MIXED_KEYWORDS = [
+  "mixed breed rescue",
+  "mixed breed dogs for adoption",
+  "mixed breed puppies",
+  "mutt adoption",
+  "crossbreed dogs",
+  "hybrid dogs for adoption",
+  "unique rescue dogs",
+  "mixed puppies for adoption",
+  "adopt mixed breed",
+  "mixed breed rescue near me",
+  "rescue mutts",
+  "designer mix dogs",
+  "rescue dogs",
+  "dog adoption",
+].join(", ");
+
 export async function generateMetadata(
   props: BreedPageProps,
 ): Promise<Metadata> {
   const params = await props.params;
-  const breedData = await getBreedBySlug(params.slug);
+  const breedData = await getBreedPageData(params.slug);
 
   if (!breedData) {
     return {
@@ -34,19 +60,16 @@ export async function generateMetadata(
     };
   }
 
-  const description = breedData.description;
+  const isMixed = params.slug === MIXED;
+  const avgAge = averageAgeSentence(breedData.average_age_months);
+  // The facts first, so the clamp cuts the blurb rather than the age
+  const seoDescription = clampDescription(
+    isMixed
+      ? `Discover ${breedData.count} unique mixed breed rescue dogs waiting for homes. ${avgAge}Each with special personality and story. Browse by size and age.`
+      : `${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}${breedData.description ?? ""}`,
+  );
 
-  const avgAge = breedData.average_age
-    ? `Average age ${Math.round(breedData.average_age)} years. `
-    : "";
-  const locations =
-    breedData.top_locations?.slice(0, 3).join(", ") || "multiple locations";
-
-  const seoDescription = description
-    ? `${description.substring(0, 80)}… ${breedData.count} ${breedData.primary_breed} rescue dogs available. ${avgAge}Adoptable in ${locations}.`
-    : `Find ${breedData.count} ${breedData.primary_breed} rescue dogs for adoption. ${avgAge}View photos, profiles, and apply from verified rescues in ${locations}.`;
-
-  const keywords = [
+  const keywords = isMixed ? MIXED_KEYWORDS : [
     `${breedData.primary_breed} rescue`,
     `${breedData.primary_breed} adoption`,
     `${breedData.primary_breed} dogs for adoption`,
@@ -62,13 +85,15 @@ export async function generateMetadata(
   ]
     .filter(Boolean)
     .join(", ");
+  const dogsLabel = isMixed ? "Mixed Breed" : breedData.primary_breed;
 
   return {
-    title: `${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`,
-    description: seoDescription.substring(0, 160),
+    // The count is every country's: "Near You" would claim a location filter
+    title: fitTitle(`${dogsLabel} Rescue Dogs for Adoption`, ` | ${breedData.count} Available`),
+    description: seoDescription,
     keywords,
     openGraph: {
-      title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
+      title: `${breedData.count} ${dogsLabel} Dogs Need Homes`,
       description: seoDescription,
       images:
         breedData.topDogs
@@ -81,14 +106,14 @@ export async function generateMetadata(
             url: d.primary_image_url,
             width: 800,
             height: 600,
-            alt: `${d.name} - ${breedData.primary_breed} rescue dog`,
+            alt: `${d.name} - ${isMixed ? "Mixed breed" : breedData.primary_breed} rescue dog`,
           })) || [],
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${breedData.count} ${breedData.primary_breed} Dogs Need Homes`,
-      description: seoDescription.substring(0, 120),
+      title: `${breedData.count} ${dogsLabel} Dogs Need Homes`,
+      description: seoDescription,
       images:
         breedData.topDogs
           ?.filter(
@@ -104,33 +129,23 @@ export async function generateMetadata(
   };
 }
 
-// Strict: a build during an outage fails, and Vercel keeps the last
-// deployment, rather than shipping one with no breed pages prerendered
+// Nothing is prerendered at build: each breed page, /breeds/mixed included,
+// renders on its first request and ISR caches it. Its fetches are strict
+// (#659): a failed render keeps the last good page, or none, rather than
+// cache one without its dogs; and no breed fetch can fail a deploy
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
-  const breedStats = await getBreedStats.orThrow();
-  return (
-    breedStats.qualifying_breeds
-      ?.filter((breed) => {
-        const isMixed =
-          breed.breed_type === "mixed" ||
-          breed.breed_group === "Mixed" ||
-          breed.primary_breed?.toLowerCase().includes("mix");
-        return !isMixed;
-      })
-      .map((breed) => ({
-        slug: breed.breed_slug,
-      })) || []
-  );
+  return [];
 }
 
 async function fetchBreedPageData(slug: string) {
-  const breedData = await getBreedBySlug(slug);
+  // The breed first: with no such breed (or no Mixed group) the page 404s
+  const breedData = await getBreedPageData(slug);
 
   if (!breedData) {
     return null;
   }
 
-  const breedFilter = slug === "mixed" ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
+  const breedFilter = slug === MIXED ? { breed_group: "Mixed" } : { primary_breed: breedData.primary_breed };
   // The catalog's first page, in its default order
   const [initialDogs, breedCounts, metadata] = await Promise.all([
     getAnimals.orThrow({ ...breedFilter, sort: FILTER_DEFAULTS.SORT, limit: 20, offset: 0 }),
@@ -173,7 +188,6 @@ export default async function BreedDetailPage(props: BreedPageProps) {
             initialDogs={initialDogs}
             breedCounts={breedCounts}
             metadata={metadata}
-            lastUpdated={new Date().toISOString()}
           />
         </Suspense>
       </ErrorBoundary>

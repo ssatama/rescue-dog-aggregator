@@ -21,8 +21,8 @@ const BASE_DELAY_MS = 2000;
 // The ceiling is `staticPageGenerationTimeout` in next.config.js: a page can
 // make several of these calls in sequence, and if their combined waiting
 // exceeds that timeout Next kills the page instead, which is the failure this
-// retry exists to prevent. Five attempts wait 2+4+8+16 = 30s, so two sequential
-// calls still fit inside the configured 120s.
+// retry exists to prevent. Five attempts wait 2+4+8+16 = 30s, so four
+// sequential calls still fit inside the configured 180s.
 const PRERENDER_ATTEMPTS = 5;
 
 // At request time somebody is waiting on the response, so one quick retry is

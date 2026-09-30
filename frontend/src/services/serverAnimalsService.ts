@@ -16,7 +16,7 @@ import { FilterCountsResponseSchema } from "../schemas/common";
 import type { BreedStats } from "../schemas/animals";
 import type { FilterCountsResponse } from "../schemas/common";
 import type { Dog } from "../types/dog";
-import type { BreedPageData, SampleDog, PersonalityMetrics } from "../types/breeds";
+import type { BreedPageData, SampleDog } from "../types/breeds";
 import {
   transformApiDogToDog,
   transformApiDogsToDogs,
@@ -530,209 +530,62 @@ export const getAllAnimals = cache(
 );
 
  
-// No catch: a failure fails the render, which keeps the last good page and
-// reaches Sentry once through onRequestError
-export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
-  if (slug === "mixed") {
-    const breedStats = await getBreedStats.orThrow();
-    const mixedGroup = (
-      breedStats.breed_groups as { name: string; count: number }[] | undefined
-    )?.find((g) => g.name === "Mixed");
+// The newest six with a photo and a page, for the breed page's gallery
+function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
+  const topDogs = candidateDogs
+    .filter((dog) => dog.primary_image_url && dog.slug)
+    .slice(0, 6)
+    .map((dog) => ({
+      name: dog.name,
+      slug: dog.slug!,
+      primary_image_url: dog.primary_image_url,
+    }));
 
-    const candidateDogs = await getAnimals.orThrow({
+  if (topDogs.length === 0 && candidateDogs.length > 0) {
+    logger.warn(`No dogs with images found for ${label} out of ${candidateDogs.length} candidates`);
+  }
+  return topDogs;
+}
+
+// Neither of these catches: a failure fails the render, which keeps the last
+// good page and reaches Sentry once through onRequestError
+
+/**
+ * /breeds/mixed. Null when a good stats response has no Mixed group, i.e. no
+ * mixed dogs: the page 404s, as a breed page does when its breed drops out,
+ * and returns when a scraper's purge brings the group back. Not memoized, so
+ * a null is never held past the stats it came from.
+ */
+export async function getMixedBreedPageData(): Promise<BreedPageData | null> {
+  const [breedStats, candidateDogs] = await Promise.all([
+    getBreedStats.orThrow(),
+    getAnimals.orThrow({
       breed_group: "Mixed",
       limit: 30,
-      sort_by: "created_at",
-      sort_order: "desc",
-    });
-    const topDogs: SampleDog[] = candidateDogs
-      .filter((dog: Dog) => dog.primary_image_url && dog.slug)
-      .slice(0, 6)
-      .map((dog) => ({
-        name: dog.name,
-        slug: dog.slug!,
-        primary_image_url: dog.primary_image_url,
-      }));
-
-    if (topDogs.length === 0 && candidateDogs.length > 0) {
-      logger.warn(`No dogs with images found for Mixed breeds out of ${candidateDogs.length} candidates`);
-    }
-
-    // Only for the average age: a failure leaves it out, not the page
-    const allMixedDogs = await getAnimals({
-      breed_group: "Mixed",
-      limit: 200,
-    });
-
-    const organizationSet = new Set<string>();
-    const countrySet = new Set<string>();
-
-    if (breedStats?.qualifying_breeds) {
-      breedStats.qualifying_breeds.forEach((breed) => {
-        if (breed.breed_group === "Mixed" || breed.breed_type === "mixed") {
-          if (breed.organizations) {
-            breed.organizations.forEach((org: unknown) =>
-              organizationSet.add(String(org)),
-            );
-          }
-          if (breed.countries) {
-            breed.countries.forEach((country: string) =>
-              countrySet.add(country),
-            );
-          }
-        }
-      });
-    }
-
-    const personalityAggregation: Record<string, number> = {
-      energy_level: 0,
-      affection: 0,
-      trainability: 0,
-      independence: 0,
-    };
-
-    const personalityCount: Record<string, number> = {
-      energy_level: 0,
-      affection: 0,
-      trainability: 0,
-      independence: 0,
-    };
-
-    const traitsMap = new Map<string, number>();
-
-    let totalAgeMonths = 0;
-    let ageCount = 0;
-
-     
-    allMixedDogs.forEach((dog) => {
-      if (dog.organization_id) {
-        organizationSet.add(String(dog.organization_id));
-      }
-
-      if (dog.organization?.country) {
-        countrySet.add(dog.organization.country);
-      } else if (dog.available_country) {
-        countrySet.add(dog.available_country);
-      } else if (dog.country) {
-        countrySet.add(dog.country);
-      }
-
-      if (dog.age_min_months && dog.age_max_months) {
-        const avgAge = (dog.age_min_months + dog.age_max_months) / 2;
-        totalAgeMonths += avgAge;
-        ageCount++;
-      }
-
-      if (dog.properties) {
-        ["energy_level", "affection", "trainability", "independence"].forEach(
-          (trait) => {
-            if (
-              dog.properties?.[trait] !== undefined &&
-              dog.properties?.[trait] !== null
-            ) {
-              const value = Number(dog.properties?.[trait]);
-              if (!isNaN(value) && value >= 0 && value <= 100) {
-                personalityAggregation[trait] += value;
-                personalityCount[trait]++;
-              }
-            }
-          },
-        );
-
-        if (dog.properties.personality_traits) {
-          const traits = Array.isArray(dog.properties.personality_traits)
-            ? dog.properties.personality_traits
-            : [dog.properties.personality_traits];
-          traits.forEach((trait: unknown) => {
-            if (trait && typeof trait === "string") {
-              traitsMap.set(trait, (traitsMap.get(trait) || 0) + 1);
-            }
-          });
-        }
-      }
-    });
-
-    const getMetric = (trait: string): { percentage: number; label: string } => {
-      const defaults: Record<string, number> = {
-        energy_level: 60, affection: 80, trainability: 70, independence: 50,
-      };
-      const percentage = personalityCount[trait] > 0
-        ? Math.round(personalityAggregation[trait] / personalityCount[trait])
-        : (defaults[trait] ?? 50);
-
-      const label =
-        percentage <= 20 ? "Very Low" :
-        percentage <= 40 ? "Low" :
-        percentage <= 60 ? "Medium" :
-        percentage <= 80 ? "High" : "Very High";
-
-      return { percentage, label };
-    };
-
-    const personalityMetrics: PersonalityMetrics = {
-      energy_level: getMetric("energy_level"),
-      affection: getMetric("affection"),
-      trainability: getMetric("trainability"),
-      independence: getMetric("independence"),
-    };
-
-    const commonTraits = Array.from(traitsMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([trait]) => trait);
-
-    if (commonTraits.length === 0) {
-      commonTraits.push(
-        "Affectionate",
-        "Gentle",
-        "Loyal",
-        "Smart",
-        "Loving",
-      );
-    }
-
-    const experienceDistribution = {
-      first_time_ok: 0,
-      some_experience: 0,
-      experienced: 0,
-    };
-
-    allMixedDogs.forEach((dog) => {
-      if (dog.properties?.experience_level) {
-        const level = dog.properties.experience_level as string;
-        if (level === "first_time_ok") {
-          experienceDistribution.first_time_ok++;
-        } else if (level === "some_experience") {
-          experienceDistribution.some_experience++;
-        } else if (level === "experienced") {
-          experienceDistribution.experienced++;
-        }
-      }
-    });
-
-    // Left out when no dog has an age, or the fetch failed: never invented
-    const avgAgeMonths =
-      ageCount > 0 ? Math.round(totalAgeMonths / ageCount) : undefined;
-
-    return {
-      primary_breed: "Mixed Breed",
-      breed_slug: "mixed",
-      breed_type: "mixed",
-      breed_group: "Mixed",
-      count: mixedGroup?.count || 0,
-      organizations: Array.from(organizationSet).slice(0, 10).map(String),
-      countries: Array.from(countrySet),
-      topDogs: topDogs,
-      description:
-        "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
-      personality_metrics: personalityMetrics,
-      personality_traits: commonTraits,
-      experience_distribution: experienceDistribution,
-      average_age: avgAgeMonths === undefined ? undefined : avgAgeMonths / 12,
-      average_age_months: avgAgeMonths,
-    };
+      sort: "newest",
+    }),
+  ]);
+  const mixedGroup = breedStats.breed_groups?.find((g) => g.name === "Mixed");
+  if (!mixedGroup?.count) {
+    logger.warn("No Mixed group in the breed stats");
+    return null;
   }
 
+  return {
+    primary_breed: "Mixed Breed",
+    breed_slug: "mixed",
+    breed_type: "mixed",
+    breed_group: "Mixed",
+    count: mixedGroup.count,
+    // The group's own: the same dogs as its count
+    average_age_months: mixedGroup.average_age_months,
+    topDogs: pickGalleryDogs(candidateDogs, "Mixed breeds"),
+    description:
+      "Every mixed breed is unique! These wonderful dogs combine traits from multiple breeds, creating diverse personalities, unique looks, and often fewer health issues. Each one has their own special story and character.",
+  };
+}
+
+export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
   // Not the fallback: it has no breeds, which would read as "no such breed"
   const breedStats = await getBreedStats.orThrow();
   const breedData = breedStats.qualifying_breeds?.find(
@@ -747,26 +600,19 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
   const candidateDogs = await getAnimals.orThrow({
     primary_breed: breedData.primary_breed,
     limit: 30,
-    sort_by: "created_at",
-    sort_order: "desc",
+    sort: "newest",
   });
-  const topDogs: SampleDog[] = candidateDogs
-    .filter((dog: Dog) => dog.primary_image_url && dog.slug)
-    .slice(0, 6)
-    .map((dog) => ({
-      name: dog.name,
-      slug: dog.slug!,
-      primary_image_url: dog.primary_image_url,
-    }));
 
-  if (topDogs.length === 0 && candidateDogs.length > 0) {
-    logger.warn(`No dogs with images found for "${breedData.primary_breed}" out of ${candidateDogs.length} candidates`);
-  }
-
+  // Only what the page uses: the stats row carries distributions and
+  // personality data that would otherwise ship to every visitor
   return {
-    ...breedData,
+    primary_breed: breedData.primary_breed,
     breed_slug: slug,
-    topDogs,
+    breed_group: breedData.breed_group,
+    breed_type: breedData.breed_type,
+    count: breedData.count,
+    average_age_months: breedData.average_age_months,
+    topDogs: pickGalleryDogs(candidateDogs, `"${breedData.primary_breed}"`),
     description:
       getBreedDescription(breedData.primary_breed) ||
       `${breedData.primary_breed} dogs are wonderful companions looking for loving homes.`,

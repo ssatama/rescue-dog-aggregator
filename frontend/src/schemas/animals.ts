@@ -132,6 +132,7 @@ export const QualifyingBreedSchema = z
     breed_type: z.string().optional(),
     breed_group: z.string().optional(),
     count: z.number(),
+    average_age_months: z.number().optional(),
     organizations: z.array(z.string()).optional(),
     organization_count: z.number().optional(),
     countries: z.array(z.string()).optional(),
@@ -143,6 +144,7 @@ export const BreedGroupSchema = z
   .object({
     name: z.string(),
     count: z.number(),
+    average_age_months: z.number().optional(),
   })
   .passthrough();
 

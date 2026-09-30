@@ -7,39 +7,16 @@ import type { FilterCountsResponse } from "../schemas/common";
 
 export type { BreedGroupDisplay } from "../services/breedImagesService";
 
-export interface PersonalityMetric {
-  percentage: number;
-  label: string;
-}
-
-export interface PersonalityMetrics {
-  energy_level: PersonalityMetric;
-  affection: PersonalityMetric;
-  trainability: PersonalityMetric;
-  independence: PersonalityMetric;
-}
-
 export interface BreedData {
   primary_breed: string;
   breed_slug?: string;
   breed_group?: string;
   breed_type?: string;
   count: number;
-  /** A breed page covers the breed and its crosses; these split the count. */
-  purebred_count?: number;
-  crossbreed_count?: number;
-  slug?: string;
   description?: string;
-  average_age?: number;
   average_age_months?: number;
-  sex_distribution?: { male: number; female: number };
-  organizations?: string[];
-  countries?: string[];
   sample_dogs?: SampleDog[];
   sample_image_url?: string;
-  personality_metrics?: PersonalityMetrics;
-  personality_traits?: string[];
-  experience_distribution?: ExperienceDistribution;
   unique_breeds?: number;
   qualifying_breeds?: Array<{
     primary_breed: string;
@@ -56,12 +33,6 @@ export interface SampleDog {
   age_text?: string;
   sex?: string;
   personality_traits?: string[];
-}
-
-export interface ExperienceDistribution {
-  first_time_ok?: number;
-  some_experience?: number;
-  experienced?: number;
 }
 
 export interface BreedDog {
@@ -92,8 +63,6 @@ export interface BreedStructuredDataProps {
 
 export interface BreedPageData extends BreedData {
   topDogs?: SampleDog[];
-  top_locations?: string[];
-  available_countries?: string[];
 }
 
 export interface BreedDetailClientProps {
@@ -103,7 +72,6 @@ export interface BreedDetailClientProps {
   breedCounts?: FilterCountsResponse | null;
   /** The catalog's filter options (rescues, countries) */
   metadata?: DogsPageMetadata;
-  lastUpdated?: string;
 }
 
 export interface BreedsHubClientProps {

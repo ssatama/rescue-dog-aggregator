@@ -144,7 +144,7 @@ interface BreedPhotoGalleryProps {
 }
 
 export default function BreedPhotoGallery({ dogs, breedName, className = "" }: BreedPhotoGalleryProps) {
-  // None of the breed's newest dogs has a photo (getBreedBySlug logs it):
+  // None of the breed's newest dogs has a photo (pickGalleryDogs logs it):
   // leave the gallery out rather than apologise for it (#660)
   if (!dogs || dogs.length === 0) {
     return null;

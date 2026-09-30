@@ -4,20 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ExpandableText from "@/components/ui/ExpandableText";
 import AdoptableToYouCount from "@/components/location/AdoptableToYouCount";
+import { formatAverageAge } from "@/utils/breedMetadata";
 import type { BreedData } from "@/types/breeds";
 import type { FilterCount } from "@/schemas/common";
 
 interface BreedStatisticsProps {
   breedData: BreedData | null;
   className?: string;
-}
-
-function formatAge(months: number): string {
-  if (months < 12) return `${months} mo`;
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-  if (remainingMonths === 0) return `${years} yr${years === 1 ? "" : "s"}`;
-  return `${years}.${Math.floor((remainingMonths / 12) * 10)} yrs`;
 }
 
 /** How many are listed and their average age; an unknown age is left out. */
@@ -34,7 +27,7 @@ export default function BreedStatistics({ breedData, className = "" }: BreedStat
 
         {breedData.average_age_months ? (
           <div className="flex items-baseline gap-1.5">
-            <span className="font-display text-2xl font-bold text-ink">{formatAge(breedData.average_age_months)}</span>
+            <span className="font-display text-2xl font-bold text-ink">{formatAverageAge(breedData.average_age_months)}</span>
             <span className="text-sm text-subtle">avg age</span>
           </div>
         ) : null}
@@ -48,11 +41,10 @@ interface BreedInfoProps {
   /** The breed's per-country counts, for "adoptable to you" */
   adoptableOptions?: FilterCount[];
   onShowAdoptable?: (countryValue: string) => void;
-  lastUpdated?: string;
   className?: string;
 }
 
-export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUpdated, className = "" }: BreedInfoProps) {
+export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, className = "" }: BreedInfoProps) {
   const handleScrollToDogs = (): void => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     document
@@ -68,14 +60,10 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUp
         </h1>
 
         <div className="flex flex-wrap gap-2">
-          {breedData.breed_group && breedData.breed_group !== "Unknown" && (
+          {/* On /breeds/mixed, "Mixed Group" under "Mixed Breed" would only repeat it */}
+          {breedData.breed_group && breedData.breed_group !== "Unknown" && breedData.breed_slug !== "mixed" && (
             <Badge variant="secondary" className="text-sm">
               {breedData.breed_group} Group
-            </Badge>
-          )}
-          {breedData.count >= 50 && (
-            <Badge variant="default" className="bg-green-600 text-sm">
-              Popular Breed
             </Badge>
           )}
         </div>
@@ -94,26 +82,14 @@ export function BreedInfo({ breedData, adoptableOptions, onShowAdoptable, lastUp
         />
       )}
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div>
         <Button
           size="lg"
           className="bg-orange-600 hover:bg-orange-700 text-white"
           onClick={handleScrollToDogs}
         >
-          View All {breedData.count} {breedData.primary_breed}s
+          {breedData.count === 1 ? "See the 1 dog" : `See all ${breedData.count} dogs`}
         </Button>
-        {lastUpdated && !isNaN(new Date(lastUpdated).getTime()) && (
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Updated{" "}
-            <time dateTime={lastUpdated}>
-              {new Date(lastUpdated).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </time>
-          </p>
-        )}
       </div>
     </div>
   );

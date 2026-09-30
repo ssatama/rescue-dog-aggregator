@@ -12,8 +12,9 @@ import useShowAdoptable from "@/hooks/dogs/useShowAdoptable";
 import { buildPracticalStats } from "@/utils/breedPracticalStats";
 import type { BreedDetailClientProps, SampleDog } from "@/types/breeds";
 
-export function isMixedBreedPage(breedData: { breed_slug?: string; breed_type?: string }): boolean {
-  return breedData.breed_slug === "mixed" || breedData.breed_type === "mixed";
+// Only /breeds/mixed: a mixed-type breed with a page of its own lists its own dogs
+export function isMixedBreedPage(breedData: { breed_slug?: string }): boolean {
+  return breedData.breed_slug === "mixed";
 }
 
 /**
@@ -26,7 +27,6 @@ export default function BreedDetailClient({
   initialDogs,
   breedCounts,
   metadata,
-  lastUpdated,
 }: BreedDetailClientProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -87,7 +87,6 @@ export default function BreedDetailClient({
           breedData={breedData}
           adoptableOptions={breedCounts?.available_country_options}
           onShowAdoptable={showAdoptable}
-          lastUpdated={lastUpdated}
           className="order-1 lg:order-2"
         />
       </div>

@@ -35,8 +35,8 @@ class TestAnimalServiceBreeds:
         # Mock breed groups
         mock_cursor.fetchall.side_effect = [
             [
-                {"group_name": "Hound", "count": 450},
-                {"group_name": "Sporting", "count": 300},
+                {"group_name": "Hound", "count": 450, "average_age_months": 52},
+                {"group_name": "Sporting", "count": 300, "average_age_months": None},
             ],  # breed groups
             # Qualifying breeds with all required fields
             [
@@ -137,6 +137,9 @@ class TestAnimalServiceBreeds:
         assert result["crossbreed_count"] == 238
         assert len(result["breed_groups"]) == 2
         assert result["breed_groups"][0]["name"] == "Hound"
+        # Each group carries its own average age, left out when none is known
+        assert result["breed_groups"][0]["average_age_months"] == 52
+        assert result["breed_groups"][1]["average_age_months"] is None
         assert len(result["qualifying_breeds"]) == 2
 
         # Check first breed details

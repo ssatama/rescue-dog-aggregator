@@ -864,7 +864,8 @@ class AnimalService:
                 f"""
                 SELECT
                     COALESCE(breed_group, 'Unknown') as group_name,
-                    COUNT(*) as count
+                    COUNT(*) as count,
+                    ROUND(AVG((a.age_min_months + a.age_max_months) / 2.0) FILTER (WHERE a.age_min_months IS NOT NULL AND a.age_max_months IS NOT NULL)) as average_age_months
                 FROM animals a
                 JOIN organizations o ON a.organization_id = o.id
                 WHERE a.animal_type = 'dog'
@@ -874,7 +875,9 @@ class AnimalService:
                 ORDER BY count DESC
             """
             )
-            breed_groups = [{"name": row["group_name"], "count": row["count"]} for row in self.cursor.fetchall()]
+            # The group's own average age, over the same dogs as its count
+            # (the Mixed page shows both), worked out as each breed's is
+            breed_groups = [{"name": row["group_name"], "count": row["count"], "average_age_months": row.get("average_age_months")} for row in self.cursor.fetchall()]
 
             # Get qualifying breeds with organization distribution
             self.cursor.execute(

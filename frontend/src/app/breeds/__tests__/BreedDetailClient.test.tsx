@@ -48,6 +48,16 @@ describe("BreedDetailClient (#500)", () => {
     );
   });
 
+  it("lists a mixed-type breed with its own page by that breed, not the Mixed group", () => {
+    render(
+      <BreedDetailClient
+        initialBreedData={{ primary_breed: "Terrier Mix", breed_slug: "terrier-mix", breed_type: "mixed", count: 5 } as never}
+        initialDogs={[]}
+      />,
+    );
+    expect(catalogProps).toHaveBeenLastCalledWith(expect.objectContaining({ initialParams: { primary_breed: "Terrier Mix" } }));
+  });
+
   it("fixes the Mixed group on the mixed breeds page", () => {
     render(
       <BreedDetailClient
