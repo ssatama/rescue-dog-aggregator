@@ -353,6 +353,25 @@ describe("Server Animals Service", () => {
       crossbreed_count: 50,
     };
 
+    it("describes a type like Hound as a type, not with a breed's description (#669)", async () => {
+      const stats = {
+        total_dogs: 16,
+        breed_groups: [],
+        qualifying_breeds: [{ primary_breed: "Hound", breed_slug: "hound", breed_group: "Hound", count: 16 }],
+      };
+      (fetch as jest.Mock).mockImplementation(async (url: string) => ({
+        ok: true,
+        status: 200,
+        json: async () => (url.includes("/breeds/stats") ? stats : []),
+      }));
+
+      const hound = await getBreedBySlug("hound");
+
+      expect(hound?.description).toBe(
+        "Dogs their rescue lists as a hound type or hound cross, without naming a specific breed.",
+      );
+    });
+
     it("throws when the breed stats can't be fetched, rather than a 404", async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error("unreachable"));
 

@@ -102,6 +102,14 @@ describe("PopularBreedsSection (#500)", () => {
     expect(screen.getAllByTestId("breed-card")).toHaveLength(4);
   });
 
+  it("leaves out types like Livestock Guardian Dog, which aren't breeds (#669)", () => {
+    const lgd = { ...mockPopularBreeds[0], primary_breed: "Livestock Guardian Dog", breed_slug: "livestock-guardian-dog", count: 200 };
+    render(<PopularBreedsSection popularBreeds={[lgd, ...mockPopularBreeds]} />);
+
+    expect(screen.queryByRole("link", { name: /Livestock Guardian Dog/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Galgo/ })).toBeInTheDocument();
+  });
+
   it("shows mixed breeds as one tile among the breeds, placed by count", () => {
     render(<PopularBreedsSection popularBreeds={[...mockPopularBreeds, mixed]} mixedBreed={mixed} />);
 
