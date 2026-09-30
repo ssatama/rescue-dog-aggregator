@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { logger, reportError } from "../utils/logger";
 import { stripNulls } from "../utils/api";
-import { fetchWithRetry } from "../utils/serverFetch";
+import { fallbackInBuildWithoutApi, fetchWithRetry } from "../utils/serverFetch";
 import {
   BreedWithImagesSchema,
   BreedStatsSchema,
@@ -44,8 +44,14 @@ export async function getBreedsWithImages(
   const queryString = queryParams.toString();
   const url = `${API_URL}/api/animals/breeds/with-images${queryString ? `?${queryString}` : ""}`;
 
-  // No catch: the hub's sections come from here, and a failure fails its
-  // render rather than cache the hub without them (#675)
+  // The hub's sections come from here: a failure fails its render rather than
+  // cache the hub without them (#675)
+  return fetchBreedsWithImages(url).catch(fallbackInBuildWithoutApi([]));
+}
+
+async function fetchBreedsWithImages(
+  url: string,
+): Promise<z.infer<typeof BreedWithImagesSchema>[]> {
   const response = await fetchWithRetry(url, {
     headers: {
       "Content-Type": "application/json",
@@ -114,6 +120,10 @@ export async function getPopularBreedsWithImages(
 export async function getBreedGroupsWithTopBreeds(): Promise<
   BreedGroupDisplay[]
 > {
+  return fetchBreedGroups().catch(fallbackInBuildWithoutApi([]));
+}
+
+async function fetchBreedGroups(): Promise<BreedGroupDisplay[]> {
   const statsUrl = `${API_URL}/api/animals/breeds/stats`;
   const statsResponse = await fetchWithRetry(statsUrl, {
     headers: { "Content-Type": "application/json" },

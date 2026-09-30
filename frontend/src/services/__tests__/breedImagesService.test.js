@@ -353,6 +353,20 @@ describe("breedImagesService", () => {
       await expect(getBreedGroupsWithTopBreeds()).rejects.toThrow("500");
     });
 
+    it("answers empty sections in the GitHub Actions build, which runs with no API", async () => {
+      const env = { ...process.env };
+      process.env.GITHUB_ACTIONS = "true";
+      process.env.NEXT_PHASE = "phase-production-build";
+      fetch.mockRejectedValue(new Error("bad port"));
+
+      try {
+        await expect(getBreedGroupsWithTopBreeds()).resolves.toEqual([]);
+        await expect(getBreedsWithImages()).resolves.toEqual([]);
+      } finally {
+        process.env = env;
+      }
+    }, 60000);
+
     it("still lists the groups, without photos, when only the photos fail", async () => {
       jest.spyOn(console, "warn").mockImplementation(() => {});
       fetch.mockImplementation(async (url) =>

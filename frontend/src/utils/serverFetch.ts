@@ -32,6 +32,19 @@ const RUNTIME_ATTEMPTS = 2;
 const isPrerendering = (): boolean =>
   process.env.NEXT_PHASE === "phase-production-build";
 
+// The GitHub Actions build runs with no API at all, and has to render anyway.
+// Everywhere else a page whose data fails must fail its render (#675).
+export const buildsWithoutApi = (): boolean =>
+  process.env.GITHUB_ACTIONS === "true" && isPrerendering();
+
+/** For a .catch: `fallback` in that build, and the error everywhere else. */
+export const fallbackInBuildWithoutApi =
+  <T>(fallback: T) =>
+  (error: unknown): T => {
+    if (buildsWithoutApi()) return fallback;
+    throw error;
+  };
+
 export function getRetryPolicy(): RetryPolicy {
   return {
     attempts: isPrerendering() ? PRERENDER_ATTEMPTS : RUNTIME_ATTEMPTS,

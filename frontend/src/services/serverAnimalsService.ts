@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { stripNulls } from "../utils/api";
-import { fetchWithRetry } from "../utils/serverFetch";
+import { buildsWithoutApi, fetchWithRetry } from "../utils/serverFetch";
 import { logger, reportError } from "../utils/logger";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -91,10 +91,6 @@ type Cached<T extends AsyncFn> = T & {
    */
   orFallback: T;
 };
-
-// The GitHub Actions build runs with no API at all, and has to render anyway
-const buildsWithoutApi = (): boolean =>
-  process.env.GITHUB_ACTIONS === "true" && process.env.NEXT_PHASE === "phase-production-build";
 
 // A fetch throws by default (#675): ISR caches a render built from fallback
 // data as if it were real, for up to a week, while a render that throws keeps
