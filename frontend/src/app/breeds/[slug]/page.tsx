@@ -15,7 +15,7 @@ import {
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
-import { clampDescription, clampTitle } from "@/utils/seoMeta";
+import { clampDescription, fitTitle } from "@/utils/seoMeta";
 
 interface BreedPageProps {
   params: Promise<{ slug: string }>;
@@ -59,7 +59,7 @@ export async function generateMetadata(
     .join(", ");
 
   return {
-    title: clampTitle(`${breedData.primary_breed} Rescue Dogs for Adoption | ${breedData.count} Available Near You`),
+    title: fitTitle(`${breedData.primary_breed} Rescue Dogs for Adoption`, ` | ${breedData.count} Available`, " Near You"),
     description: seoDescription,
     keywords,
     openGraph: {

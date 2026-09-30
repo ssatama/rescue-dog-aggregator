@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import BreedDetailClient from "../[slug]/BreedDetailClient";
 import Layout from "@/components/layout/Layout";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
@@ -14,15 +13,12 @@ import {
 } from "@/services/serverAnimalsService";
 import { FILTER_DEFAULTS } from "@/constants/filters";
 import { averageAgeSentence } from "@/utils/breedMetadata";
-import { clampDescription, clampTitle } from "@/utils/seoMeta";
+import { clampDescription, fitTitle } from "@/utils/seoMeta";
 
 export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
   const breedData = await getMixedBreedPageData();
-  if (!breedData) {
-    return { title: "Breed Not Found", description: "The requested breed could not be found." };
-  }
 
   const avgAge = averageAgeSentence(breedData.average_age_months);
 
@@ -48,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
   ].join(", ");
 
   return {
-    title: clampTitle(`Mixed Breed Rescue Dogs for Adoption | ${breedData.count} Unique Dogs Available`),
+    title: fitTitle("Mixed Breed Rescue Dogs for Adoption", ` | ${breedData.count} Unique Dogs Available`),
     description: seoDescription,
     keywords,
     openGraph: {
@@ -102,9 +98,6 @@ async function fetchMixedBreedData() {
 
 export default async function MixedBreedsPage() {
   const { breedData, initialDogs, breedCounts, metadata } = await fetchMixedBreedData();
-  if (!breedData) {
-    notFound();
-  }
 
   // The same frame as every other breed page: the site header was missing here
   return (

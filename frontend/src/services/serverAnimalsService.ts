@@ -550,8 +550,8 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): SampleDog[] {
 // Neither of these catches: a failure fails the render, which keeps the last
 // good page and reaches Sentry once through onRequestError
 
-/** /breeds/mixed; null when no dog is in the Mixed group, for a 404 rather than "0 available" */
-export const getMixedBreedPageData = cache(async (): Promise<BreedPageData | null> => {
+/** /breeds/mixed: always there, so never null */
+export const getMixedBreedPageData = cache(async (): Promise<BreedPageData> => {
   const [breedStats, candidateDogs] = await Promise.all([
     getBreedStats.orThrow(),
     getAnimals.orThrow({
@@ -565,9 +565,10 @@ export const getMixedBreedPageData = cache(async (): Promise<BreedPageData | nul
   // is the stats' own, worked out the same way as every other breed's
   const mixedGroup = breedStats.breed_groups?.find((g) => g.name === "Mixed");
   const mixedStats = breedStats.qualifying_breeds?.find((b) => b.breed_slug === "mixed-breed");
+  // Not "0 available", nor a 404 that ISR would cache: fail the render and
+  // keep the last good page
   if (!mixedGroup?.count) {
-    logger.warn("No Mixed group in the breed stats");
-    return null;
+    throw new Error("No Mixed group in the breed stats");
   }
 
   return {

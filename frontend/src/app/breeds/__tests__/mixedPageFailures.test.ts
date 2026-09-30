@@ -1,8 +1,8 @@
 import MixedBreedsPage from "../mixed/page";
-import { getAllMetadata, getAnimals, getBreedBySlug, getListCounts } from "@/services/serverAnimalsService";
+import { getAllMetadata, getAnimals, getMixedBreedPageData, getListCounts } from "@/services/serverAnimalsService";
 
 jest.mock("@/services/serverAnimalsService", () => ({
-  getBreedBySlug: jest.fn(),
+  getMixedBreedPageData: jest.fn(),
   getAnimals: Object.assign(jest.fn(), { orThrow: jest.fn() }),
   getListCounts: Object.assign(jest.fn(), { orThrow: jest.fn() }),
   getAllMetadata: jest.fn(),
@@ -13,7 +13,7 @@ const mock = (fn: unknown) => fn as jest.Mock;
 describe("/breeds/mixed whose data fails (#659)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mock(getBreedBySlug).mockResolvedValue({ primary_breed: "Mixed Breed", breed_slug: "mixed", count: 534, topDogs: [] });
+    mock(getMixedBreedPageData).mockResolvedValue({ primary_breed: "Mixed Breed", breed_slug: "mixed", count: 534, topDogs: [] });
     mock(getAnimals).mockResolvedValue([]);
     mock(getListCounts).mockResolvedValue(null);
     mock(getAnimals.orThrow).mockResolvedValue([]);

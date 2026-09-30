@@ -34,8 +34,24 @@ describe("breed page meta description (#664)", () => {
 
     const { title } = await generateMetadata(params);
 
-    expect((title as string).length).toBeLessThanOrEqual(65);
-    expect(title).toMatch(/^Staffordshire Bull Terrier Rescue Dogs for Adoption/);
+    // Whole phrases dropped, never "| 32…"
+    expect(title).toBe("Staffordshire Bull Terrier Rescue Dogs for Adoption");
+  });
+
+  it("drops only as much of the title as it has to", async () => {
+    (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, primary_breed: "Labrador Retriever" });
+
+    const { title } = await generateMetadata(params);
+
+    expect(title).toBe("Labrador Retriever Rescue Dogs for Adoption | 32 Available");
+  });
+
+  it("keeps the full title when it fits", async () => {
+    (getBreedBySlug as unknown as jest.Mock).mockResolvedValue({ ...borderCollie, primary_breed: "Pug", count: 5 });
+
+    const { title } = await generateMetadata(params);
+
+    expect(title).toBe("Pug Rescue Dogs for Adoption | 5 Available Near You");
   });
 
   it("leaves the age out when it isn't known", async () => {

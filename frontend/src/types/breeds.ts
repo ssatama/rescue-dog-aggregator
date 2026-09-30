@@ -13,15 +13,8 @@ export interface BreedData {
   breed_group?: string;
   breed_type?: string;
   count: number;
-  /** A breed page covers the breed and its crosses; these split the count. */
-  purebred_count?: number;
-  crossbreed_count?: number;
-  slug?: string;
   description?: string;
   average_age_months?: number;
-  sex_distribution?: { male: number; female: number };
-  organizations?: string[];
-  countries?: string[];
   sample_dogs?: SampleDog[];
   sample_image_url?: string;
   unique_breeds?: number;

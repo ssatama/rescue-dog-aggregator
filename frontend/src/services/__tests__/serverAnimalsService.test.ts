@@ -456,7 +456,7 @@ describe("Server Animals Service", () => {
       );
     });
 
-    it("has no mixed page, rather than '0 available', when the Mixed group is missing", async () => {
+    it("fails, rather than show '0 available' or a 404, when the Mixed group is missing", async () => {
       const stats = { total_dogs: 1, unique_breeds: 1, breed_groups: [{ name: "Hound", count: 3 }], qualifying_breeds: [] };
       (fetch as jest.Mock).mockImplementation(async (url: string) => ({
         ok: true,
@@ -464,7 +464,7 @@ describe("Server Animals Service", () => {
         json: async () => (url.includes("/breeds/stats") ? stats : []),
       }));
 
-      await expect(getMixedBreedPageData()).resolves.toBeNull();
+      await expect(getMixedBreedPageData()).rejects.toThrow("No Mixed group");
     });
   });
 
