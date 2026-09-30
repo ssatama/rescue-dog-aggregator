@@ -16,6 +16,7 @@ import {
 } from "../services/serverAnimalsService";
 import { getAllGuides } from "../lib/guides";
 import { reportError } from "../utils/logger";
+import { buildsWithoutApi } from "../utils/serverFetch";
 
 export const revalidate = 21600;
 
@@ -71,14 +72,13 @@ export default async function Home(): Promise<React.JSX.Element> {
     getAllGuides(),
   ]);
 
-  // The service answers a failed fetch with empty lists and zero counts. This
-  // page is cached for hours, so a home without dogs or statistics must fail the
-  // render instead: ISR keeps serving the last good page, and a Vercel build that
-  // hits the API mid-deploy fails rather than shipping it. Only CI, which builds
-  // with no API at all, renders it anyway.
+  // A failed fetch already fails the render (#675). This page is cached for
+  // hours, so an API that answers with no dogs or statistics fails it too: ISR
+  // keeps serving the last good page, and a Vercel build fails rather than
+  // shipping it. Only CI, which builds with no API at all, renders it anyway.
   if (
     (statistics.total_dogs === 0 || lookingForHomes.length === 0 || waitingLongest.length === 0) &&
-    process.env.GITHUB_ACTIONS !== "true"
+    !buildsWithoutApi()
   ) {
     throw new Error("Home: no dogs or statistics came back from the API");
   }

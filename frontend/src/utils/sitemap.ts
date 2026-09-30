@@ -297,7 +297,7 @@ export const generateCountrySitemap = async (): Promise<string> => {
   try {
     // Only countries with dogs; if the stats call failed, keep every configured page
     // rather than dropping them all from the sitemap
-    const stats = await getCountryStats();
+    const stats = await getCountryStats.orFallback();
     const withDogs = getCountriesWithDogs(stats);
     const countries = (stats.countries?.length ? withDogs.map((c) => c.code) : getAllCountryCodes()).map((code) =>
       code.toLowerCase(),

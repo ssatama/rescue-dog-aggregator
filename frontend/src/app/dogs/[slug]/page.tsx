@@ -167,13 +167,13 @@ function DogDetailPage(_props: DogDetailPageProps): React.JSX.Element {
   return <Layout><DogDetailClient /></Layout>;
 }
 
-// Neither helper throws: the cached server fetches return a fallback on API failure.
+// Neither helper throws: the dog is the page, and these only add to it (#675).
 async function fetchSimilarDogs(dog: Dog): Promise<Dog[] | undefined> {
   const query = similarDogsQuery(dog);
   if (!query) return undefined;
   const { getAnimals } = await import("../../../services/serverAnimalsService");
-  const similar = pickSimilarDogs(dog, await getAnimals({ ...query, limit: SIMILAR_CANDIDATES, offset: 0 }));
-  // getAnimals answers [] both for "none" and for a failed request. Pass nothing then, so
+  const similar = pickSimilarDogs(dog, await getAnimals.orFallback({ ...query, limit: SIMILAR_CANDIDATES, offset: 0 }));
+  // The fallback is [], the same as "none". Pass nothing then, so
   // the client fetches and decides, rather than caching an empty section for the ISR window.
   return similar.length > 0 ? similar : undefined;
 }
@@ -181,7 +181,7 @@ async function fetchSimilarDogs(dog: Dog): Promise<Dog[] | undefined> {
 async function fetchBreedPageSlug(dog: Dog): Promise<string | null> {
   if (!dog.breed_slug) return null;
   const { getBreedStats } = await import("../../../services/serverAnimalsService");
-  const stats = await getBreedStats();
+  const stats = await getBreedStats.orFallback();
   // On a failed stats request the breed stays plain text until the page revalidates
   const hasPage = getIndexableBreeds(stats?.qualifying_breeds).some((b) => b.breed_slug === dog.breed_slug);
   return hasPage ? dog.breed_slug : null;

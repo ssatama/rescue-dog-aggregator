@@ -12,10 +12,17 @@
 import { notFound } from "next/navigation";
 import OrganizationDetailPage from "../page";
 import { getOrganizationBySlug } from "../../../../services/organizationsService";
+import { getAllMetadata, getAnimals, getListCounts } from "../../../../services/serverAnimalsService";
 
 jest.mock("../../../../services/organizationsService", () => ({
   getOrganizationBySlug: jest.fn(),
   getAllOrganizations: jest.fn(),
+}));
+
+jest.mock("../../../../services/serverAnimalsService", () => ({
+  getAnimals: jest.fn(),
+  getListCounts: jest.fn(),
+  getAllMetadata: jest.fn(),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -67,5 +74,19 @@ describe("organization detail page — failed fetches must not be cached", () =>
       "params unavailable",
     );
     expect(getOrganizationBySlug).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["its dogs", () => getAnimals],
+    ["its counts", () => getListCounts],
+    ["the filter options", () => getAllMetadata],
+  ])("fails the render when %s can't be fetched, rather than cache an empty list (#675)", async (_, fetcher) => {
+    getOrganizationBySlug.mockResolvedValue({ id: 7, name: "Furry Rescue", slug: "furry-rescue-italy" });
+    getAnimals.mockResolvedValue([]);
+    getListCounts.mockResolvedValue({});
+    getAllMetadata.mockResolvedValue({ standardizedBreeds: [], locationCountries: [], availableCountries: [], organizations: [] });
+    fetcher().mockRejectedValue(new Error("API unreachable"));
+
+    await expect(OrganizationDetailPage(props)).rejects.toThrow("API unreachable");
   });
 });

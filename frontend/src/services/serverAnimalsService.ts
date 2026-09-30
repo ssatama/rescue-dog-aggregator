@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getApiUrl } from "../utils/apiConfig";
 import { stripNulls } from "../utils/api";
-import { fetchWithRetry } from "../utils/serverFetch";
+import { buildsWithoutApi, fetchWithRetry } from "../utils/serverFetch";
 import { logger, reportError } from "../utils/logger";
 import * as Sentry from "@sentry/nextjs";
 import {
@@ -85,15 +85,17 @@ const memoize = <T extends AsyncFn>(fn: T): T => {
 
 type Cached<T extends AsyncFn> = T & {
   /**
-   * The same fetch without the fallback: a failure throws. For ISR pages,
-   * where a render that succeeded on fallback data is cached as if it were
-   * real, and one that throws keeps the last good page instead (#659).
+   * The same fetch, answering the fallback instead of throwing. Only for a
+   * caller that chose to degrade: the 404 page, a section the browser fills in
+   * after a miss, a sitemap that keeps its configured pages.
    */
-  orThrow: T;
+  orFallback: T;
 };
 
-// Only a fetcher with a fallback gets .orThrow: one without already throws,
-// or handles its own failure, and .orThrow would promise a throw it can't keep
+// A fetch throws by default (#675): ISR caches a render built from fallback
+// data as if it were real, for up to a week, while a render that throws keeps
+// the last good page and is retried on the next request (#659). A page opts
+// into degrading with .orFallback.
 function cache<T extends AsyncFn>(fn: T): T;
 function cache<T extends AsyncFn>(fn: T, errorFallback: Awaited<ReturnType<T>>): Cached<T>;
 function cache<T extends AsyncFn>(fn: T, errorFallback?: Awaited<ReturnType<T>>): T | Cached<T> {
@@ -118,7 +120,9 @@ function cache<T extends AsyncFn>(fn: T, errorFallback?: Awaited<ReturnType<T>>)
     }
   }) as T;
 
-  return Object.assign(withFallback, { orThrow: strict });
+  const byDefault = ((...args: Parameters<T>) =>
+    (buildsWithoutApi() ? withFallback : strict)(...args)) as T;
+  return Object.assign(byDefault, { orFallback: withFallback });
 }
 
 const API_URL = getApiUrl();
@@ -405,7 +409,6 @@ export const getBreedStats = cache(
     qualifying_breeds: [],
     purebred_count: 0,
     crossbreed_count: 0,
-    error: true,
   } as BreedStats,
 );
 
@@ -451,19 +454,16 @@ interface AllMetadata {
 }
 
 /**
- * The catalog's filter options. `strict` throws on a failed fetch instead of
- * leaving that filter with only its "Any" option, for pages that must not be
- * cached that way (#659).
+ * The catalog's filter options. A failed fetch throws rather than leaving
+ * that filter with only its "Any" option in a cached page (#659).
  */
-export async function getAllMetadata({ strict = false } = {}): Promise<AllMetadata> {
-  const pick = <T extends { orThrow: unknown }>(fetcher: T): T | T["orThrow"] =>
-    strict ? fetcher.orThrow : fetcher;
+export async function getAllMetadata(): Promise<AllMetadata> {
   const [breeds, locationCountries, availableCountries, organizations] =
     await Promise.all([
-      pick(getStandardizedBreeds)(),
-      pick(getLocationCountries)(),
-      pick(getAvailableCountries)(),
-      pick(getOrganizations)(),
+      getStandardizedBreeds(),
+      getLocationCountries(),
+      getAvailableCountries(),
+      getOrganizations(),
     ]);
 
   return {
@@ -558,8 +558,8 @@ function pickGalleryDogs(candidateDogs: Dog[], label: string): GalleryDog[] {
  */
 export async function getMixedBreedPageData(): Promise<BreedPageData | null> {
   const [breedStats, candidateDogs] = await Promise.all([
-    getBreedStats.orThrow(),
-    getAnimals.orThrow({
+    getBreedStats(),
+    getAnimals({
       breed_group: "Mixed",
       limit: 30,
       sort: "newest",
@@ -586,8 +586,9 @@ export async function getMixedBreedPageData(): Promise<BreedPageData | null> {
 }
 
 export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData | null> => {
-  // Not the fallback: it has no breeds, which would read as "no such breed"
-  const breedStats = await getBreedStats.orThrow();
+  // Throws rather than answer the fallback, whose empty list would read as
+  // "no such breed" and 404
+  const breedStats = await getBreedStats();
   const breedData = breedStats.qualifying_breeds?.find(
     (breed) => breed.breed_slug === slug,
   );
@@ -597,7 +598,7 @@ export const getBreedBySlug = cache(async (slug: string): Promise<BreedPageData 
     return null;
   }
 
-  const candidateDogs = await getAnimals.orThrow({
+  const candidateDogs = await getAnimals({
     primary_breed: breedData.primary_breed,
     limit: 30,
     sort: "newest",
@@ -650,9 +651,7 @@ async function fetchListCounts(listFilter: ListFilter): Promise<FilterCountsResp
 /**
  * Unfiltered counts for one breed, rescue or age page, or for every dog
  * (country pages) (#500, #501, #502): a breed's practical stats, and how many
- * are adoptable to each country. Ages count only dogs with a recorded age. A
- * failure leaves the counts out; getListCounts.orThrow fails the page instead,
- * for pages that must not be cached without them (the breed pages).
+ * are adoptable to each country. Ages count only dogs with a recorded age.
  */
 export const getListCounts = cache(fetchListCounts, null);
 

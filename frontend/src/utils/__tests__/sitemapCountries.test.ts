@@ -1,7 +1,7 @@
 import { generateCountrySitemap } from "../sitemap";
 import { getCountryStats } from "../../services/serverAnimalsService";
 
-jest.mock("../../services/serverAnimalsService", () => ({ getCountryStats: jest.fn() }));
+jest.mock("../../services/serverAnimalsService", () => ({ getCountryStats: { orFallback: jest.fn() } }));
 jest.mock("../../services/animalsService", () => ({ getAllAnimalsForSitemap: jest.fn() }));
 jest.mock("../../services/organizationsService", () => ({ getAllOrganizations: jest.fn() }));
 
@@ -9,7 +9,7 @@ const countryUrls = (xml: string) => Array.from(xml.matchAll(/\/dogs\/country\/(
 
 describe("country sitemap (#442)", () => {
   it("lists only countries that currently have dogs", async () => {
-    (getCountryStats as unknown as jest.Mock).mockResolvedValue({
+    (getCountryStats.orFallback as unknown as jest.Mock).mockResolvedValue({
       total: 700,
       countries: [
         { code: "UK", count: 588 },
@@ -24,7 +24,7 @@ describe("country sitemap (#442)", () => {
   });
 
   it("keeps every configured country when the stats call failed", async () => {
-    (getCountryStats as unknown as jest.Mock).mockResolvedValue({ total: 0, countries: [] });
+    (getCountryStats.orFallback as unknown as jest.Mock).mockResolvedValue({ total: 0, countries: [] });
 
     const urls = countryUrls(await generateCountrySitemap());
 
