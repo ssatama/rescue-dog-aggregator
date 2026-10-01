@@ -962,14 +962,6 @@ class FurryRescueItalyScraper(BaseScraper):
             if good_with_list:
                 props["good_with_list"] = good_with_list
 
-        # Preserve location processing
-        if "location" in props:
-            location = props["location"].strip()
-            if location.lower() in ["italy", "italia", "it"]:
-                props["location_country"] = "IT"
-            elif location.lower() in ["uk", "united kingdom", "england"]:
-                props["location_country"] = "UK"
-
     def _validate_animal_data(self, animal: dict[str, Any]) -> bool:
         """Check the fields this scraper needs, then run the shared validator,
         which also cleans the name like every other rescue's (#505)."""

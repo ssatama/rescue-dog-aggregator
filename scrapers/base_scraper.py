@@ -132,7 +132,12 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
         self.database_service = database_service
         self.session_manager = session_manager
         self.metrics_collector = metrics_collector or NullMetricsCollector()
-        self.animal_validator = animal_validator or AnimalValidator(logger=self.logger)
+        metadata = self.org_config.metadata if self.org_config else None
+        self.animal_validator = animal_validator or AnimalValidator(
+            logger=self.logger,
+            service_regions=metadata.service_regions if metadata else None,
+            base_country=metadata.location.country if metadata else None,
+        )
         self.filtering_service = filtering_service or FilteringService(
             database_service=database_service,
             session_manager=session_manager,

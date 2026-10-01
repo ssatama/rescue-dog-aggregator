@@ -9,6 +9,7 @@ from config import DB_CONFIG
 from scrapers.base_scraper import BaseScraper
 from services.metrics_collector import MetricsCollector
 from services.session_manager import SessionManager
+from utils.config_models import OrganizationMetadata
 
 ORG_ID = 901  # seeded by conftest.manage_test_data, with animals 9001-9014
 
@@ -29,6 +30,7 @@ def _scraper(session_manager):
         patch("scrapers.base_scraper.ConfigLoader") as loader,
     ):
         config = Mock()
+        config.metadata = OrganizationMetadata()
         config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "max_retries": 1, "timeout": 10, "skip_existing_animals": False}
         config.name = "Test Rescue"
         loader.return_value.load_config.return_value = config

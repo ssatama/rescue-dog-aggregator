@@ -8,6 +8,7 @@ import pytest
 
 from management import backfill_commands
 from scrapers.base_scraper import BaseScraper
+from utils.config_models import OrganizationMetadata
 
 
 class _FakeRescueScraper(BaseScraper):
@@ -36,6 +37,7 @@ def restore_force_rescrape(monkeypatch):
 @pytest.fixture
 def fake_scraper_class():
     config = Mock()
+    config.metadata = OrganizationMetadata()
     config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "skip_existing_animals": True}
     config.name = "Fake Rescue"
     with (

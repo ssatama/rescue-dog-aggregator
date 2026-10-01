@@ -15,15 +15,18 @@ from scrapers.validation.constants import (
     PROMO_KEYWORDS_PATTERN,
     SKU_PATTERN,
 )
-from scrapers.validation.location_cleaner import display_location
+from scrapers.validation.location_cleaner import locate
 from scrapers.validation.name_cleaner import clean_name
 
 
 class AnimalValidator:
     """Validates and normalizes animal data for scrapers."""
 
-    def __init__(self, logger: logging.Logger | None = None):
+    def __init__(self, logger: logging.Logger | None = None, service_regions: list[str] | None = None, base_country: str | None = None):
         self.logger = logger or logging.getLogger(__name__)
+        # The rescue's, for the country each dog is in (#702)
+        self.service_regions = service_regions or []
+        self.base_country = base_country
 
     def is_valid_name(self, name: str) -> bool:
         """Check if animal name is valid.
@@ -144,9 +147,10 @@ class AnimalValidator:
             result_data["properties"] = properties
         normalized_name = display_name
 
-        place = display_location(result_data.get("properties") or {})
-        if place:
-            result_data["properties"] = {**(result_data.get("properties") or {}), "display_location": place}
+        properties = result_data.get("properties") or {}
+        located = locate(properties, self.service_regions, self.base_country)
+        if located != properties:
+            result_data["properties"] = located
 
         primary_image_url = animal_data.get("primary_image_url")
         if primary_image_url == "":
