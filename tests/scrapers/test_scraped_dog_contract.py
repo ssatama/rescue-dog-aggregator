@@ -1,11 +1,12 @@
 """Every scraper's output keeps the ScrapedDog contract (#568).
 
 Each case runs a scraper's own parsing over a saved real page: the gallery
-fixtures (2026-09-24), Pets in Turkey's saved listing and REAN's text
-entries. Galgos del Sol and Furry Rescue Italy are disabled and have none.
+fixtures (2026-09-24), Pets in Turkey's saved listing, REAN's text
+entries and Hunderettung Europa's REST answers (2026-10-01). Galgos del Sol and Furry Rescue Italy are disabled and have none.
 """
 
 import asyncio
+import json
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -15,6 +16,7 @@ from scrapers.animalrescuebosnia.animalrescuebosnia_scraper import AnimalRescueB
 from scrapers.contract import missing_required, unknown_keys
 from scrapers.daisy_family_rescue.dog_detail_scraper import DaisyFamilyRescueDogDetailScraper
 from scrapers.dogstrust.dogstrust_scraper import DogsTrustScraper
+from scrapers.hunderettung_europa.dogs_scraper import HunderettungEuropaScraper
 from scrapers.manytearsrescue.manytearsrescue_scraper import ManyTearsRescueScraper
 from scrapers.misis_rescue.scraper import MisisRescueScraper
 from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
@@ -117,7 +119,21 @@ def manytears():
     return _listed(url, "6199", "Helga", details)
 
 
-SCRAPERS = [bosnia, santer, underdog, woof, tierschutzverein, dogstrust, misis, daisy, pets_in_turkey, rean, manytears]
+def hunderettung():
+    scraper = HunderettungEuropaScraper()
+    scraper.skip_existing_animals = False
+    scraper.session_manager = None
+    rest = FIXTURES / "hunderettung_europa"
+
+    def get(url, **kwargs):
+        data = json.loads((rest / ("posts.json" if url.endswith("/posts") else "categories.json")).read_text())
+        return Mock(json=Mock(return_value=data), headers={"X-WP-TotalPages": "1"})
+
+    with patch.object(scraper, "get_listing_page", side_effect=get):
+        return scraper.collect_data()[0]
+
+
+SCRAPERS = [bosnia, santer, underdog, woof, tierschutzverein, dogstrust, misis, daisy, pets_in_turkey, rean, manytears, hunderettung]
 
 
 @pytest.mark.unit

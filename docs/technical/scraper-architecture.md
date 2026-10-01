@@ -402,7 +402,8 @@ The validator also sets `properties.display_location`, one readable place
 ("Snetterton, Norfolk", "Baeza, Spain"), from whatever the rescue stores:
 Dogs Trust and Woof Project `location`, Tierschutzverein `Aufenthaltsort`
 (postcodes, and partner shelters mapped to their towns in `SHELTER_PLACES`),
-Daisy Family and REAN `current_location(_translated)`. A value that can't be
+Daisy Family and REAN `current_location(_translated)`, Hunderettung Europa
+`location` ("Romania", or the foster home's town). A value that can't be
 read as a place is left out. The dog page shows it, falling back to the
 rescue's own town. MISIs, Many Tears, Santer Paws, Animal Rescue Bosnia, Pets
 in Turkey and The Underdog publish no per-dog location.
@@ -474,6 +475,7 @@ plain-HTTP fetch, retrying timeouts, connection errors, 429 and 5xx
 (`max_retries: 3` means 4 attempts). Per site: Many Tears reads `?page=N` up
 to the highest numbered link; Santer Paws walks `/adopt/page/N/` until an
 empty 200 past its highest `data-page`; Tierschutzverein reads numbered pages while a "→" link follows;
+Hunderettung Europa reads REST pages up to `X-WP-TotalPages` (a missing header or an empty page within it raises);
 MISIs raises when a clicked page shows no `/post/` links or the previous
 page's. A listing past its page limit raises (Tierschutzverein 50, Santer 20,
 MISIs 10).
@@ -548,6 +550,8 @@ def update_stale_data_detection(self) -> None:
 | `santerpawsbulgarianrescue` | Bulgaria   | HTTP       | Standard HTML                   |
 
 **Inactive:** `galgosdelsol` (Spain) - scraper exists but organization disabled.
+`hunderettung-europa` (Romania/Germany, WordPress REST API) is being rolled
+out in epic #688, disabled until then.
 
 ### Common Implementation Pattern
 
@@ -817,6 +821,20 @@ post id (`wp-9270`).
 
 - `_clean_dog_name()` - Removes location suffixes ("/ FINLAND", "IN UK")
 - `_calculate_age_from_birth_date()` - Date parsing with multiple formats
+
+---
+
+### 10. Hunderettung Europa (`scrapers/hunderettung_europa/dogs_scraper.py`)
+
+**Organization:** Duisburg non-profit; dogs in its Romanian partner shelter and
+German foster homes. Added in epic #688 (decisions in
+`docs/epics/688-hunderettung-europa.md` until it closes).
+
+**Scraping Strategy:** the WordPress REST API alone. `/wp-json/wp/v2/posts`,
+filtered to the location categories (found by slug) and without
+`happy-ends-hunde`, returns every dog's rendered page, so no dog page is
+fetched. Elementor parts hidden on desktop hold the editors' unfilled template
+("HUNDENAME", stock photos) and are dropped first. IDs are `hre-<post id>`.
 
 ---
 

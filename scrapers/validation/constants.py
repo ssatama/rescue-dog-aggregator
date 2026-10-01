@@ -42,6 +42,7 @@ KNOWN_ORG_PREFIXES = [
     "dt-",
     "mtr-",
     "tve-",
+    "hre-",
 ]
 
 PRICE_PATTERN = re.compile(r"[$€£¥₹]\s*\d+|\d+\s*[$€£¥₹]")
