@@ -1017,8 +1017,7 @@ creates the org with `active = false` and logs its ID.
    production as in step 4 (the dry run shows one update: the new org).
 2. First scrape on production (with `pace_photo_downloads` set if the site
    is small), the single-org run in
-   `docs/technical/operational-knowledge.md` ("Running one rescue against
-   production"). It profiles every new dog in its LLM phase.
+   `docs/technical/operational-knowledge.md` ("Manual production runs from the laptop"). It profiles every new dog in its LLM phase.
 3. Check the run: `scrape_logs` row, dogs found vs. the site, Sentry, and
    dogs without a profile (`llm_commands.py generate-profiles --ids <id>`
    under `railway run` picks up failures). Hunderettung Europa's run: 150
