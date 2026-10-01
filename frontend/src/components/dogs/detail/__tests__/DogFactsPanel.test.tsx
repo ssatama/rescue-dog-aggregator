@@ -100,6 +100,22 @@ describe("DogFactsPanel", () => {
     expect(screen.getByText("I have Grade 3 bilateral luxating patellas.")).toBeInTheDocument();
   });
 
+  it("leaves out energy and experience the profile only guessed (#696)", () => {
+    render(
+      <DogFactsPanel
+        dog={dog({
+          dog_profiler_data: {
+            energy_level: "medium",
+            experience_level: "some_experience",
+            confidence_scores: { energy_level: 0.2, experience_level: 0.5 },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.queryByText("Good to know")).not.toBeInTheDocument();
+  });
+
   it("says where the dog is, falling back to the rescue's town", () => {
     const { rerender } = render(
       <DogFactsPanel dog={dog({ properties: { display_location: "Evesham, Worcestershire" } })} />,
