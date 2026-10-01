@@ -10,6 +10,9 @@ Spain"). Sources, by the property the scraper already stores:
 - current_location(_translated): Daisy Family and REAN ("bei Münster", "Norfolk")
 
 A value that can't be read as a place is left out, never guessed.
+
+properties.location_country is the country the dog is in (#702), as the
+organizations table writes it ("UK", not "GB"), for the country pages.
 """
 
 import re
@@ -108,3 +111,47 @@ def display_location(properties: dict) -> str | None:
     if current:
         return _current_location(current)
     return None
+
+
+# The countries display_location names, as its last part ("Baeza, Spain")
+COUNTRY_CODES = {
+    "belgium": "BE",
+    "bosnia": "BA",
+    "bosnia and herzegovina": "BA",
+    "bulgaria": "BG",
+    "cyprus": "CY",
+    "france": "FR",
+    "germany": "DE",
+    "italy": "IT",
+    "north macedonia": "MK",
+    "portugal": "PT",
+    "romania": "RO",
+    "serbia": "RS",
+    "spain": "ES",
+    "switzerland": "CH",
+    "turkey": "TR",
+    "uk": "UK",
+    "united kingdom": "UK",
+}
+
+
+def location_country(place: str | None, service_regions: list[str] | None = None, base_country: str | None = None) -> str | None:
+    """The country a dog is in: the one its place names, else the rescue's only
+    service region, else, when a place is known but not its country ("Berlin",
+    "Norfolk"), the rescue's own. None when nothing says (#702)."""
+    if place and (code := COUNTRY_CODES.get(place.rsplit(",", 1)[-1].strip().lower())):
+        return code
+    if service_regions and len(service_regions) == 1:
+        return service_regions[0]
+    if place and base_country:
+        return base_country
+    return None
+
+
+def locate(properties: dict, service_regions: list[str] | None = None, base_country: str | None = None) -> dict:
+    """properties with display_location and location_country set from them.
+    location_country is only ever derived, so an unknown one is dropped."""
+    place = display_location(properties)
+    country = location_country(place, service_regions, base_country)
+    located = {key: value for key, value in properties.items() if key != "location_country"}
+    return located | {key: value for key, value in (("display_location", place), ("location_country", country)) if value}

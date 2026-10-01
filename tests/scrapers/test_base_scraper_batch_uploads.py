@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from scrapers.base_scraper import BaseScraper
+from utils.config_models import OrganizationMetadata
 
 
 @pytest.mark.external
@@ -23,6 +24,7 @@ class TestBaseScraperBatchUploads:
         ):
             # Mock config
             mock_config = Mock()
+            mock_config.metadata = OrganizationMetadata()
             mock_config.get_scraper_config_dict.return_value = {
                 "rate_limit_delay": 0.1,
                 "max_retries": 1,

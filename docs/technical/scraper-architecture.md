@@ -405,8 +405,17 @@ Dogs Trust and Woof Project `location`, Tierschutzverein `Aufenthaltsort`
 Daisy Family and REAN `current_location(_translated)`, Hunderettung Europa
 `location` ("Romania", or the foster home's town). A value that can't be
 read as a place is left out. The dog page shows it, falling back to the
-rescue's own town. MISIs, Many Tears, Santer Paws, Animal Rescue Bosnia, Pets
-in Turkey and The Underdog publish no per-dog location.
+rescue's own town. MISIs, Many Tears, Santer Paws, Animal Rescue Bosnia and
+Pets in Turkey publish no per-dog location.
+
+It also sets `properties.location_country`, the country the dog is in, for
+the country pages (#702), as the organizations table writes it ("UK"): the
+country the place names ("Baeza, Spain", "Romania"), else the rescue's only
+`service_region`, else, when a place is known but not its country ("Berlin"
+at Daisy, "Norfolk" at REAN), the rescue's base country. Otherwise there is
+none, never a guess: MISIs (`RS` and `MK`) and Tierschutzverein dogs without
+an `Aufenthaltsort` are on no country page. The validator owns the key, so a
+scraper never sets it.
 
 ### Rules for scraper changes
 
@@ -432,7 +441,8 @@ Settled in epic #554; don't re-ask them.
   `get_playwright_service` with `tests/fixtures/playwright_fakes.py`.
 - **The disabled scrapers stay** (Galgos del Sol, Furry Rescue Italy).
 - **Name and location cleaning live in the validator.** Keep
-  `properties.raw_name`, `overlooked` and `display_location` working.
+  `properties.raw_name`, `overlooked`, `display_location` and
+  `location_country` working.
 - **Base-class changes must not need edits in the org scrapers.**
 
 ### Run counts and stale detection (#555, #558)

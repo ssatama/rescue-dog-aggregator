@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""Store a readable location on dogs scraped before scrapers did (#505).
+"""Store a readable location, and the country it is in, on dogs scraped
+before scrapers did (#505, #702).
 
     uv run python management/location_commands.py display-locations
     uv run python management/location_commands.py display-locations --apply
 
 Dry run by default. Most rescues skip dogs they already have, so only a
-backfill sets properties.display_location on them. Prints coverage per rescue.
+backfill sets properties.display_location and properties.location_country on
+them. Prints coverage per rescue and the dogs per country.
 """
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -23,41 +26,50 @@ from rich.table import Table
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import DB_CONFIG  # noqa: E402
-from scrapers.validation.location_cleaner import display_location  # noqa: E402
+from scrapers.validation.location_cleaner import locate  # noqa: E402
 from services.revalidation_client import invalidate_sync  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
 FETCH_QUERY = """
-    SELECT a.id, a.slug, a.properties, o.config_id AS organization
+    SELECT a.id, a.slug, a.properties, o.config_id AS organization, o.service_regions, o.country
     FROM animals a
     LEFT JOIN organizations o ON o.id = a.organization_id
-    WHERE a.active AND a.status = 'available'
+    WHERE a.active
 """
 
 
+LOCATION_KEYS = ("display_location", "location_country")
+
+
 def plan_locations(records: list[dict]) -> list[tuple[int, str, dict]]:
-    """(id, slug, new properties) for rows whose display_location would change. Pure."""
+    """(id, slug, new properties) for rows whose display location or country would change. Pure."""
     changes = []
     for record in sorted(records, key=lambda r: r["id"]):
         properties = record["properties"] or {}
-        place = display_location(properties)
-        if place and place != properties.get("display_location"):
-            changes.append((record["id"], record["slug"], {**properties, "display_location": place}))
+        located = locate(properties, record["service_regions"], record["country"])
+        if any(located.get(key) != properties.get(key) for key in LOCATION_KEYS):
+            changes.append((record["id"], record["slug"], located))
     return changes
 
 
 def coverage(records: list[dict], changes: list[tuple[int, str, dict]]) -> dict[str, tuple[int, int, int]]:
     """Per rescue: dogs, with a display location now, with one after --apply."""
-    changed = {animal_id for animal_id, _, _ in changes}
+    planned = {animal_id: properties for animal_id, _, properties in changes}
     dogs, before, after = Counter(), Counter(), Counter()
     for record in records:
         org = record["organization"] or "unknown"
-        has_now = bool((record["properties"] or {}).get("display_location"))
+        properties = record["properties"] or {}
         dogs[org] += 1
-        before[org] += has_now
-        after[org] += has_now or record["id"] in changed
+        before[org] += bool(properties.get("display_location"))
+        after[org] += bool(planned.get(record["id"], properties).get("display_location"))
     return {org: (dogs[org], before[org], after[org]) for org, _ in dogs.most_common()}
+
+
+def countries(records: list[dict], changes: list[tuple[int, str, dict]]) -> Counter:
+    """Dogs per location_country after --apply; None counts the unknown."""
+    planned = {animal_id: properties for animal_id, _, properties in changes}
+    return Counter((planned.get(r["id"]) or r["properties"] or {}).get("location_country") for r in records)
 
 
 def _connect():
@@ -83,12 +95,19 @@ def main() -> int:
         records = [dict(r) for r in cursor.fetchall()]
     changes = plan_locations(records)
 
-    table = Table(title="Display location coverage (available dogs)", header_style="bold")
+    table = Table(title="Display location coverage (active dogs)", header_style="bold")
     for column in ("rescue", "dogs", "before", "after"):
         table.add_column(column, justify="left" if column == "rescue" else "right")
     for org, (dogs, before, after) in coverage(records, changes).items():
         table.add_row(org, str(dogs), str(before), str(after))
     console.print(table)
+
+    by_country = Table(title="Dogs per country after --apply", header_style="bold")
+    by_country.add_column("country")
+    by_country.add_column("dogs", justify="right")
+    for country, dogs in countries(records, changes).most_common():
+        by_country.add_row(country or "unknown", str(dogs))
+    console.print(by_country)
 
     if not changes or not args.apply:
         if changes:
@@ -97,13 +116,13 @@ def main() -> int:
 
     with closing(_connect()) as conn, conn, conn.cursor() as cursor:
         for animal_id, _, properties in changes:
-            # Merge the one key so a scrape running meanwhile keeps its writes.
+            # Merge only these keys so a scrape running meanwhile keeps its writes.
             cursor.execute(
-                "UPDATE animals SET properties = coalesce(properties, '{}'::jsonb) || jsonb_build_object('display_location', %s::text) WHERE id = %s",
-                (properties["display_location"], animal_id),
+                "UPDATE animals SET properties = (coalesce(properties, '{}'::jsonb) - 'location_country') || %s::jsonb WHERE id = %s",
+                (json.dumps({key: properties[key] for key in LOCATION_KEYS if key in properties}), animal_id),
             )
         conn.commit()
-    logger.info("Set display_location on %s dogs", len(changes))
+    logger.info("Set the location on %s dogs", len(changes))
 
     invalidate_sync(tags=["animals", *(slug for _, slug, _ in changes)])
     return 0

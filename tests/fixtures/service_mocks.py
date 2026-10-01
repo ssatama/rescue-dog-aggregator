@@ -20,6 +20,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from scrapers.base_scraper import BaseScraper
+from utils.config_models import OrganizationMetadata
 
 
 def create_mock_database_service(success_mode: bool = True) -> Mock:
@@ -222,6 +223,7 @@ def create_test_scraper_with_services(
         # Mock config-based initialization
         with patch("scrapers.base_scraper.ConfigLoader") as mock_loader_class:
             mock_config = Mock()
+            mock_config.metadata = OrganizationMetadata()
             mock_config.name = "Mock Test Org"
             mock_config.get_scraper_config_dict.return_value = {
                 "rate_limit_delay": 1.0,

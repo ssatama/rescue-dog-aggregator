@@ -498,12 +498,14 @@ sync` of a disabled org sets its dogs to `active = false` and `status =
 the count. Nothing scrapes a disabled rescue, so nothing else would. It is
 idempotent, so a retire that failed is redone by the next sync.
 
-**Name and location backfills (#505).** Most rescues skip dogs they already
-have, so name cleaning and `display_location` reach stored rows only through
-a backfill. Both are dry runs unless given `--apply`, cover active dogs only,
-and merge just the keys they set into `properties`. Both ran on production on
-2026-09-26 (930 of 1,411 available dogs got a `display_location`). Rerun
-after a cleaner change, outside the cron window (Mon/Thu/Sat 3pm UTC):
+**Name and location backfills (#505, #702).** Most rescues skip dogs they
+already have, so name cleaning, `display_location` and `location_country`
+reach stored rows only through a backfill. Both are dry runs unless given
+`--apply`, cover active dogs only, and merge just the keys they set into
+`properties`. Both ran on production on 2026-09-26 (930 of 1,411 available
+dogs got a `display_location`). The location one also prints the dogs per
+country, and must rerun when a rescue's `service_regions` or country changes.
+Rerun after a cleaner change, outside the cron window (Mon/Thu/Sat 3pm UTC):
 ```bash
 export $(grep -E '^RAILWAY_DATABASE_URL=' .env | xargs)
 railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \

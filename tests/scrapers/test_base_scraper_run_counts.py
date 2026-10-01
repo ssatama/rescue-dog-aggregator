@@ -10,6 +10,7 @@ from scrapers.scrape_stats import ScrapeStats
 from scrapers.validation.animal_validator import AnimalValidator
 from services.image_processing_service import ImageProcessingService
 from services.metrics_collector import MetricsCollector
+from utils.config_models import OrganizationMetadata
 
 
 def _dog(external_id, **overrides):
@@ -34,6 +35,7 @@ def scraper():
         patch("scrapers.base_scraper.ConfigLoader") as loader,
     ):
         config = Mock()
+        config.metadata = OrganizationMetadata()
         config.get_scraper_config_dict.return_value = {"rate_limit_delay": 0, "max_retries": 1, "timeout": 10}
         config.name = "Test Rescue"
         loader.return_value.load_config.return_value = config
