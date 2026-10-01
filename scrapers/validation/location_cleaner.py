@@ -120,18 +120,23 @@ COUNTRY_CODES = {
     "bosnia and herzegovina": "BA",
     "bulgaria": "BG",
     "cyprus": "CY",
+    "england": "UK",
     "france": "FR",
     "germany": "DE",
+    "greece": "GR",
+    "ireland": "IE",
     "italy": "IT",
     "north macedonia": "MK",
     "portugal": "PT",
     "romania": "RO",
+    "scotland": "UK",
     "serbia": "RS",
     "spain": "ES",
     "switzerland": "CH",
     "turkey": "TR",
     "uk": "UK",
     "united kingdom": "UK",
+    "wales": "UK",
 }
 
 

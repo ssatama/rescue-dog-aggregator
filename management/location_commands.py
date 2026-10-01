@@ -69,7 +69,7 @@ def coverage(records: list[dict], changes: list[tuple[int, str, dict]]) -> dict[
 def countries(records: list[dict], changes: list[tuple[int, str, dict]]) -> Counter:
     """Dogs per location_country after --apply; None counts the unknown."""
     planned = {animal_id: properties for animal_id, _, properties in changes}
-    return Counter((planned.get(r["id"]) or r["properties"] or {}).get("location_country") for r in records)
+    return Counter(planned.get(r["id"], r["properties"] or {}).get("location_country") for r in records)
 
 
 def _connect():

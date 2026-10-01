@@ -101,11 +101,15 @@ class TestLocationCountry:
             ("United Kingdom", "UK"),
             ("UK", "UK"),
             ("Wales, UK", "UK"),
+            ("Greece", "GR"),
         ],
     )
     def test_a_named_country_wins(self, place, expected):
+        assert location_country(place, ["DE", "MK"], "DE") == expected
+
+    def test_a_named_country_beats_a_single_region(self):
         # Woof Project serves Cyprus only, but its dogs already in Belgium are in Belgium
-        assert location_country(place, ["DE", "CY"], "DE") == expected
+        assert location_country("Belgium", ["CY"], "CY") == "BE"
 
     def test_a_single_service_region(self):
         assert location_country("Snetterton, Norfolk", ["UK"], "UK") == "UK"
