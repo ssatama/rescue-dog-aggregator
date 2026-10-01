@@ -22,6 +22,15 @@ describe("favoritesInCommon (#498)", () => {
     expect(lines).not.toContain("All fine in an apartment");
   });
 
+  test("a guessed answer backs no line, as the dog page doesn't show it (#696)", () => {
+    const guessed = { confidence_scores: { experience_level: 0.3, energy_level: 0.3 } };
+    const lines = favoritesInCommon([
+      dog(1, { experience_level: "first_time_ok", energy_level: "high" }),
+      dog(2, { experience_level: "first_time_ok", energy_level: "high", ...guessed }),
+    ]);
+    expect(lines).toEqual([]);
+  });
+
   test("a dog with the value missing drops the line instead of being skipped", () => {
     const lines = favoritesInCommon([
       dog(1, { experience_level: "first_time_ok", energy_level: "high" }),

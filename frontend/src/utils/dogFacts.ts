@@ -90,6 +90,20 @@ export function companionAnswer(
   return answerOf(dog.dog_profiler_data?.[field] ?? dog.properties?.[field]);
 }
 
+/**
+ * The profile's energy or experience answer, or null when the model scored it
+ * 0.5 or less: a guess, left out as companionAnswer leaves one out (#517). The
+ * dog page, compare view and "in common" lines all read it here (#696).
+ */
+export function assessedProfileValue<F extends "energy_level" | "experience_level">(
+  dog: Dog,
+  field: F,
+): NonNullable<NonNullable<Dog["dog_profiler_data"]>[F]> | null {
+  const confidence = dog.dog_profiler_data?.confidence_scores?.[field];
+  if (typeof confidence === "number" && confidence <= 0.5) return null;
+  return dog.dog_profiler_data?.[field] ?? null;
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** "listed 3 weeks ago", from when the dog first appeared on the site. */

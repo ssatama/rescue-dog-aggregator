@@ -7,6 +7,7 @@ import { Dog } from "./types";
 import Image from "next/image";
 import { FallbackImage } from "../ui/FallbackImage";
 import { formatCurrentAge, formatBreed } from "@/utils/dogHelpers";
+import { assessedProfileValue } from "@/utils/dogFacts";
 import { AdoptLink, ENERGY, EXPERIENCE, LivesWith, canAdopt } from "@/components/dogs/detail/DogFactsPanel";
 
 interface ComparisonViewProps {
@@ -56,11 +57,12 @@ const DogComparisonCard = ({
   const imageUrl = dog.primary_image_url;
   const tagline = dog.dog_profiler_data?.tagline;
   const traits = dog.dog_profiler_data?.personality_traits || [];
-  const energyLevel = dog.dog_profiler_data?.energy_level ?? "";
+  // As the dog page shows them: a guessed answer is left out (#696)
+  const energyLevel = assessedProfileValue(dog, "energy_level") ?? "";
   const energy = ENERGY[energyLevel] && ENERGY_WIDTH[energyLevel]
     ? { label: ENERGY[energyLevel], width: ENERGY_WIDTH[energyLevel] }
     : null;
-  const experience = dog.dog_profiler_data?.experience_level;
+  const experience = assessedProfileValue(dog, "experience_level");
   const breed = formatBreed(dog);
   const uniqueQuirk = dog.dog_profiler_data?.unique_quirk;
 
