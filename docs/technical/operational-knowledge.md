@@ -219,7 +219,11 @@ tried); scope purges to changed slugs (#315).
 cache survives deploys. After a production data write: purge, request the
 page, wait, purge again, then verify with `curl` + `grep`. Purges need
 `REVALIDATION_TOKEN`, which lives only on `thriving-appreciation` (use
-`railway run --service thriving-appreciation`).
+`railway run --service thriving-appreciation`). The sitemap routes are
+different: they send `s-maxage=86400`, so Vercel's CDN keeps each one for up
+to a day, and `revalidatePath` doesn't clear that copy. A unique cache-busting query
+(`?v=$(date +%s)`; a reused one is cached too) shows what the route serves now; the plain URL catches up within a
+day (seen after #702 changed the country pages).
 
 **`STATIC_PARAMS_LIMIT = 500`** on `/dogs/[slug]` is tuned: prerendering all
 dogs broke builds (#149, reverted by #196), and below 500 on-demand ISR costs
@@ -513,6 +517,11 @@ railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWA
 railway run --service thriving-appreciation -- env RAILWAY_DATABASE_URL="$RAILWAY_DATABASE_URL" TZ=UTC \
   uv run python management/location_commands.py display-locations --apply
 ```
+The commands load `.env` themselves (through `config.py`), so `unset
+RAILWAY_DATABASE_URL` in the shell does not keep them off production. To aim
+one at the local database, pass the variable empty:
+`RAILWAY_DATABASE_URL= uv run python management/location_commands.py ...`,
+and check the `target:` line of a dry run first.
 Known gaps: Pets in Turkey writes "Currently in Amsterdam" in free text
 (not parsed), and Tierschutzverein's "bald in Leipzig" (soon in Leipzig)
 shows as "Leipzig" with "(ab 12.9.26)" dates dropped.
