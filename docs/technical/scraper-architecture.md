@@ -532,7 +532,7 @@ def update_stale_data_detection(self) -> None:
 
 ## Organization-Specific Scrapers
 
-### Active Organizations (12)
+### Active Organizations (13)
 
 | Config ID                   | Country    | Technology | Notes                           |
 | --------------------------- | ---------- | ---------- | ------------------------------- |
@@ -548,10 +548,9 @@ def update_stale_data_detection(self) -> None:
 | `pets_in_turkey`            | Turkey     | HTTP       | Standard HTML                   |
 | `animalrescuebosnia`        | Bosnia     | HTTP       | Standard HTML                   |
 | `santerpawsbulgarianrescue` | Bulgaria   | HTTP       | Standard HTML                   |
+| `hunderettung-europa`       | Germany    | HTTP       | WordPress REST API only         |
 
 **Inactive:** `galgosdelsol` (Spain) - scraper exists but organization disabled.
-`hunderettung-europa` (Romania/Germany, WordPress REST API) is being rolled
-out in epic #688, disabled until then.
 
 ### Common Implementation Pattern
 
@@ -826,15 +825,47 @@ post id (`wp-9270`).
 
 ### 10. Hunderettung Europa (`scrapers/hunderettung_europa/dogs_scraper.py`)
 
-**Organization:** Duisburg non-profit; dogs in its Romanian partner shelter and
-German foster homes. Added in epic #688 (decisions in
-`docs/epics/688-hunderettung-europa.md` until it closes).
+**Organization:** Duisburg non-profit (founded 2019); dogs in its Romanian
+partner shelter and German foster homes. Added in epic #688 (2026-10-01).
+Site quirks and the first-run incident: `docs/technical/operational-knowledge.md`,
+"Hunderettung Europa quirks".
 
-**Scraping Strategy:** the WordPress REST API alone. `/wp-json/wp/v2/posts`,
-filtered to the location categories (found by slug) and without
-`happy-ends-hunde`, returns every dog's rendered page, so no dog page is
-fetched. Elementor parts hidden on desktop hold the editors' unfilled template
-("HUNDENAME", stock photos) and are dropped first. IDs are `hre-<post id>`.
+**Scraping Strategy:** the WordPress REST API alone, 7 requests a run.
+- Categories come from one lookup by slug
+  (`categories?slug=hundekategorien,aufenthaltsort,…`), never paged, each
+  one's parent checked. The posts query asks WordPress for child categories:
+  `categories[terms]=<Rumänien>,<Deutschland>&categories[include_children]=true`,
+  and the same to exclude `happy-ends-hunde` (adopted dogs) with its
+  subcategories. Each post carries its whole rendered page, so no dog page is
+  fetched; 25 posts a page (100 were 3.6 MB).
+- Every listing must add up to `X-WP-Total` in distinct items with the same
+  total on every page; a missing location category, page or paging header,
+  or an empty listing, raises `ListingIncompleteError`.
+- IDs are `hre-<post id>`. A dog moving to a foster home is renamed
+  ("Pflegehund Tindra", `/pflegehund-tindra/`; the prefix goes to
+  `properties.raw_name`) but keeps its post ID, and the old link 301s.
+- Everything hidden on desktop (`.elementor-hidden-desktop`) is dropped
+  before reading: it holds the editors' unfilled template ("HUNDENAME",
+  "ca. xx – xx cm", stock photos), sometimes still shown on phones. Images
+  named `template-*` are skipped too.
+- Facts are the "Label: value" lines of the first text block ("Geschlecht",
+  "Geschätztes Alter: geb. ca. Februar 2026", "Geschätzte (End)Schulterhöhe",
+  "Auf Pflegestelle in: <postcode> <town>"); a post without them is a failed
+  dog. The story runs from the first heading after them to the first button
+  (the generic adoption block follows), without "Lerne hier … kennen!" links.
+- Size from the shoulder height on the 40/60 cm scale when both ends of the
+  range agree (a puppy's "ca. 20 – 59 cm" is no size), else the rescue's
+  Klein/Mittel/Groß category. Age: the birth text is `date_of_birth`, and
+  `age_text` is "02/2026" (or "2016"). No breed: the rescue states none.
+- Location: the foster town ("Viersen, Germany"), else "Romania" when filed
+  under Rumänien.
+- `skip_existing_animals: false`, the only rescue: re-reading costs no
+  request and dogs move from the shelter to foster homes. Unchanged dogs are
+  `no_change`; photos are reused. Profiles still run only on create.
+- `pace_photo_downloads: true`, the only rescue: its firewall banned the
+  laptop after the first run's ~1,000 photo requests. New gallery photos are
+  fetched one at a time on the request clock, at most 150 a run
+  (`services/image_processing_service.py`, `PACED_PHOTOS_PER_RUN`).
 
 ---
 
@@ -873,93 +904,132 @@ batch_result = runner.run_all_enabled_scrapers()
 
 ---
 
-## Adding a New Scraper
+## Adding a New Rescue
 
-### Step 1: Create Configuration
+The end-to-end path, as taken for Hunderettung Europa (epic #688, 2026-10-01).
+Plan four PRs: scraper and disabled config, site copy, LLM prompt and logo
+(after the first production sync gives the org its ID), then enable.
 
-```yaml
-# configs/organizations/new-org.yaml
-organization:
-  name: "New Organization"
-  config_id: "new-org"
+### 1. Check the candidate
 
-metadata:
-  website_url: "https://neworg.example.com"
-  country: "UK"
+- **A registered non-profit** that rehomes itself (not only through partners).
+- **robots.txt** allows the listing (`/robots.txt`); a `Crawl-delay` above a
+  few seconds rules a site out (SOS Dogs Romania: 60).
+- **Dogs listed**: enough to matter (dozens), each with its own page and URL.
+- **Profile quality**: a real story per dog, and facts the site states (sex,
+  age or birth date, size or height) rather than only photos.
+- **`ships_to`**: only the countries the rescue names as adoption
+  destinations. Don't add neighbours it doesn't name.
+- Prefer structured data: the WordPress REST API (`/wp-json/wp/v2/...`)
+  often holds every dog, which beats parsing HTML. Check for template text
+  and stock photos the editors leave in pages.
+- Before paging any list, check the site honours `orderby` (fetch page 1
+  and 2 and look for overlaps): Hunderettung Europa's category list doesn't,
+  and its first production scrape failed on it. Prefer lookups that need no
+  paging (`?slug=a,b,c`, `include_children`), and check every paged listing
+  against `X-WP-Total`.
 
-scraper:
-  rate_limit_delay: 1.0
-  batch_size: 10
-  timeout: 30
-  max_retries: 3
-  skip_existing_animals: true
+Keep the runners-up with their reasons
+(`docs/technical/operational-knowledge.md`, "Rescue candidates").
+
+### 2. Scraper and config (one PR, `enabled: false`)
+
+- `configs/organizations/<id>.yaml`: `enabled: false`, location, `service_regions`
+  (where the dogs are), `ships_to`, socials, `established_year`, an English
+  description from the rescue's own about page. No `adoption_fees`.
+- `scrapers/<package>/`: a `BaseScraper` subclass. Follow "Rules for scraper
+  changes" above: a listing failure raises `ListingIncompleteError`, missing
+  data is `None`, IDs are the site's stable ones (WordPress post ID, #570)
+  with a new prefix in `scrapers/validation/constants.py` `KNOWN_ORG_PREFIXES`.
+- **Add the module to `utils/secure_scraper_loader.py` `ALLOWED_MODULES`.**
+  The cron refuses any other; `tests/utils/test_secure_scraper_loader_whitelist.py`
+  fails until you do.
+- Small hosting can't take a burst of photo requests: the first run fetches
+  every dog's hero and gallery (about 1,000 photos for 150 dogs). Set
+  `pace_photo_downloads: true` for a rescue on its own WordPress hosting
+  (Hunderettung Europa's firewall banned the laptop without it).
+- Decide `skip_existing_animals`. Every rescue but Hunderettung Europa skips
+  dogs it has; skip off only when re-reading costs no request and dogs'
+  facts change (Hunderettung's listing holds every page, and its dogs move
+  from the shelter to foster homes).
+- `birth_dates` backfill: if the rescue publishes a birth date, add where it
+  is stored to `DOB_SOURCES` in `management/backfill_steps.py`.
+- Tests: fixtures saved from the live site (never re-fetch in tests), a case
+  in `tests/scrapers/test_scraped_dog_contract.py`, and listing-failure cases.
+- Verify with one polite local run (no database): the dog count matches the
+  site, and sex, age, size, location and photos are set for nearly every dog.
+  A passing run proves little about paging order: test fakes page
+  deterministically and the live site may not.
+
+### 3. Site copy (its own PR, merged when the rescue is enabled)
+
+`frontend/public/llms.txt` (organization count, where rescues are based,
+adoption destinations) and the README rescue table. Country pages
+(`/dogs/country/{code}`) group by the rescue's base country, so a new base
+country needs an entry in `frontend/src/utils/countryData.ts`; a new country
+the dogs are in doesn't. `countryNames.ts` must name every `ships_to` code.
+
+### 4. First production sync (gives the ID)
+
+After the scraper PR merges, from `main`:
+
+```bash
+url="$(grep -E '^RAILWAY_DATABASE_URL=' .env | cut -d= -f2- | tr -d "\"'")"
+run() { railway run -p 947b70e4-076f-4288-833a-ed1b1409a01d -e production -s thriving-appreciation -- env DATABASE_URL="$url" TZ=UTC "$@"; }
+run uv run python management/config_commands.py sync --dry-run
+run uv run python management/config_commands.py sync
 ```
 
-### Step 2: Create Scraper Package
+Run it under `railway run`: the sync purges the `organizations` cache tags
+with the cron's `REVALIDATION_TOKEN`, and a plain laptop run skips that
+("REVALIDATION_TOKEN not set"), so the rescue page kept "0 dogs listed"
+after its dogs arrived until the tags were purged by hand.
 
-```
-scrapers/
-└── new_org/
-    ├── __init__.py
-    └── new_org_scraper.py
-```
+The dry run must show only "Would create: <id>"; anything under "needs
+update" means production differs from a config, so stop and look. The sync
+creates the org with `active = false` and logs its ID.
 
-### Step 3: Implement Scraper
+### 5. LLM prompt and logo (one PR)
 
-```python
-from scrapers.base_scraper import BaseScraper
-from services.playwright_browser_service import PlaywrightOptions, get_playwright_service
+- `prompts/organizations/<name>.yaml` modelled on a rescue with the same
+  source language. Find the boilerplate by counting the sentences the
+  stories share, and name it in the system prompt so it never becomes a
+  trait. Profiles are written once, on create: keep where the dog is, its age
+  in numbers and how long it has waited out of every field. No money.
+- `configs/llm_organizations.yaml` entry under the production ID;
+  `enable_llm_profiling: true` and `llm_organization_id` in the org config.
+- Dry run before merging, with the production model and no database:
+  ```bash
+  env $(grep -E '^OPENROUTER_API_KEY=' .env | tr -d "\"'") \
+    LLM_DEFAULT_MODEL=google/gemini-3.8-flash SENTRY_DSN= SENTRY_DSN_BACKEND= \
+    uv run python -c "..."  # DogProfilerPipeline(organization_id=<ID>, dry_run=True).process_batch(<scraped dogs>)
+  ```
+  Read every profile next to its source (about 15 dogs: foster, puppies,
+  template-only, seniors, special notes).
+- Logo: a square mark from the rescue's site, uploaded with
+  `R2OrganizationLogoUploader.upload_organization_logo("<id>", "<local file>")`
+  (`uv run --env-file .env`), then `logo_url` in the config. Don't request the
+  R2 URL before uploading: Cloudflare caches the 404 for a while.
 
-class NewOrgScraper(BaseScraper):
-    def __init__(self, config_id: str = "new-org", **kwargs):
-        super().__init__(config_id=config_id, **kwargs)
-        self.base_url = "https://neworg.example.com"
-        self.listing_url = f"{self.base_url}/dogs"
+### 6. Enable and roll out
 
-    def collect_data(self) -> List[Dict[str, Any]]:
-        # Prefer plain HTTP (get_listing_page) when the site renders server-side
-        return asyncio.run(self._collect_with_playwright())
-
-    async def _collect_with_playwright(self) -> List[Dict[str, Any]]:
-        playwright_service = get_playwright_service()
-        options = PlaywrightOptions(
-            headless=True,
-            timeout=60000,
-            wait_until="networkidle",
-        )
-
-        async with playwright_service.get_browser(options) as browser_result:
-            page = browser_result.page
-            await page.goto(self.listing_url, wait_until="networkidle")
-
-            # Scroll for lazy loading
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(2000)
-
-            content = await page.content()
-            return self._parse_listing(content)
-
-    def _collect_with_http(self) -> List[Dict[str, Any]]:
-        response = requests.get(self.listing_url, timeout=self.timeout)
-        return self._parse_listing(response.text)
-```
-
-### Step 4: Write Tests (TDD)
-
-```python
-# tests/scrapers/test_new_org_scraper.py
-
-def test_extract_name():
-    scraper = NewOrgScraper(config_id="new-org")
-    html = '<h1>Buddy</h1>'
-    soup = BeautifulSoup(html, "html.parser")
-    assert scraper._extract_name(soup) == "Buddy"
-
-@pytest.mark.browser
-def test_playwright_scraping():
-    # Test with live site (marked as browser test)
-    pass
-```
+1. PR: `enabled: true` (plus counts in AGENTS.md). Merge, then sync to
+   production as in step 4 (the dry run shows one update: the new org).
+2. First scrape on production (with `pace_photo_downloads` set if the site
+   is small), the single-org run in
+   `docs/technical/operational-knowledge.md` ("Running one rescue against
+   production"). It profiles every new dog in its LLM phase.
+3. Check the run: `scrape_logs` row, dogs found vs. the site, Sentry, and
+   dogs without a profile (`llm_commands.py generate-profiles --ids <id>`
+   under `railway run` picks up failures). Hunderettung Europa's run: 150
+   found, 150 added, every hero on R2, 149 profiled in the run and the last
+   (a template-only dog whose description came out under 150 characters
+   three times) on the next try.
+4. Merge the site-copy PR.
+5. Check in Chrome at 1440 and 390 px, light and dark: the rescue page, a few
+   dog pages, the catalog filters, "Adoptable to you" from a `ships_to`
+   country, swipe.
+6. Watch the first scheduled cron run and the run after it (stale handling).
 
 ---
 
