@@ -10,7 +10,9 @@ scraper:
     max_retries: 3
     timeout: 30
     batch_size: 6
-    skip_existing_animals: true
+    # The listing holds every dog's whole page, so re-reading costs no request;
+    # dogs move from the shelter to foster homes and must not keep the old place (#688)
+    skip_existing_animals: false
 metadata:
   website_url: "https://hunderettung-europa.de"
   description: |

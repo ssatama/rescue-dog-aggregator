@@ -21,7 +21,7 @@ CATEGORIES = json.loads((FIXTURES / "categories.json").read_text())
 POSTS = json.loads((FIXTURES / "posts.json").read_text())
 
 
-def _rest(categories=CATEGORIES, posts=POSTS, per_page_override=None):
+def _rest(categories=CATEGORIES, posts=POSTS, per_page_override=None, headers=True):
     """A get_listing_page stand-in serving the fixtures, paged as WordPress pages them."""
     calls = []
 
@@ -32,7 +32,10 @@ def _rest(categories=CATEGORIES, posts=POSTS, per_page_override=None):
         per_page = (is_posts and per_page_override) or params["per_page"]
         page = params["page"]
         # WordPress says 0 pages for no results
-        return Mock(json=Mock(return_value=data[(page - 1) * per_page : page * per_page]), headers={"X-WP-TotalPages": str(-(-len(data) // per_page))})
+        paging = {"X-WP-TotalPages": str(-(-len(data) // per_page))} if send_headers else {}
+        return Mock(json=Mock(return_value=data[(page - 1) * per_page : page * per_page]), headers=paging)
+
+    send_headers = headers
 
     return get, calls
 
@@ -157,7 +160,9 @@ class TestListing:
 
         # Rumänien, Deutschland and its sixteen federal states
         assert set(params["categories"].split(",")) == {"83", *map(str, range(85, 102))}
-        assert params["categories_exclude"] == 36
+        # Happy-Ends Hunde and its subcategories: WordPress doesn't exclude children
+        adopted = {category["id"] for category in CATEGORIES if category["id"] == 36 or category["parent"] in (36, 148, 152, 160, 163)}
+        assert set(map(int, params["categories_exclude"].split(","))) == adopted
 
     def test_categories_are_found_by_slug_not_number(self, scraper):
         renumbered = [{**category, "id": category["id"] + 1000, "parent": category["parent"] + 1000 if category["parent"] else 0} for category in CATEGORIES]
@@ -166,7 +171,7 @@ class TestListing:
         dogs, calls = _collect(scraper, categories=renumbered, posts=posts)
 
         assert dogs["Tindra"]["properties"]["location"] == "Blankenhof, Germany"
-        assert next(params for url, params in calls if url.endswith("/posts"))["categories_exclude"] == 1036
+        assert "1036" in next(params for url, params in calls if url.endswith("/posts"))["categories_exclude"].split(",")
 
     def test_a_missing_category_fails_loudly(self, scraper):
         categories = [category for category in CATEGORIES if category["slug"] != "rumaenien"]
@@ -184,9 +189,41 @@ class TestListing:
         with pytest.raises(ListingIncompleteError, match="no dogs"):
             _collect(scraper, posts=[])
 
-    def test_a_failed_request_fails_loudly(self, scraper):
-        with patch.object(scraper, "get_listing_page", side_effect=ListingIncompleteError("503")), pytest.raises(ListingIncompleteError):
+    def test_without_paging_headers_a_full_page_is_followed(self, scraper):
+        module = "scrapers.hunderettung_europa.dogs_scraper"
+        with patch(f"{module}.PER_PAGE", 2), patch(f"{module}.MAX_PAGES", 100):
+            dogs, calls = _collect(scraper, headers=False)
+
+        assert len(dogs) == 4
+        # Two full pages, then an empty one ends it
+        assert [params["page"] for url, params in calls if url.endswith("/posts")] == [1, 2, 3]
+
+    def test_an_empty_page_within_the_count_fails_loudly(self, scraper):
+        get, _ = _rest()
+
+        def short(url, params=None, headers=None):
+            response = get(url, params=params, headers=headers)
+            if url.endswith("/posts"):
+                response.headers = {"X-WP-TotalPages": "2"}
+                if params["page"] == 2:
+                    response.json = Mock(return_value=[])
+            return response
+
+        with patch.object(scraper, "get_listing_page", side_effect=short), pytest.raises(ListingIncompleteError, match="page 2 of 2 is empty"):
             scraper.collect_data()
+
+    def test_a_missing_fallback_tree_only_loses_the_fallback(self, scraper):
+        categories = [category for category in CATEGORIES if category["slug"] != "groesse"]
+
+        assert len(_collect(scraper, categories=categories)[0]) == 4
+
+    def test_a_post_without_facts_is_a_failed_dog(self, scraper):
+        post = {**POSTS[0], "content": {"rendered": re.sub(r"(Im Tierheim seit|Geschlecht|Geschätzte?s? \w+|Herkunft|Früheste Ausreise):", r"\1", POSTS[0]["content"]["rendered"])}}
+
+        dogs = _collect(scraper, posts=[post, *POSTS[1:]])[0]
+
+        assert "Saskia" not in dogs
+        assert scraper.detail_failures == ["https://hunderettung-europa.de/saskia/"]
 
     def test_a_post_that_cant_be_read_skips_one_dog_and_is_still_found(self, scraper):
         broken = {**POSTS[0], "title": None}

@@ -43,9 +43,8 @@ current rescues skipped).
   returns each post's rendered page, so no dog page is fetched: two category
   requests and two post requests per run.
 - **Categories by slug, not number**: `hundekategorien` > `aufenthaltsort` >
-  `rumaenien` / `deutschland` (and its federal states); `happy-ends-hunde`
-  (adopted) is excluded. A missing category or an empty listing raises
-  `ListingIncompleteError`.
+  `rumaenien` / `deutschland` (and its federal states). A missing location
+  category, a missing page or an empty listing raises `ListingIncompleteError`.
 - **IDs** are `hre-<post id>`. A dog that moves to a foster home is renamed
   ("Pflegehund Tindra", `/pflegehund-tindra/`) but keeps its post ID.
 - **Template text and photos**: everything hidden on desktop
@@ -73,7 +72,18 @@ current rescues skipped).
 - **No breed**: the rescue doesn't state one.
 - **Gnadenplatz dogs stay**: they are seniors looking for a home for life, not
   sanctuary-only.
-- **`skip_existing_animals: true`**, as every rescue.
+- **`skip_existing_animals: false`**, unlike every other rescue: the listing
+  already holds every page, so re-reading costs no request, and dogs move
+  from the shelter to foster homes (39 of 150 had). Unchanged dogs are a
+  `no_change` and photos are reused. Text changes don't re-profile a dog
+  (profiling runs on create). A moved dog's post is renamed
+  (`/tindra/` to `/pflegehund-tindra/`); the old link 301s to the new one,
+  and updates don't rewrite `adoption_url`.
+- **Excluded**: `happy-ends-hunde` and all its subcategories (WordPress
+  doesn't exclude children). Size and sex categories only stand in for the
+  text, so a change to those trees logs a warning instead of failing the run.
+- **A post without its facts block** counts as a failed dog, not a half-read
+  one, so a layout change shows up in the run's detail failures.
 
 ## Runners-up (for later)
 

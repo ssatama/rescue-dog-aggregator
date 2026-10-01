@@ -133,8 +133,10 @@ class HunderettungEuropaScraper(BaseScraper):
         while True:
             response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/{route}", params={**params, "per_page": PER_PAGE, "page": page}, headers=HEADERS)
             batch = response.json()
-            total_pages = int(response.headers.get("X-WP-TotalPages", 1))
-            if not batch and page <= total_pages:
+            stated = response.headers.get("X-WP-TotalPages")
+            # Without the header, a full page means another may follow
+            total_pages = int(stated) if stated is not None else page + 1 if len(batch) == PER_PAGE else page
+            if not batch and stated is not None and page <= total_pages:
                 raise ListingIncompleteError(f"{route} page {page} of {total_pages} is empty")
             items += batch
             if page >= total_pages:
@@ -158,16 +160,23 @@ class HunderettungEuropaScraper(BaseScraper):
         def descendants(category: int) -> set[int]:
             return {category}.union(*(descendants(sub) for sub in children.get(category, {}).values()))
 
+        def fallback(parent_slug: str, values: dict[str, str]) -> dict[int, str]:
+            """A tree that only stands in for the page's text: one missing doesn't stop the run."""
+            parent = children.get(root, {}).get(parent_slug)
+            found = {children.get(parent, {}).get(slug): value for slug, value in values.items()}
+            if None in found or parent is None:
+                self.logger.warning(f"Category tree {parent_slug!r} changed; its categories no longer stand in for missing facts")
+            return {category: value for category, value in found.items() if category is not None}
+
         root = child(0, DOG_ROOT)
         location = child(root, "aufenthaltsort")
-        size = child(root, "groesse")
-        sex = child(root, "geschlecht")
         return {
             "romania": child(location, "rumaenien"),
             "germany": descendants(child(location, "deutschland")),
-            "adopted": child(0, ADOPTED),
-            "sizes": {child(size, slug): value for slug, value in SIZES.items()},
-            "sexes": {child(sex, slug): value for slug, value in SEXES.items()},
+            # WordPress excludes only the categories named, not their children
+            "adopted": descendants(child(0, ADOPTED)),
+            "sizes": fallback("groesse", SIZES),
+            "sexes": fallback("geschlecht", SEXES),
         }
 
     def _posts(self, categories: dict[str, Any]) -> list[dict]:
@@ -177,7 +186,7 @@ class HunderettungEuropaScraper(BaseScraper):
             "posts",
             {
                 "categories": ",".join(map(str, locations)),
-                "categories_exclude": categories["adopted"],
+                "categories_exclude": ",".join(map(str, sorted(categories["adopted"]))),
                 "_fields": "id,link,title,content,categories",
             },
         )
@@ -209,6 +218,9 @@ class HunderettungEuropaScraper(BaseScraper):
                     continue
                 story += [line for line in lines if not VIDEO_LINE.match(line)]
 
+        if not facts:
+            # A layout the scraper doesn't know: counted as a failed dog, not saved half-read
+            raise ValueError('no facts block ("Geschlecht: …") above the story')
         in_categories = set(post["categories"])
         born = birth_text(facts.get("Geschätztes Alter"))
         sex = (facts.get("Geschlecht") or "").lower()
