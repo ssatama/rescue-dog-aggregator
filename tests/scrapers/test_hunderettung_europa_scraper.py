@@ -189,14 +189,9 @@ class TestListing:
         with pytest.raises(ListingIncompleteError, match="no dogs"):
             _collect(scraper, posts=[])
 
-    def test_without_paging_headers_a_full_page_is_followed(self, scraper):
-        module = "scrapers.hunderettung_europa.dogs_scraper"
-        with patch(f"{module}.PER_PAGE", 2), patch(f"{module}.MAX_PAGES", 100):
-            dogs, calls = _collect(scraper, headers=False)
-
-        assert len(dogs) == 4
-        # Two full pages, then an empty one ends it
-        assert [params["page"] for url, params in calls if url.endswith("/posts")] == [1, 2, 3]
+    def test_without_paging_headers_the_listing_fails_loudly(self, scraper):
+        with pytest.raises(ListingIncompleteError, match="X-WP-TotalPages"):
+            _collect(scraper, headers=False)
 
     def test_an_empty_page_within_the_count_fails_loudly(self, scraper):
         get, _ = _rest()

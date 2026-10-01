@@ -134,9 +134,11 @@ class HunderettungEuropaScraper(BaseScraper):
             response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/{route}", params={**params, "per_page": PER_PAGE, "page": page}, headers=HEADERS)
             batch = response.json()
             stated = response.headers.get("X-WP-TotalPages")
-            # Without the header, a full page means another may follow
-            total_pages = int(stated) if stated is not None else page + 1 if len(batch) == PER_PAGE else page
-            if not batch and stated is not None and page <= total_pages:
+            if stated is None:
+                # Without it, a short read can't be told from the end (a page past it is a 400)
+                raise ListingIncompleteError(f"{route} page {page} has no X-WP-TotalPages header")
+            total_pages = int(stated)
+            if not batch and page <= total_pages:
                 raise ListingIncompleteError(f"{route} page {page} of {total_pages} is empty")
             items += batch
             if page >= total_pages:
@@ -188,6 +190,9 @@ class HunderettungEuropaScraper(BaseScraper):
                 "categories": ",".join(map(str, locations)),
                 "categories_exclude": ",".join(map(str, sorted(categories["adopted"]))),
                 "_fields": "id,link,title,content,categories",
+                # Oldest first: a dog published while paging can't push another off a page
+                "orderby": "id",
+                "order": "asc",
             },
         )
         if not posts:

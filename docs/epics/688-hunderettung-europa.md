@@ -44,7 +44,9 @@ current rescues skipped).
   requests and two post requests per run.
 - **Categories by slug, not number**: `hundekategorien` > `aufenthaltsort` >
   `rumaenien` / `deutschland` (and its federal states). A missing location
-  category, a missing page or an empty listing raises `ListingIncompleteError`.
+  category, a missing page, a missing `X-WP-TotalPages` header or an empty
+  listing raises `ListingIncompleteError`. Posts are paged oldest first
+  (`orderby=id`), so a dog published mid-run can't push another off a page.
 - **IDs** are `hre-<post id>`. A dog that moves to a foster home is renamed
   ("Pflegehund Tindra", `/pflegehund-tindra/`) but keeps its post ID.
 - **Template text and photos**: everything hidden on desktop
