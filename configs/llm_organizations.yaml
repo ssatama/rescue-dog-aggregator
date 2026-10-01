@@ -44,13 +44,6 @@ organizations:
     target_language: "en"
     enabled: false # Not yet configured - needs separate prompt development
 
-  30:
-    name: "Hunderettung Europa"
-    prompt_file: "hunderettung_europa.yaml"
-    source_language: "de"
-    target_language: "en"
-    enabled: true
-
   26:
     name: "Santer Paws Bulgarian Rescue"
     prompt_file: "santerpawsbulgarianrescue.yaml"
@@ -92,3 +85,10 @@ organizations:
     source_language: "en"
     target_language: "en"
     enabled: true # Configured and ready for testing
+
+  30:
+    name: "Hunderettung Europa"
+    prompt_file: "hunderettung_europa.yaml"
+    source_language: "de"
+    target_language: "en"
+    enabled: true

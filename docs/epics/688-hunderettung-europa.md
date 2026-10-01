@@ -107,6 +107,10 @@ current rescues skipped).
   a Gnadenplatz dog is a senior looking for a quiet home), and "no small
   children, teenagers from 14" read as `no` (now `older_children`).
   Puppies with only the litter template get short, honest profiles.
+- Profiles are written once (on create), and this rescue moves dogs, so the
+  prompt keeps where the dog is, its age in numbers and how long it has
+  waited out of every field; the page shows those from current data.
+  Re-checked on 8 dogs: none mention them.
 - Logo: the rescue's square paw-and-hand mark (512 px PNG from its site),
   uploaded to R2 as `org-logo-hunderettung-europa.png`. Checking it right
   before the upload cached a 404 at Cloudflare for a while; check with a

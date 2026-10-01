@@ -79,8 +79,15 @@ system_prompt: |
     Rumänien", "von der rumänischen Straße gerettet") are the dog's history, not
     its character.
 
+  WHAT THE PROFILE MUST NOT SAY: a profile is written once and kept, while this
+  rescue moves dogs from its Romanian shelter to foster homes in Germany. Keep
+  out of description, tagline and every other field: where the dog is now (the
+  shelter, Romania, a foster home or its town), its age in months or years, and
+  how long it has waited. The page shows these from the rescue's current data.
+  "Puppy", "young", "adult" and "senior" are fine.
+
   When a dog's text is ONLY boilerplate (a new dog, a litter), write a short,
-  honest description from the facts (age, size, where it is). Compatibility stays
+  honest description from the facts (size; puppy, adult or senior). Compatibility stays
   "unknown"; required behavioral fields take the neutral value ("medium",
   "moderate", "social", "moderate", "house_preferred", "some_experience") with a
   confidence below 0.3. Don't invent a personality.
@@ -98,7 +105,7 @@ system_prompt: |
 
   NEVER mention money: no adoption fee, waived fee ("Schutzgebühr entfällt"),
   vet costs or who pays them, in any field. adoption_fee_euros stays null.
-  "location" is where the dog is now. All dogs travel vaccinated, chipped,
+  "location" is where the dog is now (don't write it into the profile). All dogs travel vaccinated, chipped,
   dewormed and (except young puppies and very old dogs) neutered, per the rescue;
   set vaccinated/neutered only from the dog's own text.
 
@@ -125,7 +132,7 @@ extraction_prompt: |
   BEHAVIORAL ASSESSMENT (derive from text clues):
   - energy_level: Use ONLY "low", "medium", "high", or "very_high". Assess from descriptions ("ruhig"=low, "aktiv"=high, "lebhaft"=high, "verspielt"=medium or high)
   - trainability: Use ONLY "easy", "moderate", "challenging", or "very_challenging". Look for "gelehrig", "intelligent", "stur", "lernwillig", "kennt Kommandos"
-  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Check for "verträglich", "sozial", "menschenbezogen", "scheu", "ängstlich". Return null if not mentioned.
+  - sociability: Use ONLY "very_social", "social", "selective", "independent", or "needs_work". Check for "verträglich", "sozial", "menschenbezogen", "scheu", "ängstlich".
   - confidence: Use ONLY "very_confident", "confident", "moderate", "shy", or "very_shy". Assess from "selbstbewusst", "souverän", "ängstlich", "mutig", "vorsichtig", "unsicher"
 
   COMPATIBILITY (only if explicitly mentioned about THIS dog):
@@ -209,6 +216,8 @@ german_keywords:
   Zwinger: kennel
   Selbstauskunft: adoption application form
 
+# Documentation, like the other rescues' prompts: PromptBuilder sends only
+# system_prompt and extraction_prompt
 few_shot_examples:
   - input: |
       Name: Tindra
@@ -218,7 +227,7 @@ few_shot_examples:
 
     output: |
       {
-        "description": "Tindra is an outgoing young female who got on very well with the dog she shared her shelter space with. She loves attention and nudges your hand with her nose the moment the stroking stops. Now in a foster home in Blankenhof.",
+        "description": "Tindra is an outgoing young female who got on very well with the dog she shared her shelter space with. She loves attention and nudges your hand with her nose the moment the stroking stops.",
         "tagline": "Stops petting? Expect a nose nudge",
         "energy_level": "medium",
         "trainability": "moderate",
@@ -260,6 +269,7 @@ few_shot_examples:
           "description": "sehr aufgeschlossene junge Hündin; Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
           "good_with_dogs": "Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
           "unique_quirk": "Hörte man auf sie zu streicheln, stupste sie einen sanft mit ihrer Nase an",
+          "personality_traits": "sehr aufgeschlossene junge Hündin; Auch Menschen gegenüber war Tindra sehr freundlich",
           "ready_to_travel": "Auf Pflegestelle in: 17039 Blankenhof"
         },
         "prompt_version": "1.0.0"
