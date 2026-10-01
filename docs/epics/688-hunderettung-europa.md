@@ -40,8 +40,12 @@ current rescues skipped).
   Austria, France, Denmark, Poland and Czechia are neighbours too but are
   added only if the rescue confirms.
 - **The REST listing is the whole scrape.** `GET /wp-json/wp/v2/posts`
-  returns each post's rendered page, so no dog page is fetched: two category
-  requests and two post requests per run.
+  returns each post's rendered page, so no dog page is fetched. Pages hold
+  25 posts: a post carries its whole rendered page, and 100 of them were
+  3.6 MB, up to 46 s uncached. About 11 requests a run (5 category, 6 post).
+- **The cron loads only whitelisted modules**
+  (`utils/secure_scraper_loader.py`, `ALLOWED_MODULES`). A test now checks
+  every config's module is on it; the first version of this scraper wasn't.
 - **Categories by slug, not number**: `hundekategorien` > `aufenthaltsort` >
   `rumaenien` / `deutschland` (and its federal states). A missing location
   category, a missing page, a missing `X-WP-TotalPages` header or an empty

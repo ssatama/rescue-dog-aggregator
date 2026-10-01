@@ -63,7 +63,8 @@ class TestDogs:
         assert saskia["adoption_url"] == "https://hunderettung-europa.de/saskia/"
         assert saskia["sex"] == "Female"
         # "geb. ca. Februar 2026", in the form the age parser reads as a birth month
-        assert saskia["age_text"] == saskia["date_of_birth"] == "02/2026"
+        assert saskia["age_text"] == "02/2026"
+        assert saskia["date_of_birth"] == "geb. ca. Februar 2026"
         # "Geschätzte Endschulterhöhe: ca. 20 – 39 cm": small at both ends
         assert saskia["size"] == "Small"
         assert saskia["properties"]["location"] == "Romania"

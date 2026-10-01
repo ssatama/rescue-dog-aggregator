@@ -58,6 +58,7 @@ class SecureScraperLoader:
         "scrapers.manytearsrescue.manytearsrescue_scraper",
         "scrapers.dogstrust.dogstrust_scraper",
         "scrapers.furryrescueitaly.furryrescueitaly_scraper",
+        "scrapers.hunderettung_europa.dogs_scraper",
         # Add new modules here as needed
     }
 

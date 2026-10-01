@@ -25,9 +25,10 @@ from utils.shared_extraction_patterns import gallery_urls
 
 # Not the default python-requests User-Agent (#571)
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; RescueDogAggregator/1.0)"}
-PER_PAGE = 100
-# ~150 dogs fill two pages; more than this means the paging is broken
-MAX_PAGES = 10
+# A post page carries every dog's whole rendered page: 100 of them were 3.6 MB
+PER_PAGE = 25
+# ~150 dogs fill six pages; more than this means the paging is broken
+MAX_PAGES = 40
 
 # Category slugs: looked up by name, so renumbered IDs can't empty the listing
 DOG_ROOT = "hundekategorien"
@@ -43,7 +44,7 @@ HEIGHT_LABEL = re.compile(r"schulterhöhe", re.IGNORECASE)
 VIDEO_LINE = re.compile(r"^Lerne\b.*\bkennen!?$")
 # Stock media from the editors' template, under /2023/11/
 TEMPLATE_MEDIA = re.compile(r"/template-[^/]*$")
-FOSTER_PREFIX = re.compile(r"^Pflegehund\s+", re.IGNORECASE)
+FOSTER_PREFIX = re.compile(r"^Pflegeh(?:und|ündin)\s+", re.IGNORECASE)
 POSTCODE = re.compile(r"^\d{5}\s+")
 
 
@@ -227,7 +228,7 @@ class HunderettungEuropaScraper(BaseScraper):
             # A layout the scraper doesn't know: counted as a failed dog, not saved half-read
             raise ValueError('no facts block ("Geschlecht: …") above the story')
         in_categories = set(post["categories"])
-        born = birth_text(facts.get("Geschätztes Alter"))
+        stated_birth = facts.get("Geschätztes Alter")
         sex = (facts.get("Geschlecht") or "").lower()
         properties = {
             **facts,
@@ -246,8 +247,9 @@ class HunderettungEuropaScraper(BaseScraper):
             "status": "available",
             "sex": {"männlich": "Male", "weiblich": "Female"}.get(sex) or self._one_of(in_categories, categories["sexes"]),
             "size": size_from_height(_fact(facts, HEIGHT_LABEL)) or self._one_of(in_categories, categories["sizes"]),
-            "age_text": born,
-            "date_of_birth": born,
+            "age_text": birth_text(stated_birth),
+            # The rescue's own words: the age parser also reads "Oktober/November 2025" or "2015/2016"
+            "date_of_birth": stated_birth,
             "properties": properties,
         }
 

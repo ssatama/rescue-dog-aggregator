@@ -8,7 +8,7 @@ scraper:
   config:
     rate_limit_delay: 2.5
     max_retries: 3
-    timeout: 30
+    timeout: 60
     batch_size: 6
     # The listing holds every dog's whole page, so re-reading costs no request;
     # dogs move from the shelter to foster homes and must not keep the old place (#688)
