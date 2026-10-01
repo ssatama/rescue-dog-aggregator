@@ -208,7 +208,10 @@ class DogSaving:
                 try:
                     stored_images = self.database_service.get_images_by_external_id(self.organization_id) if self.database_service else {}
                     pace = self.wait_for_request_slot if getattr(self, "pace_photo_downloads", False) else None
-                    self.image_processing_service.batch_process_galleries(valid, stored_images, self.organization_name, pace=pace)
+                    new, stored = self.image_processing_service.batch_process_galleries(valid, stored_images, self.organization_name, pace=pace)
+                    if new:
+                        later = "; the rest come on later runs" if pace and stored < new else ""
+                        self.logger.info(f"🖼️ Gallery photos: {stored} of {new} new stored{later}")
                 except Exception as e:
                     self.logger.warning(f"Gallery processing failed; keeping stored galleries: {e}")
 

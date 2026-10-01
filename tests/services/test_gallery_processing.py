@@ -353,8 +353,10 @@ class TestPacedGalleries:
         service, r2 = service_uploading({source: photo(source) for dog in dogs for source in dog["image_urls"]})
 
         with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 4):
-            service.batch_process_galleries(dogs, {}, pace=lambda: None)
+            counts = service.batch_process_galleries(dogs, {}, pace=lambda: None)
 
+        # (new, stored): the scraper logs these, so a backlog shows in the run's log
+        assert counts == (6, 4)
         fetched = [call.args[0] for call in r2.upload_image_with_size.call_args_list]
         assert fetched == ["https://rescue.example/0/hero.jpg", "https://rescue.example/1/hero.jpg", "https://rescue.example/2/hero.jpg", "https://rescue.example/0/2.jpg"]
         assert [len(dog["images"]) for dog in dogs] == [2, 1, 1]

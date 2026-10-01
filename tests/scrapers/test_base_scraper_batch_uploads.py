@@ -42,6 +42,7 @@ class TestBaseScraperBatchUploads:
             # Mock image processing service
             mock_image_service_instance = Mock()
             mock_image_service_instance.batch_process_images = Mock(side_effect=lambda animals, *args, **kwargs: animals)
+            mock_image_service_instance.batch_process_galleries = Mock(return_value=(0, 0))
             mock_image_service.return_value = mock_image_service_instance
 
             # Mock progress tracker
@@ -113,6 +114,37 @@ class TestBaseScraperBatchUploads:
 
         pace = mock_services["image_service"].batch_process_galleries.call_args.kwargs["pace"]
         assert pace == (scraper.wait_for_request_slot if paced else None)
+
+    @pytest.mark.parametrize(
+        ("paced", "counts", "line"),
+        [
+            (True, (412, 150), "🖼️ Gallery photos: 150 of 412 new stored; the rest come on later runs"),
+            (False, (5, 5), "🖼️ Gallery photos: 5 of 5 new stored"),
+            (True, (0, 0), None),
+        ],
+    )
+    def test_the_run_log_says_how_many_gallery_photos_were_stored(self, mock_services, paced, counts, line):
+        """The image service's INFO is muted in scraper runs, so the scraper logs its counts."""
+        mock_services["config"].get_scraper_config_dict.return_value = {"rate_limit_delay": 0.1, "max_retries": 1, "timeout": 10, "pace_photo_downloads": paced}
+        mock_services["image_service"].batch_process_galleries.return_value = counts
+
+        class TestScraper(BaseScraper):
+            def collect_data(self):
+                return [{"name": "Test Dog", "external_id": "test-1", "adoption_url": "https://example.com/dog", "primary_image_url": "https://example.com/dog.jpg"}]
+
+        scraper = TestScraper(config_id="test")
+        scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
+        scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
+        scraper.logger = Mock()
+
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
+
+        gallery_lines = [call.args[0] for call in scraper.logger.info.call_args_list if "Gallery photos" in call.args[0]]
+        assert gallery_lines == ([line] if line else [])
+        assert not [call for call in scraper.logger.warning.call_args_list if "Gallery" in call.args[0]]
 
     def test_batch_upload_for_small_dataset(self, mock_services):
         """Test that batch upload is used for small datasets (2-3 animals)."""

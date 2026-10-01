@@ -99,7 +99,7 @@ class ImageProcessingService:
         stored_images: dict[str, list[dict[str, Any]]],
         organization_name: str = "unknown",
         pace: Callable[[], None] | None = None,
-    ) -> None:
+    ) -> tuple[int, int]:
         """Set each dog's `images` from its scraped source URLs, in one batch (in place).
 
         Scrapers set `image_urls` (source URLs, hero first); those that don't
@@ -114,6 +114,9 @@ class ImageProcessingService:
         config sets pace_photo_downloads), photos are fetched one at a time,
         each after its request slot, and at most PACED_PHOTOS_PER_RUN of them;
         the others count as not fetched this run.
+
+        Returns (new photos, of them stored this run), for the scraper to log:
+        this module's INFO is muted in scraper runs.
         """
         known: dict[str, dict[str, Any]] = {}
         for images in stored_images.values():
@@ -141,12 +144,10 @@ class ImageProcessingService:
         uploaded: dict[str, dict[str, Any] | None] = {}
         if pending and not self.r2_service.prepare_for_parallel_uploads():
             self.logger.info("R2 not configured; keeping stored galleries")
-            return
+            return len(pending), 0
         if pending and pace:
-            self.logger.info(f"🖼️ Paced: {min(len(pending), PACED_PHOTOS_PER_RUN)} of {len(pending)} new gallery photos this run")
             uploaded.update(self._fetch_paced(list(pending.items()), pace, organization_name))
         elif pending:
-            self.logger.info(f"🖼️ Checking {len(pending)} new gallery photos ({len(known)} already stored)")
             with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:
                 futures = {pool.submit(self.r2_service.upload_image_with_size, source, name, organization_name): source for source, name in pending.items()}
                 for future in as_completed(futures):
@@ -156,10 +157,6 @@ class ImageProcessingService:
                         # One photo's failure must not cost the rest of the run
                         self.logger.warning(f"Gallery photo {futures[future]} failed: {e}")
                         uploaded[futures[future]] = None
-        if pending:
-            stored = sum(1 for photo in uploaded.values() if photo)
-            self.logger.info(f"🖼️ Gallery photos stored: {stored}/{len(pending)}")
-
         photos = {**known, **uploaded}
         for animal in animals_data:
             sources = _gallery_sources(animal)
@@ -176,6 +173,7 @@ class ImageProcessingService:
             images = build_gallery(sources, photos)
             if images is not None:
                 animal["images"] = images
+        return len(pending), sum(1 for photo in uploaded.values() if photo)
 
     def _fetch_paced(self, pending: list[tuple[str, str]], pace: Callable[[], None], organization_name: str) -> dict[str, dict[str, Any] | None]:
         """Photos one at a time, each after its request slot, at most PACED_PHOTOS_PER_RUN.
