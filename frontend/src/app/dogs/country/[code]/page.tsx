@@ -48,7 +48,7 @@ export async function generateMetadata(props: CountryPageProps): Promise<Metadat
 
   return {
     title: `${formatCount(count)} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
-    description: clampDescription(`Browse ${formatCount(count)} rescue dogs currently in ${country.name}. ${country.description} View photos, profiles, and apply through verified rescue organizations.`),
+    description: clampDescription(`Browse ${formatCount(count)} dogs from rescues based in ${country.name}. ${country.description} View photos, profiles, and apply through verified rescue organizations.`),
     keywords: `rescue dogs ${country.name}, ${country.name} dog adoption, dogs from ${country.name}, adopt dog ${country.shortName}, ${country.name} rescue organizations`,
     alternates: {
       canonical: `https://www.rescuedogs.me/dogs/country/${params.code.toLowerCase()}`,

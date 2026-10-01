@@ -71,7 +71,7 @@ class AnimalFilterRequest(BaseModel):
     age_known: bool = Field(default=False, description="Age buckets match only dogs with a recorded age (no-age dogs otherwise match every bucket)")
 
     # Location filters
-    location_country: str | None = Field(default=None, description="Filter by country where animal is located")
+    location_country: str | None = Field(default=None, description="Filter by the country the rescue is based in (not where the dog is)")
     available_to_country: str | None = Field(default=None, description="Filter by adoption destination country")
     available_to_region: str | None = Field(default=None, description="Filter by adoption destination region")
 
