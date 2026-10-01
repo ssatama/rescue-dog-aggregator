@@ -81,13 +81,17 @@ system_prompt: |
 
   WHAT THE PROFILE MUST NOT SAY: a profile is written once and kept, while this
   rescue moves dogs from its Romanian shelter to foster homes in Germany. Keep
-  out of description, tagline and every other field: where the dog is now (the
-  shelter, Romania, a foster home or its town), its age in months or years, and
-  how long it has waited. The page shows these from the rescue's current data.
-  "Puppy", "young", "adult" and "senior" are fine.
+  out of description, tagline, personality_traits, favorite_activities,
+  unique_quirk, special_needs and medical_needs: where the dog is now (the
+  shelter, Romania, a foster home or its town), its age in months or years, how
+  long it has waited, and when it can travel. The page shows these from the
+  rescue's current data. "Puppy", "young", "adult" and "senior" are fine, and so
+  is origin as past history ("rescued from the streets of Romania").
 
-  When a dog's text is ONLY boilerplate (a new dog, a litter), write a short,
-  honest description from the facts (size; puppy, adult or senior). Compatibility stays
+  When a dog's text is ONLY boilerplate (a new dog, a litter), write an honest
+  description from what is known: sex, puppy/adult/senior, expected adult size,
+  littermates or the dog it was found with, and how it came to the rescue (as
+  history). Compatibility stays
   "unknown"; required behavioral fields take the neutral value ("medium",
   "moderate", "social", "moderate", "house_preferred", "some_experience") with a
   confidence below 0.3. Don't invent a personality.
@@ -158,7 +162,7 @@ extraction_prompt: |
 
   ADOPTION INFO:
   - adoption_fee_euros: always null (fees are never shown)
-  - ready_to_travel: true for dogs in Romania, false for dogs already in a German foster home
+  - ready_to_travel: true (every dog can go to its adopters; this field is not shown)
   - vaccinated: Look for "geimpft", "Impfungen" in this dog's text
   - neutered: Look for "kastriert", "sterilisiert" in this dog's text
 
@@ -247,7 +251,7 @@ few_shot_examples:
         "favorite_activities": ["attention from people", "being stroked"],
         "unique_quirk": "nudges you with her nose when you stop stroking her",
         "adoption_fee_euros": null,
-        "ready_to_travel": false,
+        "ready_to_travel": true,
         "vaccinated": null,
         "neutered": null,
         "processing_time_ms": 1250,
@@ -269,8 +273,7 @@ few_shot_examples:
           "description": "sehr aufgeschlossene junge Hündin; Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
           "good_with_dogs": "Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
           "unique_quirk": "Hörte man auf sie zu streicheln, stupste sie einen sanft mit ihrer Nase an",
-          "personality_traits": "sehr aufgeschlossene junge Hündin; Auch Menschen gegenüber war Tindra sehr freundlich",
-          "ready_to_travel": "Auf Pflegestelle in: 17039 Blankenhof"
+          "personality_traits": "sehr aufgeschlossene junge Hündin; Auch Menschen gegenüber war Tindra sehr freundlich"
         },
         "prompt_version": "1.0.0"
       }
