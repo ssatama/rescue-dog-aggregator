@@ -46,15 +46,17 @@ class TestFetchPosts:
             fetch_posts(get_json, ["a"])
 
 
-def _scraper(pages):
-    """get_listing_page answers the REST route with `rest`, and page URLs from `pages` (a 404 when missing)."""
+def _scraper(pages, files=(), content_type="text/html; charset=UTF-8"):
+    """get_listing_page answers the REST route with `rest`, page URLs from `pages` as `content_type`, file URLs in `files` with a JPEG (a 404 when missing)."""
     rest = [{"id": 36251, "link": "https://site.org/johny/"}]
 
     def get_listing_page(url, **kwargs):
         if "wp-json" in url:
             return Mock(headers={"X-WP-TotalPages": "1"}, json=Mock(return_value=rest))
         if url in pages:
-            return Mock(content=pages[url].encode())
+            return Mock(content=pages[url].encode(), headers={"Content-Type": content_type})
+        if url in files:
+            return Mock(content=b"\xff\xd8\xff", headers={"Content-Type": "image/jpeg"})
         error = requests.HTTPError(response=Mock(status_code=404))
         raise ListingIncompleteError(f"{url} failed") from error
 
@@ -74,7 +76,9 @@ class TestKeyOnPostIds:
         """A renamed page WordPress redirects keeps its dog listed (#558)."""
         pages = {"https://site.org/old-name/": '<body class="page page-id-40001"></body>'}
 
-        keyed = key_on_post_ids(_scraper(pages), [{"url": "https://site.org/old-name/"}], route="https://site.org/wp-json/wp/v2/pages", url_of=lambda dog: dog["url"], prefix="arb-")
+        keyed = key_on_post_ids(
+            _scraper(pages, content_type="TEXT/HTML"), [{"url": "https://site.org/old-name/"}], route="https://site.org/wp-json/wp/v2/pages", url_of=lambda dog: dog["url"], prefix="arb-"
+        )
 
         assert [dog["external_id"] for dog in keyed] == ["arb-40001"]
 
@@ -85,6 +89,24 @@ class TestKeyOnPostIds:
 
         assert keyed == []
         scraper.logger.warning.assert_called_once()
+
+    def test_a_link_that_leads_to_a_file_is_skipped_not_failed(self):
+        """Bosnia linked /lucky/, an old photo's slug; WordPress sent it to lucky.jpg."""
+        scraper = _scraper({}, files={"https://site.org/lucky/"})
+        dogs = [{"url": "https://site.org/lucky/"}, {"url": "https://site.org/johny/"}]
+
+        keyed = key_on_post_ids(scraper, dogs, route="https://site.org/wp-json/wp/v2/pages", url_of=lambda dog: dog["url"], prefix="arb-")
+
+        assert [dog["external_id"] for dog in keyed] == ["arb-36251"]
+        scraper.logger.warning.assert_called_once()
+
+    @pytest.mark.parametrize("content_type", ["text/html; charset=UTF-8", "application/json", ""])
+    def test_a_page_without_an_id_still_fails(self, content_type):
+        """An error page or a firewall's JSON, not a file, can't be told from a broken listing."""
+        scraper = _scraper({"https://site.org/old-name/": '<body class="home"></body>'}, content_type=content_type)
+
+        with pytest.raises(ListingIncompleteError):
+            key_on_post_ids(scraper, [{"url": "https://site.org/old-name/"}], route="https://site.org/wp-json/wp/v2/pages", url_of=lambda dog: dog["url"], prefix="arb-")
 
 
 @pytest.mark.unit
