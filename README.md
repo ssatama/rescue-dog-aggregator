@@ -112,20 +112,22 @@ management/             # CLI tools (19 scripts)
 
 ### Active Organizations
 
-| Organization                 | Country    | Technology |
-| ---------------------------- | ---------- | ---------- |
-| Dogs Trust                   | UK/Ireland | Playwright |
-| Many Tears Rescue            | UK         | Playwright |
-| REAN                         | Romania/UK | Playwright |
-| Woof Project                 | UK         | HTTP       |
-| MISIS Rescue                 | Montenegro | Playwright |
-| Daisy Family Rescue          | Greece     | Playwright |
-| Tierschutzverein Europa      | Germany    | HTTP       |
-| The Underdog                 | Malta      | HTTP       |
-| Furry Rescue Italy           | Italy      | HTTP       |
-| Pets in Turkey               | Turkey     | HTTP       |
-| Animal Rescue Bosnia         | Bosnia     | HTTP       |
-| Santer Paws Bulgarian Rescue | Bulgaria   | HTTP       |
+| Organization                 | Based in | Technology           |
+| ---------------------------- | -------- | -------------------- |
+| Dogs Trust                   | UK       | Playwright           |
+| Many Tears Rescue            | UK       | Playwright           |
+| REAN                         | UK       | Playwright           |
+| Woof Project                 | Cyprus   | HTTP                 |
+| MISIs Animal Rescue          | Serbia   | Playwright           |
+| Daisy Family Rescue          | Germany  | Playwright           |
+| Tierschutzverein Europa      | Germany  | HTTP                 |
+| Hunderettung Europa          | Germany  | HTTP (WordPress API) |
+| The Underdog                 | UK       | HTTP                 |
+| Pets in Turkey               | Turkey   | HTTP                 |
+| Animal Rescue Bosnia         | Bosnia   | HTTP                 |
+| Santer Paws Bulgarian Rescue | Bulgaria | HTTP                 |
+
+Galgos del Sol (Spain) and Furry Rescue Italy have scrapers but are disabled.
 
 ### API Endpoints
 
