@@ -45,4 +45,4 @@ def test_counts_agree_with_the_lists(client: TestClient, low_confidence_dog):
 
     total = client.get("/api/animals/statistics").json()["total_dogs"]
     assert client.get("/api/animals/breeds/stats").json()["total_dogs"] == total
-    assert client.get("/api/animals/stats/by-country").json()["total"] == total
+    # Country totals count only dogs with a known country: test_dog_country.py (#702)

@@ -108,16 +108,16 @@ async def get_distinct_breed_groups(
 async def get_distinct_location_countries(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
-    """Get a distinct list of countries where organizations are located."""
+    """The countries the browsable dogs are in (#702)."""
     try:
-        # Query distinct, non-null, non-empty countries from the organizations
-        # table
         cursor.execute(
-            """
-            SELECT DISTINCT country
-            FROM organizations
-            WHERE country IS NOT NULL AND country != '' AND active = TRUE
-            ORDER BY country ASC
+            f"""
+            SELECT DISTINCT a.properties->>'location_country' AS country
+            FROM animals a
+            JOIN organizations o ON a.organization_id = o.id
+            WHERE {publicly_available("a")} AND o.active = TRUE
+              AND a.properties->>'location_country' IS NOT NULL
+            ORDER BY 1 ASC
             """
         )
         results = cursor.fetchall()
@@ -254,24 +254,27 @@ async def get_stats_by_country(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
     """
-    Get dog counts grouped by country for country hub pages.
+    Get dog counts grouped by the country each dog is in, for country hub pages (#702).
+
+    Dogs whose country is unknown are left out.
 
     Returns:
         Country statistics including:
-        - total: Total number of available dogs
+        - total: Available dogs with a known country
         - countries: List of countries with dog counts and organization counts
     """
     try:
         query = f"""
             SELECT
-                o.country as code,
-                o.country as name,
+                a.properties->>'location_country' as code,
+                a.properties->>'location_country' as name,
                 COUNT(a.id) as count,
                 COUNT(DISTINCT a.organization_id) as organizations
             FROM animals a
             JOIN organizations o ON a.organization_id = o.id
             WHERE {publicly_available("a")} AND o.active = true AND a.animal_type = 'dog'
-            GROUP BY o.country
+              AND a.properties->>'location_country' IS NOT NULL
+            GROUP BY a.properties->>'location_country'
             ORDER BY COUNT(a.id) DESC
         """
         cursor.execute(query)
