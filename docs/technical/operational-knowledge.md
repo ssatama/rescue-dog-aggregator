@@ -221,8 +221,8 @@ page, wait, purge again, then verify with `curl` + `grep`. Purges need
 `REVALIDATION_TOKEN`, which lives only on `thriving-appreciation` (use
 `railway run --service thriving-appreciation`). The sitemap routes are
 different: they send `s-maxage=86400`, so Vercel's CDN keeps each one for up
-to a day, and `revalidatePath` doesn't clear that copy. A cache-busting query
-(`?v=1`) shows what the route serves now; the plain URL catches up within a
+to a day, and `revalidatePath` doesn't clear that copy. A unique cache-busting query
+(`?v=$(date +%s)`; a reused one is cached too) shows what the route serves now; the plain URL catches up within a
 day (seen after #702 changed the country pages).
 
 **`STATIC_PARAMS_LIMIT = 500`** on `/dogs/[slug]` is tuned: prerendering all
