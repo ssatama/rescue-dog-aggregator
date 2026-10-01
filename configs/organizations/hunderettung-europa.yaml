@@ -13,6 +13,8 @@ scraper:
     # The listing holds every dog's whole page, so re-reading costs no request;
     # dogs move from the shelter to foster homes and must not keep the old place (#688)
     skip_existing_animals: false
+    enable_llm_profiling: true
+    llm_organization_id: 30
 metadata:
   website_url: "https://hunderettung-europa.de"
   description: |
@@ -30,3 +32,4 @@ metadata:
     youtube: "https://www.youtube.com/@Hunderettungeuropa_e.V."
     linkedin: "https://de.linkedin.com/company/hunderettung-europa"
   established_year: 2019
+  logo_url: "https://images.rescuedogs.me/rescue_dogs/organizations/org-logo-hunderettung-europa.png"
