@@ -2,7 +2,7 @@
 
 ## Overview
 
-Country Hub Pages are SEO-optimized landing pages that allow users to browse rescue dogs by their country of origin. This feature improves discoverability through search engines while providing a focused browsing experience for users interested in dogs from specific countries.
+Country Hub Pages are SEO-optimized landing pages that allow users to browse rescue dogs by the country they are in now, wherever their rescue is based (#702). This feature improves discoverability through search engines while providing a focused browsing experience for users interested in dogs in specific countries.
 
 ## Key Features
 
@@ -20,18 +20,38 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 | `/dogs/country` | Hub page listing all countries with dog counts |
 | `/dogs/country/[code]` | Individual country page (e.g., `/dogs/country/uk`) |
 
+## Which country a dog is in
+
+The scraper validator stores `properties.location_country` on each dog: the
+country its `display_location` names, else the rescue's only service region,
+else the rescue's base country when a place is known but not its country
+(rules and backfill in `docs/technical/scraper-architecture.md`). Dogs with
+none (most of MISIs', which doesn't say per dog) are on no country page; there
+is no fallback to the rescue's country.
+
+A country gets a page only with at least `MIN_DOGS_FOR_COUNTRY_PAGE` (10) dogs
+(`getCountriesWithDogs`): the same rule decides the sitemap entry, the chip,
+the hub card and the 404. Only countries in `COUNTRIES` can have a page:
+Belgium and Switzerland, with a few dogs each, are not in it.
+
 ## Supported Countries
 
 | Code | Country | Flag |
 |------|---------|------|
 | UK | United Kingdom | 🇬🇧 |
 | DE | Germany | 🇩🇪 |
-| SR | Serbia | 🇷🇸 |
+| RO | Romania | 🇷🇴 |
+| ES | Spain | 🇪🇸 |
+| RS | Serbia | 🇷🇸 |
 | BA | Bosnia & Herzegovina | 🇧🇦 |
 | BG | Bulgaria | 🇧🇬 |
 | IT | Italy | 🇮🇹 |
 | TR | Turkey | 🇹🇷 |
 | CY | Cyprus | 🇨🇾 |
+| MK | North Macedonia | 🇲🇰 |
+| PT | Portugal | 🇵🇹 |
+
+Serbia and Italy have no page while they have fewer than 10 dogs.
 
 ## Architecture
 
@@ -53,23 +73,23 @@ Country Hub Pages are SEO-optimized landing pages that allow users to browse res
 #### Endpoint
 - **Route**: `GET /api/animals/stats/by-country`
 - **Location**: `api/routes/animals.py`
-- **Purpose**: Returns aggregated dog counts and organization counts per country
+- **Purpose**: Returns dog counts and organization counts per `properties.location_country`; dogs with no known country are left out, and `total` counts only the dogs with one
 
 #### Response Format
 ```json
 {
-  "total": 4568,
+  "total": 1244,
   "countries": [
     {
       "code": "UK",
       "name": "UK",
-      "count": 3200,
-      "organizations": 5
+      "count": 475,
+      "organizations": 4
     },
     {
-      "code": "DE",
-      "name": "DE",
-      "count": 800,
+      "code": "RO",
+      "name": "RO",
+      "count": 193,
       "organizations": 3
     }
   ]
@@ -169,7 +189,7 @@ export const COUNTRIES = {
     shortName: "UK",
     flag: "🇬🇧",
     placeName: "the UK",  // how a sentence names it, when not `name`
-    description: "Rescue dogs from UK-based organizations..."
+    description: "Dogs in rescue centres and foster homes across the UK..."
   },
   // ... other countries
 };
@@ -177,8 +197,8 @@ export const COUNTRIES = {
 
 To add a new country:
 1. Add entry to `COUNTRIES` object
-2. Country will automatically appear in navigation and sitemap
-3. API must return dogs with matching `location_country` code
+2. Once at least 10 dogs have that `properties.location_country`, it appears in navigation, the hub and the sitemap
+3. If scrapers name the country in a new way, add it to `COUNTRY_CODES` in `scrapers/validation/location_cleaner.py`
 
 ## Testing
 

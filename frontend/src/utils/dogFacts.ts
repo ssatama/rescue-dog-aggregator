@@ -8,7 +8,7 @@ import { getAgeCategory, sizeCategory } from "./dogHelpers";
  * the rescue actually says so. Unknown is left out, never guessed.
  */
 
-function prop(dog: Dog, key: string): string | null {
+function prop(dog: Pick<Dog, "properties">, key: string): string | null {
   const value = dog.properties?.[key];
   if (typeof value === "boolean") return String(value);
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -19,8 +19,17 @@ function prop(dog: Dog, key: string): string | null {
  * readable `display_location` scrapers store ("Snetterton, Norfolk",
  * "Baeza, Spain", #505). Null when the rescue doesn't say.
  */
-export function dogLocation(dog: Dog): string | null {
+export function dogLocation(dog: Pick<Dog, "properties">): string | null {
   return prop(dog, "display_location");
+}
+
+/**
+ * The country the dog is in, as a code ("UK", "RO"), from
+ * `properties.location_country` (#702). Null when nothing says, never the
+ * rescue's country.
+ */
+export function dogCountry(dog: Pick<Dog, "properties">): string | null {
+  return prop(dog, "location_country");
 }
 
 const NEUTERED_TEXT = /\b(i am|i'm|i have been|i've been)\s+(spayed|neutered)\b/i;

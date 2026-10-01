@@ -20,6 +20,7 @@ import {
   getAllCountryCodes,
   getCountriesWithDogs,
   COUNTRIES,
+  MIN_DOGS_FOR_COUNTRY_PAGE,
 } from "@/utils/countryData";
 
 export const revalidate = 86400;
@@ -44,11 +45,11 @@ export async function generateMetadata(props: CountryPageProps): Promise<Metadat
 
   const countryStats = await getCountryStats();
   const count =
-    countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
+    countryStats?.countries?.find((c: { code: string }) => c.code.toUpperCase() === country.code)?.count || 0;
 
   return {
     title: `${formatCount(count)} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
-    description: clampDescription(`Browse ${formatCount(count)} dogs from rescues based in ${country.name}. ${country.description} View photos, profiles, and apply through verified rescue organizations.`),
+    description: clampDescription(`Browse ${formatCount(count)} rescue dogs currently in ${country.name}. ${country.description}. View photos, profiles, and apply through verified rescue organizations.`),
     keywords: `rescue dogs ${country.name}, ${country.name} dog adoption, dogs from ${country.name}, adopt dog ${country.shortName}, ${country.name} rescue organizations`,
     alternates: {
       canonical: `https://www.rescuedogs.me/dogs/country/${params.code.toLowerCase()}`,
@@ -90,12 +91,13 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
   ]);
 
   const countryCount =
-    countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
+    countryStats?.countries?.find((c: { code: string }) => c.code.toUpperCase() === country.code)?.count || 0;
 
-  // A country with no dogs has no page; it returns once a rescue there comes back and the
-  // stats and this page revalidate (up to about a day) (#442). Only trust a zero when the stats loaded: the
-  // API-less CI build's fallback has no countries, and a 404 for a country with dogs would be worse.
-  if (countryStats?.countries?.length && countryCount === 0 && initialDogs.length === 0) {
+  // A country with too few dogs to fill a page has none (#702); it returns once it has enough
+  // and the stats and this page revalidate (up to about a day) (#442). Only trust the count when the
+  // stats loaded: the API-less CI build's fallback has no countries, and a 404 for a country with
+  // dogs would be worse.
+  if (countryStats?.countries?.length && countryCount < MIN_DOGS_FOR_COUNTRY_PAGE) {
     notFound();
   }
 
