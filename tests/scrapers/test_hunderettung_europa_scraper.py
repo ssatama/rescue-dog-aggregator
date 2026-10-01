@@ -28,11 +28,13 @@ def _rest(categories=CATEGORIES, posts=POSTS, per_page_override=None, headers=Tr
     def get(url, params=None, headers=None):
         calls.append((url, dict(params or {})))
         is_posts = url.endswith("/posts")
-        data = posts if is_posts else categories
+        # The category lookup asks for its slugs, as WordPress filters them
+        slugs = set(params.get("slug", "").split(",")) if not is_posts else None
+        data = posts if is_posts else [category for category in categories if category["slug"] in slugs]
         per_page = (is_posts and per_page_override) or params["per_page"]
         page = params["page"]
         # WordPress says 0 pages for no results
-        paging = {"X-WP-TotalPages": str(-(-len(data) // per_page))} if send_headers else {}
+        paging = {"X-WP-TotalPages": str(-(-len(data) // per_page)), "X-WP-Total": str(len(data))} if send_headers else {}
         return Mock(json=Mock(return_value=data[(page - 1) * per_page : page * per_page]), headers=paging)
 
     send_headers = headers
@@ -160,11 +162,12 @@ class TestListing:
         _, calls = _collect(scraper)
         params = next(params for url, params in calls if url.endswith("/posts"))
 
-        # Rumänien, Deutschland and its sixteen federal states
-        assert set(params["categories"].split(",")) == {"83", *map(str, range(85, 102))}
-        # Happy-Ends Hunde and its subcategories: WordPress doesn't exclude children
-        adopted = {category["id"] for category in CATEGORIES if category["id"] == 36 or category["parent"] in (36, 148, 152, 160, 163)}
-        assert set(map(int, params["categories_exclude"].split(","))) == adopted
+        # Rumänien and Deutschland with its federal states; WordPress adds the children
+        assert params["categories[terms]"] == "83,85"
+        assert params["categories[include_children]"] == "true"
+        # Happy-Ends Hunde and its subcategories
+        assert params["categories_exclude[terms]"] == 36
+        assert params["categories_exclude[include_children]"] == "true"
 
     def test_categories_are_found_by_slug_not_number(self, scraper):
         renumbered = [{**category, "id": category["id"] + 1000, "parent": category["parent"] + 1000 if category["parent"] else 0} for category in CATEGORIES]
@@ -173,7 +176,7 @@ class TestListing:
         dogs, calls = _collect(scraper, categories=renumbered, posts=posts)
 
         assert dogs["Tindra"]["properties"]["location"] == "Blankenhof, Germany"
-        assert "1036" in next(params for url, params in calls if url.endswith("/posts"))["categories_exclude"].split(",")
+        assert next(params for url, params in calls if url.endswith("/posts"))["categories_exclude[terms]"] == 1036
 
     def test_a_missing_category_fails_loudly(self, scraper):
         categories = [category for category in CATEGORIES if category["slug"] != "rumaenien"]
@@ -186,6 +189,37 @@ class TestListing:
 
         assert len(dogs) == 4
         assert [params["page"] for url, params in calls if url.endswith("/posts")] == [1, 2]
+
+    def test_every_route_is_read_in_id_order(self, scraper):
+        _, calls = _collect(scraper)
+
+        assert {(params["orderby"], params["order"]) for _, params in calls} == {("id", "asc")}
+
+    def test_categories_are_one_lookup_by_slug(self, scraper):
+        """2026-10-01: the site ignores orderby on categories, and paged lookups skipped the root."""
+        _, calls = _collect(scraper)
+
+        lookups = [params for url, params in calls if url.endswith("/categories")]
+        assert len(lookups) == 1
+        assert {"hundekategorien", "rumaenien", "deutschland", "happy-ends-hunde"} <= set(lookups[0]["slug"].split(","))
+
+    def test_a_category_under_another_parent_fails_loudly(self, scraper):
+        moved = [{**category, "parent": 0} if category["slug"] == "rumaenien" else category for category in CATEGORIES]
+
+        with pytest.raises(ListingIncompleteError, match="rumaenien"):
+            _collect(scraper, categories=moved)
+
+    def test_pages_that_overlap_fail_loudly(self, scraper):
+        get, _ = _rest(per_page_override=2)
+
+        def overlapping(url, params=None, headers=None):
+            response = get(url, params=params, headers=headers)
+            if url.endswith("/posts") and params["page"] == 2:
+                response.json = Mock(return_value=POSTS[:2])
+            return response
+
+        with patch.object(scraper, "get_listing_page", side_effect=overlapping), pytest.raises(ListingIncompleteError, match="distinct items"):
+            scraper.collect_data()
 
     def test_an_empty_listing_fails_loudly(self, scraper):
         with pytest.raises(ListingIncompleteError, match="no dogs"):

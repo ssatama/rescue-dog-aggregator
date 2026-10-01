@@ -128,11 +128,21 @@ class HunderettungEuropaScraper(BaseScraper):
         return dogs
 
     def _get_all(self, route: str, params: dict) -> list[dict]:
-        """Every item of a REST route, all pages."""
+        """Every item of a REST route, all pages, in id order.
+
+        WordPress pages categories by name by default, and this site has many
+        with the same name ("Erwachsen" in the dog and the adopted tree), so
+        pages overlapped and skipped categories (2026-10-01). By id the order
+        is stable, and the items read must add up to X-WP-Total.
+        """
         items: list[dict] = []
         page = 1
         while True:
-            response = self.get_listing_page(f"{self.base_url}/wp-json/wp/v2/{route}", params={**params, "per_page": PER_PAGE, "page": page}, headers=HEADERS)
+            response = self.get_listing_page(
+                f"{self.base_url}/wp-json/wp/v2/{route}",
+                params={**params, "orderby": "id", "order": "asc", "per_page": PER_PAGE, "page": page},
+                headers=HEADERS,
+            )
             batch = response.json()
             stated = response.headers.get("X-WP-TotalPages")
             if stated is None:
@@ -143,57 +153,67 @@ class HunderettungEuropaScraper(BaseScraper):
                 raise ListingIncompleteError(f"{route} page {page} of {total_pages} is empty")
             items += batch
             if page >= total_pages:
+                total = int(response.headers.get("X-WP-Total", -1))
+                unique = len({item["id"] for item in items})
+                if unique != total:
+                    # Pages shifted while being read (an item added or removed, or an unstable order)
+                    raise ListingIncompleteError(f"{route}: read {unique} distinct items, the site says {total}")
                 return items
             if page == MAX_PAGES:
                 raise ListingIncompleteError(f"{route} still has pages after {MAX_PAGES}")
             page += 1
 
     def _categories(self) -> dict[str, Any]:
-        """The category IDs the scraper reads, found by slug and parent."""
-        everything = self._get_all("categories", {"_fields": "id,slug,parent"})
-        children: dict[int, dict[str, int]] = {}
-        for category in everything:
-            children.setdefault(category["parent"], {})[category["slug"]] = category["id"]
+        """The category IDs the scraper reads, looked up by slug in one request.
 
-        def child(parent: int, slug: str) -> int:
-            if slug not in children.get(parent, {}):
+        Nothing here is paged: the site orders its category listing its own way
+        (orderby is ignored) and ties made pages overlap and skip the root
+        (2026-10-01). Slugs are unique, each one's parent is checked, and the
+        listing asks WordPress for the child categories (federal states,
+        adopted subcategories) instead of walking the tree.
+        """
+        wanted = (DOG_ROOT, "aufenthaltsort", "rumaenien", "deutschland", ADOPTED, "groesse", "geschlecht", *SIZES, *SEXES)
+        found = {category["slug"]: category for category in self._get_all("categories", {"slug": ",".join(wanted), "_fields": "id,slug,parent"})}
+
+        def under(parent: int | None, slug: str) -> int | None:
+            category = found.get(slug)
+            return category["id"] if category and parent is not None and category["parent"] == parent else None
+
+        def required(parent: int | None, slug: str) -> int:
+            category = under(parent, slug)
+            if category is None:
                 raise ListingIncompleteError(f"No category {slug!r} under category {parent}: the site's dog categories changed")
-            return children[parent][slug]
-
-        def descendants(category: int) -> set[int]:
-            return {category}.union(*(descendants(sub) for sub in children.get(category, {}).values()))
+            return category
 
         def fallback(parent_slug: str, values: dict[str, str]) -> dict[int, str]:
             """A tree that only stands in for the page's text: one missing doesn't stop the run."""
-            parent = children.get(root, {}).get(parent_slug)
-            found = {children.get(parent, {}).get(slug): value for slug, value in values.items()}
-            if None in found or parent is None:
+            parent = under(root, parent_slug)
+            ids = {under(parent, slug): value for slug, value in values.items()}
+            if None in ids:
                 self.logger.warning(f"Category tree {parent_slug!r} changed; its categories no longer stand in for missing facts")
-            return {category: value for category, value in found.items() if category is not None}
+            return {category: value for category, value in ids.items() if category is not None}
 
-        root = child(0, DOG_ROOT)
-        location = child(root, "aufenthaltsort")
+        root = required(0, DOG_ROOT)
+        location = required(root, "aufenthaltsort")
         return {
-            "romania": child(location, "rumaenien"),
-            "germany": descendants(child(location, "deutschland")),
-            # WordPress excludes only the categories named, not their children
-            "adopted": descendants(child(0, ADOPTED)),
+            "romania": required(location, "rumaenien"),
+            "germany": required(location, "deutschland"),
+            "adopted": required(0, ADOPTED),
             "sizes": fallback("groesse", SIZES),
             "sexes": fallback("geschlecht", SEXES),
         }
 
     def _posts(self, categories: dict[str, Any]) -> list[dict]:
-        """The posts in Romania and every German location, without adopted dogs."""
-        locations = sorted({categories["romania"], *categories["germany"]})
+        """The posts in Romania, Germany or a German federal state, without adopted dogs."""
         posts = self._get_all(
             "posts",
             {
-                "categories": ",".join(map(str, locations)),
-                "categories_exclude": ",".join(map(str, sorted(categories["adopted"]))),
+                "categories[terms]": f"{categories['romania']},{categories['germany']}",
+                "categories[include_children]": "true",
+                # Happy-Ends Hunde and its subcategories
+                "categories_exclude[terms]": categories["adopted"],
+                "categories_exclude[include_children]": "true",
                 "_fields": "id,link,title,content,categories",
-                # Oldest first: a dog published while paging can't push another off a page
-                "orderby": "id",
-                "order": "asc",
             },
         )
         if not posts:
@@ -266,11 +286,12 @@ class HunderettungEuropaScraper(BaseScraper):
         return found.pop() if len(found) == 1 else None
 
     @staticmethod
-    def _location(in_categories: set[int], facts: dict[str, str], categories: dict[str, Any]) -> str | None:
-        """ "Viersen, Germany" for a foster dog, "Romania" for one in the shelter."""
-        if in_categories & categories["germany"]:
-            town = POSTCODE.sub("", _fact(facts, FOSTER_LABEL) or "").strip()
-            return f"{town}, Germany" if town else "Germany"
+    def _location(in_categories: set[int], facts: dict[str, str], categories: dict[str, Any]) -> str:
+        """ "Romania" for a dog in the shelter, "Viersen, Germany" for one in a foster home.
+
+        The listing holds only dogs filed under Rumänien or the Deutschland tree.
+        """
         if categories["romania"] in in_categories:
             return "Romania"
-        return None
+        town = POSTCODE.sub("", _fact(facts, FOSTER_LABEL) or "").strip()
+        return f"{town}, Germany" if town else "Germany"
