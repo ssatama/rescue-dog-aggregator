@@ -13,9 +13,10 @@ file is deleted.
 | --- | --- | --- |
 | #689 | Scraper (WordPress REST API) and disabled org config | merged (#693) |
 | #691 | Site copy and country data (Romania) | #694, merges once the rescue is enabled |
+| #696 | Dog page hides energy/experience the profile only guessed | merged (#697) |
 | #692 | Rollout up to the first production sync (gives the org its ID) | done: org ID 30, 2026-10-01 |
-| #690 | LLM prompt (German to English) and logo | this PR |
-| #692 | Enable, first scrape, LLM batch, Chrome check, runbook | |
+| #690 | LLM prompt (German to English) and logo | merged (#695) |
+| #692 | Enable, first scrape, LLM batch, Chrome check, runbook | enabled in this PR |
 
 ## Why this rescue
 

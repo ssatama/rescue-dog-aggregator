@@ -21,7 +21,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 ## Status
 
 - Site live at www.rescuedogs.me
-- ~1,400 active dogs from 11 organizations (2026-09-26)
+- ~1,400 active dogs from 12 organizations (2026-10-01)
 - Deployment: Vercel (frontend), Railway (backend + PostgreSQL + cron)
 - Scrapers: Railway cron (Mon/Thu/Sat 3pm UTC)
 - Traffic: 20+ daily users, growing steadily
@@ -112,7 +112,7 @@ frontend/         # Next.js 16 App Router
 ├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
 ├── components/   # UI components organized by feature (23 dirs)
 tests/            # Backend tests with fixtures
-configs/          # Organization YAMLs (13 active, 12 LLM-enabled)
+configs/          # Organization YAMLs (14: 12 enabled, 11 of them LLM-profiled)
 migrations/railway/  # Alembic migrations for production
 management/       # CLI tools (11 scripts)
 docs/
