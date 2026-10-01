@@ -1,5 +1,7 @@
 import type { Dog } from "@/types/dog";
 import { formatCurrentAge } from "@/utils/dogHelpers";
+import { dogCountry, dogLocation } from "@/utils/dogFacts";
+import { getCountryName, normalizeCountryCode } from "@/utils/countryNames";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.rescuedogs.me";
@@ -101,42 +103,15 @@ export const generatePetSchema = (dog: DogForSchema | null | undefined): Record<
     return undefined;
   };
 
-  const buildLocation = (): Record<string, unknown> | undefined => {
-    if (!dog.organization) return undefined;
-
-    const location: Record<string, unknown> = {
-      "@type": "Place",
-      name: dog.organization.name,
-    };
-
-    if (dog.organization.city || dog.organization.country) {
-      const address: Record<string, string> = {
-        "@type": "PostalAddress",
-      };
-
-      if (dog.organization.city) {
-        address.addressLocality = dog.organization.city;
-      }
-
-      if (dog.organization.country) {
-        address.addressCountry = dog.organization.country;
-      }
-
-      location.address = address;
-    }
-
-    return location;
-  };
-
+  // Where the dog is ("Baeza, Spain", "Berlin, Germany"), not where its rescue is (#702)
   const buildLocationString = (): string | undefined => {
-    if (!dog.organization) return undefined;
-
-    const locationParts = [
-      dog.organization.city,
-      dog.organization.country,
-    ].filter(Boolean);
-
-    return locationParts.length > 0 ? locationParts.join(", ") : undefined;
+    const place = dogLocation(dog);
+    const code = dogCountry(dog);
+    const country = code ? getCountryName(code) : null;
+    if (place && country && normalizeCountryCode(place.split(",").pop()?.trim()) !== normalizeCountryCode(code)) {
+      return `${place}, ${country}`;
+    }
+    return place ?? country ?? undefined;
   };
 
   const buildName = (): string => {

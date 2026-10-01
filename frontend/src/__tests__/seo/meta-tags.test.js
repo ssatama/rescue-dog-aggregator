@@ -22,6 +22,21 @@ describe("SEO Meta Tags", () => {
   });
 
   describe("Dog Detail Page Meta Tags", () => {
+    test("leaves the country out of the title when the dog's is unknown (#702)", async () => {
+      getAnimalBySlug.mockResolvedValue({
+        id: 2,
+        slug: "luna-2",
+        name: "Luna",
+        standardized_breed: "Mixed Breed",
+        properties: {},
+        organization: { name: "MISIs Rescue", city: "Belgrade", country: "RS" },
+      });
+
+      const metadata = await generateDogMetadata({ params: { slug: "luna-2" } });
+
+      expect(metadata.title).toBe("Luna, Mixed Breed for Adoption");
+    });
+
     test("should generate meta tags for dog detail page", async () => {
       const mockDog = {
         id: 1,
@@ -31,10 +46,11 @@ describe("SEO Meta Tags", () => {
         primary_image_url: "https://example.com/buddy.jpg",
         description:
           "A friendly dog looking for a loving home with lots of space to run and play. This beautiful and energetic dog loves to fetch, go on long walks, and spend time with families. Would be perfect for an active household with children who can provide the attention and exercise this wonderful companion deserves.",
+        properties: { display_location: "Romania", location_country: "RO" },
         organization: {
           name: "Happy Paws Rescue",
-          city: "San Francisco",
-          country: "USA",
+          city: "Viersen",
+          country: "DE",
         },
       };
 
@@ -44,8 +60,9 @@ describe("SEO Meta Tags", () => {
         params: { slug: "buddy-labrador-retriever-1" },
       });
 
-      // Name, breed and location first, no site suffix, within 65 characters (#444)
-      expect(metadata.title).toBe("Buddy, Labrador Retriever for Adoption in USA");
+      // Name, breed and location first, no site suffix, within 65 characters (#444);
+      // the country the dog is in, not where its rescue is (#702)
+      expect(metadata.title).toBe("Buddy, Labrador Retriever for Adoption in Romania");
       // The real description, clamped to one line of at most 160 characters
       expect(metadata.description.length).toBeLessThanOrEqual(160);
       expect(metadata.description).not.toMatch(/\n/);

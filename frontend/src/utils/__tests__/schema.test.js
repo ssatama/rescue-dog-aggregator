@@ -26,11 +26,13 @@ describe("Schema.org Pet Markup", () => {
     description: "Friendly dog looking for a loving home.",
     properties: {
       description: "Very active and loves playing fetch.",
+      display_location: "Baeza, Spain",
+      location_country: "ES",
     },
     organization: {
       name: "Happy Paws Rescue",
-      city: "San Francisco",
-      country: "USA",
+      city: "Bühl",
+      country: "DE",
       website_url: "https://happypaws.org",
     },
   };
@@ -59,9 +61,21 @@ describe("Schema.org Pet Markup", () => {
         description,
         image: "https://images.rescuedogs.me/buddy.jpg",
         disambiguatingDescription:
-          "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+          "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: Baeza, Spain",
       },
     });
+  });
+
+  test.each([
+    [{ display_location: "Berlin", location_country: "DE" }, "Berlin, Germany"],
+    [{ location_country: "BG" }, "Bulgaria"],
+    [{ display_location: "UK", location_country: "UK" }, "UK"],
+    [{}, undefined],
+  ])("says where the dog is, not where its rescue is (#702): %o", (properties, location) => {
+    const schema = generatePetSchema({ ...mockDog, properties });
+    const line = schema.about.disambiguatingDescription;
+
+    expect(line.match(/Location: (.*)$/)?.[1]).toBe(location);
   });
 
   test("should handle missing optional fields gracefully", () => {

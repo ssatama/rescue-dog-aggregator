@@ -5,17 +5,18 @@ import CountriesHubClient from "./CountriesHubClient";
 import Layout from "@/components/layout/Layout";
 import CountryStructuredData from "@/components/countries/CountryStructuredData";
 import { getCountryStats, getListCounts } from "@/services/serverAnimalsService";
+import { getCountryPageStats } from "@/utils/countryData";
 
 export const revalidate = 604800;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const stats = await getCountryStats();
+  const stats = getCountryPageStats(await getCountryStats());
   const totalDogs = stats?.total || 4600;
   const countryCount = stats?.countries?.length || 8;
 
   return {
     title: `Rescue Dogs by Country | ${formatCount(totalDogs)} Dogs Across ${countryCount} Countries`,
-    description: clampDescription(`Find rescue dogs by location. Browse ${formatCount(totalDogs)} dogs from ${countryCount} European countries. Pick a country to see its dogs.`),
+    description: clampDescription(`Find rescue dogs by where they are now. Browse ${formatCount(totalDogs)} dogs in ${countryCount} European countries. Pick a country to see its dogs.`),
     keywords:
       "rescue dogs by country, European rescue dogs, dogs from abroad, international dog adoption, rescue dogs UK, rescue dogs Germany",
     alternates: {
@@ -23,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     openGraph: {
       title: "Rescue Dogs by Country",
-      description: `Browse ${formatCount(totalDogs)} rescue dogs from ${countryCount} European countries`,
+      description: `Browse ${formatCount(totalDogs)} rescue dogs in ${countryCount} European countries`,
       type: "website",
       images: ["/og-image.png"],
     },
@@ -31,7 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CountriesPage(): Promise<React.JSX.Element> {
-  const [countryStats, allCounts] = await Promise.all([getCountryStats(), getListCounts({})]);
+  const [allStats, allCounts] = await Promise.all([getCountryStats(), getListCounts({})]);
+  // Only countries with a page: enough dogs, and a known country for each (#702)
+  const countryStats = getCountryPageStats(allStats);
 
   return (
     <Layout>

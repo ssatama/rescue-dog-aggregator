@@ -10,7 +10,7 @@ export default function CountryStructuredData(props: CountryStructuredDataProps)
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: "Rescue Dogs by Country",
-      description: `Browse ${stats.total || 4600} rescue dogs from ${stats.countries?.length || 8} European countries`,
+      description: `Browse ${stats.total || 4600} rescue dogs in ${stats.countries?.length || 8} European countries`,
       url: `${baseUrl}/dogs/country`,
       numberOfItems: stats.countries?.length || 8,
       mainEntity: {

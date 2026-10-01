@@ -18,11 +18,12 @@ describe("DogSchema Component", () => {
     age_max_months: 48,
     primary_image_url: "https://images.rescuedogs.me/buddy.jpg",
     description: "Friendly dog looking for a loving home.",
+    properties: { display_location: "Snetterton, Norfolk", location_country: "UK" },
     organization: {
       name: "Happy Paws Rescue",
       website_url: "https://happypaws.org",
-      city: "San Francisco",
-      country: "USA",
+      city: "London",
+      country: "UK",
     },
   };
 
@@ -85,7 +86,7 @@ describe("DogSchema Component", () => {
 
     // additionalProperty isn't valid on Thing, so the facts are one disambiguating line (#443)
     expect(schema.about.disambiguatingDescription).toBe(
-      "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: San Francisco, USA",
+      "Age: 3 years, Breed: Labrador Retriever, Gender: Male, Location: Snetterton, Norfolk, United Kingdom",
     );
   });
 

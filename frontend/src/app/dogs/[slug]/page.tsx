@@ -15,7 +15,7 @@ import { prioritizeDogsForStaticParams } from "./prioritizeDogsForStaticParams";
 import { getIndexableBreeds } from "@/utils/indexableBreeds";
 import { clampDescription, clampTitle } from "@/utils/seoMeta";
 import { getCountryName } from "@/utils/countryNames";
-import { pickSimilarDogs, similarDogsQuery, SIMILAR_CANDIDATES } from "@/utils/dogFacts";
+import { dogCountry, pickSimilarDogs, similarDogsQuery, SIMILAR_CANDIDATES } from "@/utils/dogFacts";
 
 const STATIC_PARAMS_LIMIT = 500;
 
@@ -59,10 +59,10 @@ export async function generateMetadata(props: DogDetailPageProps): Promise<Metad
     // characters, and the suffix used to push every dog page over (#444)
     const breedLabel = dog.standardized_breed || dog.breed;
     const breedText = breedLabel && breedLabel.toLowerCase() !== "unknown" ? breedLabel : "Rescue Dog";
-    const country = dog.organization?.country ? getCountryName(dog.organization.country) : null;
-    const title = clampTitle(
-      `${dog.name || "Rescue Dog"}, ${breedText} for Adoption${country && country !== "Unknown" ? ` in ${country}` : ""}`,
-    );
+    // Where the dog is, not where its rescue is; left out when nothing says (#702)
+    const countryCode = dogCountry(dog);
+    const country = countryCode ? getCountryName(countryCode) : null;
+    const title = clampTitle(`${dog.name || "Rescue Dog"}, ${breedText} for Adoption${country ? ` in ${country}` : ""}`);
 
     const seoDescription = generateSEODescription(dog);
 

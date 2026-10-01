@@ -9,8 +9,9 @@ Site: https://www.rescuedogs.me
 Source: https://github.com/ssatama/rescue-dog-aggregator (open source, MIT)
 
 Roughly 1,400 dogs from 12 organizations across 96 breeds. The rescues are
-based in the UK, Germany, Serbia, Bulgaria, Bosnia, Turkey and Cyprus, and many
-of their dogs wait in Romania.
+based in the UK, Germany, Serbia, Bulgaria, Bosnia, Turkey and Cyprus. Their
+dogs are mostly in the UK, Romania, Spain and Germany, and also in Bulgaria,
+Bosnia, Cyprus, North Macedonia, Turkey and Portugal.
 
 Adoption destinations vary a lot by organization and this matters: half the
 organizations rehome to a single country, and the two largest (Dogs Trust and
@@ -76,11 +77,12 @@ MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 - `/dogs/{slug}`: individual dog profile
 - [/dogs/puppies](https://www.rescuedogs.me/dogs/puppies): puppies
 - [/dogs/senior](https://www.rescuedogs.me/dogs/senior): senior dogs
-- `/dogs/country/{code}`: dogs from the rescues based in a country. This is
-  a filter on where the rescue is, not on where the dog is or where it can be
-  adopted, and only countries that currently have dogs have a page; /dogs/country lists
-  them. For "can I adopt to X", use the API's `available_to_country` filter
-  instead.
+- `/dogs/country/{code}`: dogs currently in a country, wherever their rescue
+  is based. This is a filter on where the dog is, not on where it can be
+  adopted. Only countries with at least 10 dogs have a page; /dogs/country
+  lists them. Dogs whose rescue doesn't say where they are (most of MISIs')
+  are on no country page. For "can I adopt to X", use the API's
+  `available_to_country` filter instead.
 - [/breeds](https://www.rescuedogs.me/breeds): breeds with availability
 - `/breeds/{slug}`: a specific breed
 - [/organizations](https://www.rescuedogs.me/organizations): rescue organizations

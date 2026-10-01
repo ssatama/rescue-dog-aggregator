@@ -31,6 +31,8 @@ interface DogData {
   primary_image_url?: string;
   properties?: {
     description?: string;
+    display_location?: string;
+    location_country?: string;
   };
   organization?: Organization;
 }
