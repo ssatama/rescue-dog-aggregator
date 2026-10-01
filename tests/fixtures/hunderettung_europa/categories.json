@@ -1,0 +1,752 @@
+[
+ {
+  "id": 195,
+  "name": "Senior",
+  "slug": "senior-alter-katzen-zuhause-gefunden",
+  "parent": 192
+ },
+ {
+  "id": 495,
+  "name": "05 - 09 kg",
+  "slug": "05-09-kg",
+  "parent": 494
+ },
+ {
+  "id": 196,
+  "name": "Besonderheiten",
+  "slug": "besonderheiten-katzen-zuhause-gefunden",
+  "parent": 188
+ },
+ {
+  "id": 496,
+  "name": "10 - 14 kg",
+  "slug": "10-14-kg",
+  "parent": 494
+ },
+ {
+  "id": 197,
+  "name": "Gnadenplatz",
+  "slug": "gnadenplatz-besonderheiten-katzen-zuhause-gefunden",
+  "parent": 196
+ },
+ {
+  "id": 497,
+  "name": "15 - 19 kg",
+  "slug": "15-19-kg",
+  "parent": 494
+ },
+ {
+  "id": 198,
+  "name": "Handicap",
+  "slug": "handicap-besonderheiten-katzen-zuhause-gefunden",
+  "parent": 196
+ },
+ {
+  "id": 498,
+  "name": "20 - 24 kg",
+  "slug": "20-24-kg",
+  "parent": 494
+ },
+ {
+  "id": 199,
+  "name": "Herkunft",
+  "slug": "herkunft-katzen-zuhause-gefunden",
+  "parent": 188
+ },
+ {
+  "id": 499,
+  "name": "25 - 29 kg",
+  "slug": "25-29-kg",
+  "parent": 494
+ },
+ {
+  "id": 200,
+  "name": "Deutschland/Pflegestelle",
+  "slug": "deutschland-pflegestelle-herkunft-katzen-zuhause-gefunden",
+  "parent": 199
+ },
+ {
+  "id": 500,
+  "name": "30 - 34 kg",
+  "slug": "30-34-kg",
+  "parent": 494
+ },
+ {
+  "id": 201,
+  "name": "Rumänien",
+  "slug": "rumaenien-herkunft-katzen-zuhause-gefunden",
+  "parent": 199
+ },
+ {
+  "id": 501,
+  "name": "35 - 39 kg",
+  "slug": "35-39-kg",
+  "parent": 494
+ },
+ {
+  "id": 205,
+  "name": "Neue Happy-End-Geschichte",
+  "slug": "neu-katzen-zuhause-gefunden",
+  "parent": 188
+ },
+ {
+  "id": 502,
+  "name": "40 - 44 kg",
+  "slug": "40-44-kg",
+  "parent": 494
+ },
+ {
+  "id": 207,
+  "name": "Notfall",
+  "slug": "notfall",
+  "parent": 186
+ },
+ {
+  "id": 504,
+  "name": "45 - 49 kg",
+  "slug": "45-49-kg",
+  "parent": 494
+ },
+ {
+  "id": 188,
+  "name": "Zuhause gefunden (Katze)",
+  "slug": "katzen-zuhause-gefunden",
+  "parent": 0
+ },
+ {
+  "id": 208,
+  "name": "Rettungsaktion",
+  "slug": "rettung",
+  "parent": 186
+ },
+ {
+  "id": 505,
+  "name": "50 - 54 kg",
+  "slug": "50-54-kg",
+  "parent": 494
+ },
+ {
+  "id": 189,
+  "name": "Geschlecht",
+  "slug": "geschlecht-katzen-zuhause-gefunden",
+  "parent": 188
+ },
+ {
+  "id": 210,
+  "name": "Vermittlungsart",
+  "slug": "vermittlungsart",
+  "parent": 112
+ },
+ {
+  "id": 506,
+  "name": "Aktionen &amp; Kampagnen",
+  "slug": "aktionen-kampagnen",
+  "parent": 186
+ },
+ {
+  "id": 190,
+  "name": "Männlich",
+  "slug": "maennlich-geschlecht-katzen-zuhause-gefunden",
+  "parent": 189
+ },
+ {
+  "id": 211,
+  "name": "Nur mit/ zu Artgenossen",
+  "slug": "nur-mit-zu-artgenossen",
+  "parent": 210
+ },
+ {
+  "id": 507,
+  "name": "Über uns",
+  "slug": "ueber-uns",
+  "parent": 186
+ },
+ {
+  "id": 191,
+  "name": "Weiblich",
+  "slug": "weiblich-geschlecht-katzen-zuhause-gefunden",
+  "parent": 189
+ },
+ {
+  "id": 213,
+  "name": "Pressemitteilung",
+  "slug": "pressemitteilung",
+  "parent": 0
+ },
+ {
+  "id": 523,
+  "name": "Tierschutz-Wissen",
+  "slug": "tierschutz-wissen",
+  "parent": 186
+ },
+ {
+  "id": 192,
+  "name": "Alter",
+  "slug": "alter-katzen-zuhause-gefunden",
+  "parent": 188
+ },
+ {
+  "id": 450,
+  "name": "Deine Spendenaktion",
+  "slug": "deine-spendenaktion",
+  "parent": 0
+ },
+ {
+  "id": 193,
+  "name": "Kitten/Jungtier",
+  "slug": "kitten-jungtier-alter-katzen-zuhause-gefunden",
+  "parent": 192
+ },
+ {
+  "id": 464,
+  "name": "Paws and People",
+  "slug": "paws-and-people",
+  "parent": 186
+ },
+ {
+  "id": 194,
+  "name": "Erwachsen",
+  "slug": "erwachsen-alter-katzen-zuhause-gefunden",
+  "parent": 192
+ },
+ {
+  "id": 494,
+  "name": "Gewicht",
+  "slug": "gewicht",
+  "parent": 75
+ },
+ {
+  "id": 141,
+  "name": "Weiblich",
+  "slug": "weiblich-geschlecht-katzenkategorien",
+  "parent": 140
+ },
+ {
+  "id": 109,
+  "name": "Klein",
+  "slug": "klein",
+  "parent": 108
+ },
+ {
+  "id": 162,
+  "name": "Weiblich",
+  "slug": "weiblich-geschlecht-zuhause-gefunden",
+  "parent": 160
+ },
+ {
+  "id": 75,
+  "name": "---Hundekategorien---",
+  "slug": "hundekategorien",
+  "parent": 0
+ },
+ {
+  "id": 143,
+  "name": "Haltungsart",
+  "slug": "haltungsart",
+  "parent": 112
+ },
+ {
+  "id": 79,
+  "name": "Welpe/ Junghund",
+  "slug": "welpe-junghund",
+  "parent": 78
+ },
+ {
+  "id": 146,
+  "name": "Einzelhaltung",
+  "slug": "einzelhaltung",
+  "parent": 210
+ },
+ {
+  "id": 114,
+  "name": "Kitten/ Jungtier",
+  "slug": "kitten-jungtier",
+  "parent": 113
+ },
+ {
+  "id": 167,
+  "name": "Herdenschutzhund",
+  "slug": "herdenschutzhund",
+  "parent": 163
+ },
+ {
+  "id": 149,
+  "name": "Welpe/ Junghund",
+  "slug": "welpe-junghund-alter-zuhause-gefunden",
+  "parent": 148
+ },
+ {
+  "id": 186,
+  "name": "News bei Hunderettung Europa",
+  "slug": "news-bei-hunderettung-europa",
+  "parent": 0
+ },
+ {
+  "id": 187,
+  "name": "Tierheim in Rumänien",
+  "slug": "tierheim-in-rumaenien",
+  "parent": 186
+ },
+ {
+  "id": 85,
+  "name": "Deutschland",
+  "slug": "deutschland",
+  "parent": 82
+ },
+ {
+  "id": 134,
+  "name": "Katzen in Sachsen-Anhalt",
+  "slug": "sachsen-anhalt-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 86,
+  "name": "Baden-Württemberg",
+  "slug": "baden-wuerttemberg",
+  "parent": 85
+ },
+ {
+  "id": 120,
+  "name": "Katzen in Deutschland",
+  "slug": "deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 117
+ },
+ {
+  "id": 104,
+  "name": "Weiblich",
+  "slug": "weiblich",
+  "parent": 102
+ },
+ {
+  "id": 155,
+  "name": "Deutschland/ Pflegestelle",
+  "slug": "deutschland-pflegestelle",
+  "parent": 152
+ },
+ {
+  "id": 139,
+  "name": "Handicap",
+  "slug": "handicap-besonderheiten-deutschland-katzenkategorien",
+  "parent": 137
+ },
+ {
+  "id": 158,
+  "name": "Neue-Happy-End Geschichte",
+  "slug": "neue-happy-end-geschichte",
+  "parent": 36
+ },
+ {
+  "id": 107,
+  "name": "Handicap",
+  "slug": "handicap",
+  "parent": 105
+ },
+ {
+  "id": 160,
+  "name": "Geschlecht",
+  "slug": "geschlecht-zuhause-gefunden",
+  "parent": 36
+ },
+ {
+  "id": 161,
+  "name": "Männlich",
+  "slug": "maennlich-geschlecht-zuhause-gefunden",
+  "parent": 160
+ },
+ {
+  "id": 36,
+  "name": "Happy-Ends Hunde",
+  "slug": "happy-ends-hunde",
+  "parent": 0
+ },
+ {
+  "id": 142,
+  "name": "Männlich",
+  "slug": "maennlich-geschlecht-katzenkategorien",
+  "parent": 140
+ },
+ {
+  "id": 110,
+  "name": "Mittel",
+  "slug": "mittel",
+  "parent": 108
+ },
+ {
+  "id": 163,
+  "name": "Besonderheiten",
+  "slug": "besonderheiten-zuhause-gefunden",
+  "parent": 36
+ },
+ {
+  "id": 112,
+  "name": "---Katzenkategorien---",
+  "slug": "katzenkategorien",
+  "parent": 0
+ },
+ {
+  "id": 145,
+  "name": "Wohnungskatze",
+  "slug": "wohnungskatze",
+  "parent": 143
+ },
+ {
+  "id": 80,
+  "name": "Erwachsen",
+  "slug": "erwachsen",
+  "parent": 78
+ },
+ {
+  "id": 97,
+  "name": "Saarland",
+  "slug": "saarland",
+  "parent": 85
+ },
+ {
+  "id": 166,
+  "name": "Angsthund",
+  "slug": "angsthund",
+  "parent": 163
+ },
+ {
+  "id": 82,
+  "name": "Aufenthaltsort",
+  "slug": "aufenthaltsort",
+  "parent": 75
+ },
+ {
+  "id": 115,
+  "name": "Erwachsen",
+  "slug": "erwachsen-alter-katzenkategorien",
+  "parent": 113
+ },
+ {
+  "id": 83,
+  "name": "Rumänien",
+  "slug": "rumaenien",
+  "parent": 82
+ },
+ {
+  "id": 150,
+  "name": "Erwachsen",
+  "slug": "erwachsen-alter-zuhause-gefunden",
+  "parent": 148
+ },
+ {
+  "id": 103,
+  "name": "Männlich",
+  "slug": "maennlich",
+  "parent": 102
+ },
+ {
+  "id": 136,
+  "name": "Katzen in Thüringen",
+  "slug": "thueringen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 153,
+  "name": "Rumänien",
+  "slug": "rumaenien-herkunft",
+  "parent": 152
+ },
+ {
+  "id": 138,
+  "name": "Gnadenplatz",
+  "slug": "gnadenplatz-besonderheiten-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 137
+ },
+ {
+  "id": 106,
+  "name": "Gnadenplatz",
+  "slug": "gnadenplatz",
+  "parent": 105
+ },
+ {
+  "id": 140,
+  "name": "Geschlecht",
+  "slug": "geschlecht-katzenkategorien",
+  "parent": 112
+ },
+ {
+  "id": 1,
+  "name": "Allgemein",
+  "slug": "allgemein",
+  "parent": 0
+ },
+ {
+  "id": 78,
+  "name": "Alter",
+  "slug": "alter",
+  "parent": 75
+ },
+ {
+  "id": 111,
+  "name": "Groß",
+  "slug": "gross",
+  "parent": 108
+ },
+ {
+  "id": 144,
+  "name": "Freigänger",
+  "slug": "freigaenger",
+  "parent": 143
+ },
+ {
+  "id": 96,
+  "name": "Rheinland-Pfalz",
+  "slug": "rheinland-pfalz",
+  "parent": 85
+ },
+ {
+  "id": 165,
+  "name": "Gnadenplatz",
+  "slug": "gnadenplatz-besonderheiten-zuhause-gefunden",
+  "parent": 163
+ },
+ {
+  "id": 81,
+  "name": "Senior",
+  "slug": "senior",
+  "parent": 78
+ },
+ {
+  "id": 116,
+  "name": "Senior",
+  "slug": "senior-alter-katzenkategorien",
+  "parent": 113
+ },
+ {
+  "id": 151,
+  "name": "Senior",
+  "slug": "senior-alter-zuhause-gefunden",
+  "parent": 148
+ },
+ {
+  "id": 118,
+  "name": "Katzen in Rumänien",
+  "slug": "rumaenien-aufenthaltsort-katzenkategorien",
+  "parent": 117
+ },
+ {
+  "id": 135,
+  "name": "Katzen in Schleswig-Holstein",
+  "slug": "schleswig-holstein-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 137,
+  "name": "Besonderheiten",
+  "slug": "besonderheiten-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 112
+ },
+ {
+  "id": 156,
+  "name": "Tötungsstation",
+  "slug": "toetungsstation",
+  "parent": 152
+ },
+ {
+  "id": 95,
+  "name": "Nordrhein-Westfalen",
+  "slug": "nordrhein-westfalen",
+  "parent": 85
+ },
+ {
+  "id": 164,
+  "name": "Handicap",
+  "slug": "handicap-besonderheiten-zuhause-gefunden",
+  "parent": 163
+ },
+ {
+  "id": 133,
+  "name": "Katzen in Sachsen",
+  "slug": "sachsen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 152,
+  "name": "Herkunft",
+  "slug": "herkunft",
+  "parent": 36
+ },
+ {
+  "id": 108,
+  "name": "Größe",
+  "slug": "groesse",
+  "parent": 75
+ },
+ {
+  "id": 94,
+  "name": "Niedersachsen",
+  "slug": "niedersachsen",
+  "parent": 85
+ },
+ {
+  "id": 148,
+  "name": "Alter",
+  "slug": "alter-zuhause-gefunden",
+  "parent": 36
+ },
+ {
+  "id": 132,
+  "name": "Katzen in Saarland",
+  "slug": "saarland-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 117,
+  "name": "Aufenthaltsort",
+  "slug": "aufenthaltsort-katzenkategorien",
+  "parent": 112
+ },
+ {
+  "id": 105,
+  "name": "Besonderheiten",
+  "slug": "besonderheiten",
+  "parent": 75
+ },
+ {
+  "id": 93,
+  "name": "Mecklenburg-Vorpommern",
+  "slug": "mecklenburg-vorpommern",
+  "parent": 85
+ },
+ {
+  "id": 113,
+  "name": "Alter (Katze)",
+  "slug": "alter-katzenkategorien",
+  "parent": 112
+ },
+ {
+  "id": 131,
+  "name": "Katzen in Rheinland-Pfalz",
+  "slug": "rheinland-pfalz-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 102,
+  "name": "Geschlecht",
+  "slug": "geschlecht",
+  "parent": 75
+ },
+ {
+  "id": 92,
+  "name": "Hessen",
+  "slug": "hessen",
+  "parent": 85
+ },
+ {
+  "id": 130,
+  "name": "Katzen in Nordrhein-Westfalen",
+  "slug": "nordrhein-westfalen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 91,
+  "name": "Hamburg",
+  "slug": "hamburg",
+  "parent": 85
+ },
+ {
+  "id": 129,
+  "name": "Katzen in Niedersachsen",
+  "slug": "niedersachsen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 90,
+  "name": "Bremen",
+  "slug": "bremen",
+  "parent": 85
+ },
+ {
+  "id": 128,
+  "name": "Katzen in Mecklenburg-Vorpommern",
+  "slug": "mecklenburg-vorpommern-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 89,
+  "name": "Brandenburg",
+  "slug": "brandenburg",
+  "parent": 85
+ },
+ {
+  "id": 127,
+  "name": "Katzen in Hessen",
+  "slug": "hessen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 88,
+  "name": "Berlin",
+  "slug": "berlin",
+  "parent": 85
+ },
+ {
+  "id": 126,
+  "name": "Katzen in Hamburg",
+  "slug": "hamburg-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 87,
+  "name": "Bayern",
+  "slug": "bayern",
+  "parent": 85
+ },
+ {
+  "id": 125,
+  "name": "Katzen in Bremen",
+  "slug": "bremen-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 124,
+  "name": "Katzen in Brandenburg",
+  "slug": "brandenburg-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 98,
+  "name": "Sachsen",
+  "slug": "sachsen",
+  "parent": 85
+ },
+ {
+  "id": 101,
+  "name": "Thüringen",
+  "slug": "thueringen",
+  "parent": 85
+ },
+ {
+  "id": 123,
+  "name": "Katzen in Berlin",
+  "slug": "berlin-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 100,
+  "name": "Schleswig-Holstein",
+  "slug": "schleswig-holstein",
+  "parent": 85
+ },
+ {
+  "id": 122,
+  "name": "Katzen in Bayern",
+  "slug": "bayern-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 121,
+  "name": "Katzen in Baden-Württemberg",
+  "slug": "baden-wuerttemberg-deutschland-aufenthaltsort-katzenkategorien",
+  "parent": 120
+ },
+ {
+  "id": 99,
+  "name": "Sachsen-Anhalt",
+  "slug": "sachsen-anhalt",
+  "parent": 85
+ }
+]

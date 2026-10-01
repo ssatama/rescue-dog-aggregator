@@ -1,0 +1,30 @@
+schema_version: "1.0"
+id: "hunderettung-europa"
+name: "Hunderettung Europa e.V."
+enabled: false # Turned on in the rollout (#692)
+scraper:
+  class_name: "HunderettungEuropaScraper"
+  module: "scrapers.hunderettung_europa.dogs_scraper"
+  config:
+    rate_limit_delay: 2.5
+    max_retries: 3
+    timeout: 30
+    batch_size: 6
+    skip_existing_animals: true
+metadata:
+  website_url: "https://hunderettung-europa.de"
+  description: |
+    Hunderettung Europa e.V. is a registered non-profit animal welfare association in Duisburg, founded in 2019 and run by volunteers. It rescues dogs and cats from the streets and from killing stations, runs neutering campaigns and teaches animal welfare at events and in schools. Its main project is a partner shelter in Romania; it also supports shelters and campaigns in Bulgaria, Greece and Germany. Dogs wait for a home in the Romanian shelter or in foster homes across Germany, and every dog leaves vaccinated, microchipped, dewormed and, unless very young or very old, neutered.
+  location:
+    country: "DE" # Organization's base country
+    city: "Duisburg" # Organization's base city
+  service_regions: ["DE", "RO"]
+  # The countries the rescue names; others only if it confirms (#688)
+  ships_to: ["DE", "CH", "NL", "BE", "LU"]
+  social_media:
+    website: "https://hunderettung-europa.de"
+    facebook: "https://www.facebook.com/hunderettungeuropa/"
+    instagram: "https://www.instagram.com/hunderettungeuropa"
+    youtube: "https://www.youtube.com/@Hunderettungeuropa_e.V."
+    linkedin: "https://de.linkedin.com/company/hunderettung-europa"
+  established_year: 2019
