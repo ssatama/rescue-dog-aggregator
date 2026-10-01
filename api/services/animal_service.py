@@ -1512,7 +1512,7 @@ class AnimalService:
             params.append(filters.organization_id)
 
         if filters.location_country:
-            conditions.append("o.country = %s")
+            conditions.append("a.properties->>'location_country' = %s")
             params.append(filters.location_country)
 
         if filters.available_to_country:
@@ -1835,7 +1835,7 @@ class AnimalService:
             params.append(filters.breed_type)
 
         if filters.location_country:
-            conditions.append("o.country = %s")
+            conditions.append("a.properties->>'location_country' = %s")
             params.append(filters.location_country)
 
         if filters.organization_id:
@@ -2078,14 +2078,13 @@ class AnimalService:
                 conditions.append(age_condition)
 
         query = f"""
-            SELECT o.country, COUNT(*) as count
+            SELECT a.properties->>'location_country' AS country, COUNT(*) as count
             FROM animals a
             LEFT JOIN organizations o ON a.organization_id = o.id
             WHERE {" AND ".join(conditions)}
-              AND o.country IS NOT NULL
-              AND o.country != ''
-            GROUP BY o.country
-            ORDER BY o.country ASC
+              AND a.properties->>'location_country' IS NOT NULL
+            GROUP BY a.properties->>'location_country'
+            ORDER BY a.properties->>'location_country' ASC
         """
 
         self.cursor.execute(query, params)
