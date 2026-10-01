@@ -45,7 +45,7 @@ export async function generateMetadata(props: CountryPageProps): Promise<Metadat
 
   const countryStats = await getCountryStats();
   const count =
-    countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
+    countryStats?.countries?.find((c: { code: string }) => c.code.toUpperCase() === country.code)?.count || 0;
 
   return {
     title: `${formatCount(count)} Rescue Dogs in ${country.name} | Adopt from ${country.shortName}`,
@@ -91,7 +91,7 @@ export default async function CountryDogsPage(props: CountryPageProps): Promise<
   ]);
 
   const countryCount =
-    countryStats?.countries?.find((c: { code: string }) => c.code === country.code)?.count || 0;
+    countryStats?.countries?.find((c: { code: string }) => c.code.toUpperCase() === country.code)?.count || 0;
 
   // A country with too few dogs to fill a page has none (#702); it returns once it has enough
   // and the stats and this page revalidate (up to about a day) (#442). Only trust the count when the

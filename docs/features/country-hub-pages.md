@@ -31,7 +31,8 @@ is no fallback to the rescue's country.
 
 A country gets a page only with at least `MIN_DOGS_FOR_COUNTRY_PAGE` (10) dogs
 (`getCountriesWithDogs`): the same rule decides the sitemap entry, the chip,
-the hub card and the 404. Belgium (3) and Switzerland (1) have dogs but no page.
+the hub card and the 404. Only countries in `COUNTRIES` can have a page:
+Belgium and Switzerland, with a few dogs each, are not in it.
 
 ## Supported Countries
 
