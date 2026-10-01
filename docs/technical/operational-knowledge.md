@@ -485,9 +485,13 @@ post ids don't. Listing pages show only links, so each run asks the site's
 REST API for the listed slugs (`/wp-json/wp/v2/dog`, `/wp-json/wp/v2/pages`,
 50 slugs a request). A listed link the answer lacks (a renamed page WordPress
 redirects) is resolved from its page's `<body class>` (`postid-N`,
-`page-id-N`); only a page that 404s is skipped, with a warning and no failure
-count. Bosnia's listing links to a few such dead pages (Lexis, Avelina on
-2026-09-27). A failed REST request fails the listing (ListingIncompleteError).
+`page-id-N`); only a link with no page behind it is skipped, with a warning
+and no failure count: a 404, or a file. Bosnia's listing links to a few dead
+pages (Lexis, Avelina on 2026-09-27), and on 2026-10-01 its "More Info" for
+Lucky linked `/lucky/` while the page is `/lucky-8/`. A 2024 photo held the
+slug, so WordPress sent the link to `lucky.jpg`, which failed the whole run
+until #707 (Lucky stays off the site until the rescue fixes the link). A
+failed REST request fails the listing (ListingIncompleteError).
 Rows were re-keyed with `management/wordpress_rekey.py` (path first, then a
 unique slug, since Santer Paws moved its pages from `/adoption/` to `/dog/`),
 which also rewrites `adoption_url`: updates never refresh it.

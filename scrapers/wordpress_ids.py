@@ -5,7 +5,8 @@ ID WordPress gives the page never changes. Listing pages show only the link,
 so the IDs come from the site's REST API, looked up by the listed slugs. A
 listed link the answer doesn't hold (a renamed page WordPress redirects, a
 link spelled differently) is resolved from its page's <body class>; only a
-page that is really gone is skipped.
+link with no page behind it (a 404, or a file WordPress redirected it to) is
+skipped.
 """
 
 import re
@@ -20,6 +21,8 @@ from scrapers.request_pacing import ListingIncompleteError
 
 # postid-232 on a post (Santer Paws' dog pages), page-id-36251 on a page (Bosnia's)
 _BODY_ID = re.compile(r"(?:postid|page-id)-(\d+)")
+# Content types of a file, not a page: a listed link WordPress sent to an upload
+_FILE_TYPES = ("image/", "video/", "audio/", "application/pdf")
 # Slugs per REST request: keeps the query string short
 SLUGS_PER_REQUEST = 50
 
@@ -70,9 +73,9 @@ def key_on_post_ids(scraper: Any, animals: list[dict], *, route: str, url_of: Ca
     """Each listed dog with external_id "{prefix}{post id}", one per page.
 
     The REST answer keys the listed links; a link it doesn't hold is resolved
-    from its page. A page that is gone (404) is skipped with a warning: its dog
-    isn't listed any more, and nothing else can be counted for it. Any other
-    failure raises ListingIncompleteError, so stale detection doesn't run.
+    from its page. A link with no page behind it (a 404, or a file) is skipped
+    with a warning: nothing can be counted for its dog. Any other failure
+    raises ListingIncompleteError, so stale detection doesn't run.
     """
     unique: dict[str, dict] = {}
     for animal in animals:
@@ -106,9 +109,10 @@ def key_on_post_ids(scraper: Any, animals: list[dict], *, route: str, url_of: Ca
 def page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
     """The ID in a page's <body class>, or None if the page is gone.
 
-    Gone is a 404, or a link that leads to a file: Bosnia linked /lucky/, the
-    slug of a 2024 photo, and WordPress sent it to lucky.jpg. An HTML page
-    with no ID still raises.
+    Gone is a 404, or a link that leads to a file (an image, video, audio or
+    PDF): Bosnia linked /lucky/, the slug of a 2024 photo, and WordPress sent
+    it to lucky.jpg. Anything else without an ID, such as an HTML error page or
+    a firewall's JSON, still raises.
     """
     try:
         response = scraper.get_listing_page(url, headers=headers)
@@ -117,7 +121,7 @@ def page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
         if isinstance(cause, requests.HTTPError) and getattr(cause.response, "status_code", None) in (404, 410):
             return None
         raise
-    if "html" not in response.headers.get("Content-Type", "text/html"):
+    if (response.headers.get("Content-Type") or "").lower().startswith(_FILE_TYPES):
         return None
     post_id = body_post_id(BeautifulSoup(response.content, "html.parser"))
     if post_id is None:
