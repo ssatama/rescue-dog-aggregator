@@ -13,6 +13,8 @@ scraper:
     # The listing holds every dog's whole page, so re-reading costs no request;
     # dogs move from the shelter to foster homes and must not keep the old place (#688)
     skip_existing_animals: false
+    # Its site went down after the first run fetched ~1,000 photos at once (#692)
+    pace_photo_downloads: true
     enable_llm_profiling: true
     llm_organization_id: 30
 metadata:

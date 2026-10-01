@@ -91,6 +91,27 @@ class TestBaseScraperBatchUploads:
         assert len(call_args[0][0]) == 1  # First positional arg is animals_data
         assert call_args[1]["batch_size"] == 1  # batch_size should be 1 for single animal
 
+    @pytest.mark.parametrize("paced", [True, False])
+    def test_galleries_get_the_scrapers_request_clock_only_when_paced(self, mock_services, paced):
+        """pace_photo_downloads hands wait_for_request_slot to the gallery step (#692)."""
+        mock_services["config"].get_scraper_config_dict.return_value = {"rate_limit_delay": 0.1, "max_retries": 1, "timeout": 10, "pace_photo_downloads": paced}
+
+        class TestScraper(BaseScraper):
+            def collect_data(self):
+                return [{"name": "Test Dog", "external_id": "test-1", "adoption_url": "https://example.com/dog", "primary_image_url": "https://example.com/dog.jpg"}]
+
+        scraper = TestScraper(config_id="test")
+        scraper.image_processing_service = mock_services["image_service"]
+        scraper.database_service = MagicMock()
+        scraper.r2_service = mock_services["r2"]
+        scraper.progress_tracker = mock_services["progress_tracker"]
+
+        with patch.object(scraper, "save_animal", return_value=(1, "created")):
+            scraper._process_animals_data(scraper.collect_data())
+
+        pace = mock_services["image_service"].batch_process_galleries.call_args.kwargs["pace"]
+        assert pace == (scraper.wait_for_request_slot if paced else None)
+
     def test_batch_upload_for_small_dataset(self, mock_services):
         """Test that batch upload is used for small datasets (2-3 animals)."""
 

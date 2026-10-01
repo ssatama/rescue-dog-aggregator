@@ -326,3 +326,75 @@ def test_an_unusable_photo_is_skipped_and_the_gallery_still_saved():
     ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
 
     assert dog["images"] == [photo(HERO)]
+
+
+@pytest.mark.unit
+class TestPacedGalleries:
+    """A rescue whose site can't take a burst of photo requests (Hunderettung Europa, 2026-10-01)."""
+
+    def test_each_new_photo_waits_for_the_scrapers_request_slot_one_at_a_time(self):
+        sources = [HERO, "https://rescue.example/2.jpg", "https://rescue.example/3.jpg"]
+        events = []
+        r2 = Mock()
+        r2.upload_image_with_size.side_effect = lambda source, name, org: events.append(("fetch", source)) or photo(source)
+        dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": sources}
+
+        ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {}, pace=lambda: events.append(("wait", None)))
+
+        # One request in flight at a time, each after its slot
+        assert events == [event for source in sources for event in (("wait", None), ("fetch", source))]
+        assert [p["original_url"] for p in dog["images"]] == sources
+
+    def test_a_run_fetches_every_hero_before_any_second_photo_and_defers_the_rest(self):
+        dogs = [
+            {"name": f"Dog {i}", "primary_image_url": f"https://rescue.example/{i}/hero.jpg", "image_urls": [f"https://rescue.example/{i}/hero.jpg", f"https://rescue.example/{i}/2.jpg"]}
+            for i in range(3)
+        ]
+        service, r2 = service_uploading({source: photo(source) for dog in dogs for source in dog["image_urls"]})
+
+        with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 4):
+            service.batch_process_galleries(dogs, {}, pace=lambda: None)
+
+        fetched = [call.args[0] for call in r2.upload_image_with_size.call_args_list]
+        assert fetched == ["https://rescue.example/0/hero.jpg", "https://rescue.example/1/hero.jpg", "https://rescue.example/2/hero.jpg", "https://rescue.example/0/2.jpg"]
+        assert [len(dog["images"]) for dog in dogs] == [2, 1, 1]
+
+    def test_photos_a_gallery_never_keeps_dont_take_the_share(self):
+        """Past the 8th, never stored, so never known: they'd come first on every run."""
+        many = [f"https://rescue.example/a/{i}.jpg" for i in range(12)]
+        late = "https://rescue.example/b/hero.jpg"
+        dogs = [{"name": "A", "primary_image_url": many[0], "image_urls": many}, {"name": "B", "primary_image_url": late}]
+        service, r2 = service_uploading({source: photo(source) for source in [*many, late]})
+
+        service.batch_process_galleries(dogs, {}, pace=lambda: None)
+
+        fetched = [call.args[0] for call in r2.upload_image_with_size.call_args_list]
+        assert fetched[1] == late
+        assert not set(many[MAX_GALLERY_PHOTOS:]) & set(fetched)
+
+    def test_three_failures_in_a_row_stop_the_run_but_dead_links_dont(self):
+        sources = [f"https://rescue.example/{i}.jpg" for i in range(6)]
+        r2 = Mock()
+        # A dead link answers (unusable); a refused connection doesn't (None)
+        r2.upload_image_with_size.side_effect = [UNUSABLE_PHOTO, UNUSABLE_PHOTO, UNUSABLE_PHOTO, None, None, None]
+        dog = {"name": "Rex", "primary_image_url": sources[0], "image_urls": sources}
+
+        ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {}, pace=lambda: None)
+
+        assert r2.upload_image_with_size.call_count == 6
+        r2.upload_image_with_size.reset_mock(side_effect=True)
+        r2.upload_image_with_size.side_effect = [None, None, None, photo(sources[3])]
+
+        ImageProcessingService(r2_service=r2).batch_process_galleries([{**dog}], {}, pace=lambda: None)
+
+        assert r2.upload_image_with_size.call_count == 3
+
+    def test_without_pacing_nothing_changes(self):
+        sources = [f"https://rescue.example/{i}.jpg" for i in range(4)]
+        service, r2 = service_uploading({source: photo(source) for source in sources})
+        dog = {"name": "Rex", "primary_image_url": sources[0], "image_urls": sources}
+
+        with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 1):
+            service.batch_process_galleries([dog], {})
+
+        assert r2.upload_image_with_size.call_count == 4

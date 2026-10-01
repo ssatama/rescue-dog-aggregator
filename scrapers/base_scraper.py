@@ -94,6 +94,8 @@ class BaseScraper(DogSaving, StaleDetection, RunReporting, RequestPacing, ABC):
             self.retry_backoff_factor = scraper_config.get("retry_backoff_factor", 2.0)
             self.batch_size = scraper_config.get("batch_size", 6)
             self.skip_existing_animals = False if force_rescrape_enabled() else scraper_config.get("skip_existing_animals", False)
+            # Photos from the rescue's own site at its request rate, a share per run (#692)
+            self.pace_photo_downloads = scraper_config.get("pace_photo_downloads", False)
 
             # Set organization name from config
             self.organization_name = self.org_config.name

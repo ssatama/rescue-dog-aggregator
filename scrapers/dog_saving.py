@@ -207,7 +207,8 @@ class DogSaving:
                 # here leaves every dog's stored gallery as it is.
                 try:
                     stored_images = self.database_service.get_images_by_external_id(self.organization_id) if self.database_service else {}
-                    self.image_processing_service.batch_process_galleries(valid, stored_images, self.organization_name)
+                    pace = self.wait_for_request_slot if getattr(self, "pace_photo_downloads", False) else None
+                    self.image_processing_service.batch_process_galleries(valid, stored_images, self.organization_name, pace=pace)
                 except Exception as e:
                     self.logger.warning(f"Gallery processing failed; keeping stored galleries: {e}")
 

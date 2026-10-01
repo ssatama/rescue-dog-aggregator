@@ -14,6 +14,7 @@ Following CLAUDE.md principles:
 """
 
 import logging
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any
 
@@ -46,6 +47,11 @@ MAX_GALLERY_PHOTOS = 8
 MIN_GALLERY_SIDE = 300
 # Matches the R2 client's connection pool (max_pool_connections=5)
 GALLERY_UPLOAD_WORKERS = 5
+# A paced rescue's new photos per run, one at a time at its request rate: the
+# rest are fetched on later runs. Hunderettung Europa's site went down after
+# its first run fetched ~1,000 photos five at a time (2026-10-01).
+PACED_PHOTOS_PER_RUN = 150
+PACED_FAILURES_IN_A_ROW = 3
 
 
 def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) -> list[dict[str, Any]] | None:
@@ -92,6 +98,7 @@ class ImageProcessingService:
         animals_data: list[dict[str, Any]],
         stored_images: dict[str, list[dict[str, Any]]],
         organization_name: str = "unknown",
+        pace: Callable[[], None] | None = None,
     ) -> None:
         """Set each dog's `images` from its scraped source URLs, in one batch (in place).
 
@@ -102,6 +109,11 @@ class ImageProcessingService:
         changed one is rewritten, never appended. Every new photo across the
         run is uploaded once, in parallel. A dog with no usable photo gets no
         `images` key, and the stored one is kept.
+
+        With `pace` (the scraper's wait_for_request_slot, for a rescue whose
+        config sets pace_photo_downloads), photos are fetched one at a time,
+        each after its request slot, and at most PACED_PHOTOS_PER_RUN of them;
+        the others count as not fetched this run.
         """
         known: dict[str, dict[str, Any]] = {}
         for images in stored_images.values():
@@ -110,16 +122,30 @@ class ImageProcessingService:
                     known[photo["original_url"]] = photo
 
         pending: dict[str, str] = {}  # source URL -> dog name for the R2 key
-        for animal in animals_data:
-            for source in _gallery_sources(animal)[: MAX_GALLERY_PHOTOS * 2]:
-                if source not in known and source not in pending:
-                    pending[source] = animal.get("name") or "unknown"
+        if pace:
+            # Round-robin over the dogs, at most a gallery's worth each: every
+            # hero first, then every second photo. Photos a gallery never keeps
+            # (past the 8th, too small) are never "known", so in listing order
+            # they would take the whole paced share again on every run.
+            queues = [(animal.get("name") or "unknown", _gallery_sources(animal)[:MAX_GALLERY_PHOTOS]) for animal in animals_data]
+            for position in range(MAX_GALLERY_PHOTOS):
+                for name, sources in queues:
+                    if position < len(sources) and sources[position] not in known:
+                        pending.setdefault(sources[position], name)
+        else:
+            for animal in animals_data:
+                for source in _gallery_sources(animal)[: MAX_GALLERY_PHOTOS * 2]:
+                    if source not in known and source not in pending:
+                        pending[source] = animal.get("name") or "unknown"
 
         uploaded: dict[str, dict[str, Any] | None] = {}
         if pending and not self.r2_service.prepare_for_parallel_uploads():
             self.logger.info("R2 not configured; keeping stored galleries")
             return
-        if pending:
+        if pending and pace:
+            self.logger.info(f"🖼️ Paced: {min(len(pending), PACED_PHOTOS_PER_RUN)} of {len(pending)} new gallery photos this run")
+            uploaded.update(self._fetch_paced(list(pending.items()), pace, organization_name))
+        elif pending:
             self.logger.info(f"🖼️ Checking {len(pending)} new gallery photos ({len(known)} already stored)")
             with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:
                 futures = {pool.submit(self.r2_service.upload_image_with_size, source, name, organization_name): source for source, name in pending.items()}
@@ -130,6 +156,7 @@ class ImageProcessingService:
                         # One photo's failure must not cost the rest of the run
                         self.logger.warning(f"Gallery photo {futures[future]} failed: {e}")
                         uploaded[futures[future]] = None
+        if pending:
             stored = sum(1 for photo in uploaded.values() if photo)
             self.logger.info(f"🖼️ Gallery photos stored: {stored}/{len(pending)}")
 
@@ -149,6 +176,30 @@ class ImageProcessingService:
             images = build_gallery(sources, photos)
             if images is not None:
                 animal["images"] = images
+
+    def _fetch_paced(self, pending: list[tuple[str, str]], pace: Callable[[], None], organization_name: str) -> dict[str, dict[str, Any] | None]:
+        """Photos one at a time, each after its request slot, at most PACED_PHOTOS_PER_RUN.
+
+        Stops after PACED_FAILURES_IN_A_ROW failures in a row: a site that
+        has started refusing us gets a few requests, not the whole share.
+        Whatever isn't fetched counts as not fetched (None) and comes next run.
+        """
+        results: dict[str, dict[str, Any] | None] = dict.fromkeys(source for source, _ in pending)
+        failures = 0
+        for source, name in pending[:PACED_PHOTOS_PER_RUN]:
+            pace()
+            try:
+                photo = self.r2_service.upload_image_with_size(source, name, organization_name)
+            except Exception as e:
+                self.logger.warning(f"Gallery photo {source} failed: {e}")
+                photo = None
+            results[source] = photo
+            # A dead link (UNUSABLE_PHOTO) answered; only no answer counts
+            failures = failures + 1 if photo is None else 0
+            if failures >= PACED_FAILURES_IN_A_ROW:
+                self.logger.warning(f"🖼️ {failures} gallery photos failed in a row; leaving the rest for a later run")
+                break
+        return results
 
     def process_primary_image(
         self,
