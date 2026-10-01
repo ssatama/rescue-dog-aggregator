@@ -229,16 +229,22 @@ class HunderettungEuropaScraper(BaseScraper):
             raise ValueError('no facts block ("Geschlecht: …") above the story')
         in_categories = set(post["categories"])
         stated_birth = facts.get("Geschätztes Alter")
+        if stated_birth and not parse_birth_date(stated_birth):
+            self.logger.warning(f"{post['link']}: no birth date in {stated_birth!r}; saved without an age")
+        title = BeautifulSoup(post["title"]["rendered"], "html.parser").get_text().strip()
+        name = FOSTER_PREFIX.sub("", title)
         sex = (facts.get("Geschlecht") or "").lower()
         properties = {
             **facts,
             "description": "\n".join(story) or None,
             "location": self._location(in_categories, facts, categories),
             "language": "de",
+            # The validator's name cleaner keeps this when it changes a name; the foster prefix goes here
+            **({"raw_name": title} if name != title else {}),
         }
         return {
             "external_id": f"hre-{post['id']}",
-            "name": FOSTER_PREFIX.sub("", BeautifulSoup(post["title"]["rendered"], "html.parser").get_text()).strip(),
+            "name": name,
             "adoption_url": post["link"],
             "primary_image_url": photos[0] if photos else None,
             "original_image_url": photos[0] if photos else None,

@@ -111,6 +111,7 @@ class TestDogs:
 
         # "Pflegehund Tindra" on the site
         assert tindra["external_id"] == "hre-115387"
+        assert tindra["properties"]["raw_name"] == "Pflegehund Tindra"
         assert tindra["properties"]["location"] == "Blankenhof, Germany"
         assert tindra["size"] == "Medium"
         assert tindra["age_text"] == "05/2025"

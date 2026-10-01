@@ -83,6 +83,7 @@ def _plan_reslug(records: list[dict[str, Any]]) -> list[Change]:
 DOB_SOURCES = {
     "animalrescuebosnia": "a.properties->>'date_of_birth'",
     "daisyfamilyrescue": "a.age_text",
+    "hunderettung-europa": "a.properties->>'Geschätztes Alter'",
     "pets-in-turkey": "a.properties->>'birth_date'",
     "santerpawsbulgarianrescue": "a.properties->>'age_text'",
     "tierschutzverein-europa": "a.properties->>'Geburtstag'",
