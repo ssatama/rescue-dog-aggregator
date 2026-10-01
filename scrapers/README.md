@@ -30,6 +30,10 @@ scraper = MyScraper(
 
 ## Adding a New Scraper
 
+The end-to-end path for a new rescue (checks, disabled config, the cron's
+module whitelist, rollout) is `docs/technical/scraper-architecture.md`,
+"Adding a New Rescue". The notes below cover only the code.
+
 ### 1. Create Configuration
 
 ```yaml

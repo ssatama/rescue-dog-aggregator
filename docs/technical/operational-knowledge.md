@@ -396,6 +396,38 @@ label and keeps it. `formatBreed` must show `standardized_breed`.
 recompute on the next scrape, so no backfill; run `breed_commands.py
 reconcile` against production text before trusting a resolver change.
 
+**Hunderettung Europa quirks** (WordPress, added 2026-10-01, #688).
+- The site ignores `orderby` on `/wp-json/wp/v2/categories` (`id`, `slug`
+  and `count` all came back in the same unsorted order, probably a
+  term-ordering plugin), so pages of the category list overlap and skip
+  entries. The first production scrape (2026-10-01 10:52 UTC) failed on it
+  with "No category 'hundekategorien'" and saved nothing; the scraper now
+  looks categories up by slug in one request (#699). Posts do honour
+  `orderby=id`.
+- `categories=83,85` misses dogs filed only under a federal state; the
+  scraper uses `categories[include_children]=true`.
+- **Its firewall bans an IP that fetches too many photos.** The second
+  first-scrape (11:06-11:32 UTC, scrape log 2328: 150 dogs added, 149
+  profiled, every hero on R2) then fetched ~900 gallery photos five at a
+  time with no pacing, as every rescue's galleries are. From 11:09 the site
+  stopped answering the laptop (371 gallery photos failed; 116 dogs kept
+  only their hero) while it still worked for visitors on a phone. Since
+  #700 the rescue sets `pace_photo_downloads: true`: new gallery photos come
+  one at a time on the scraper's request clock, at most 150 a run, every
+  hero first, stopping after 3 failures in a row; the rest fill in over
+  later runs. Run nothing against the site from a banned machine; the cron
+  runs from Railway's IPs.
+- Pages keep the editors' template in Elementor containers hidden on all
+  devices, a few on desktop only; stock photos live under
+  `/wp-content/uploads/2023/11/template-*`.
+- About a quarter of the stories are only the rescue's template (new
+  arrivals, litters). Their profiles are short, and their energy and
+  experience are scored low, so the dog page leaves them out (#696).
+- Profiles leave out where the dog is, its age in numbers and how long it
+  has waited (the prompt says why): they are written once and the dogs move.
+- Gnadenplatz dogs are seniors up for adoption with a waived fee; the prompt
+  keeps the fee and vet costs out.
+
 **Dogs Trust quirks.**
 - `_extract_description` uses `h2.find_next("p")`, which walks past the
   section: 385 of 512 dogs got "Everything you need to know about <breed>"
@@ -533,6 +565,30 @@ Model and cost details are in AGENTS.md. Operational points:
   reappear. `pnpm dev` pins `NODE_ENV=development` because any other value
   makes it add `.next/dev/dev/types` to `tsconfig.json`. Stage files by name,
   never `git add -A`, after running it.
+
+## Rescue candidates
+
+Checked on 2026-10-01 when Hunderettung Europa was chosen from 14 European
+candidates (UK-only rescues excluded, current rescues skipped). For the next
+rescue, start here; how to check one is in
+`docs/technical/scraper-architecture.md`, "Adding a New Rescue".
+
+| Rescue | Dogs | Adopts to | Notes |
+|---|---|---|---|
+| ROLDA (sponsoradog.rolda.org) | 59 free + 89 reserved | SE, CH, NO, DE, UK | Best structured data (WordPress ACF JSON, English) |
+| Scooby Medina (uonline.it/scooby) | 83 | Europe via partner groups | Structured compatibility ratings; no per-dog URL found |
+| Animal Care Austria | ~350 | AT (handover at the Hungarian border) | Thin profiles |
+| Hope for Dogs Europe | ~126 | NL, BE, DE, AT | Thin profiles |
+| Fundación Benjamín Mehnert | 73 | Spain/Europe | Spanish-only stories |
+| Every Dog Matters EU | ~50 | DE, BE, FR | Small |
+
+Rejected: SOS Dogs Romania (`crawl-delay: 60`), Sochi Dogs (dogs mixed into
+Squarespace blog posts), Takis Shelter (in-person only), Tierhilfe
+Hoffnung/Smeura (rehomes only via partners), DASH (8 dogs), Save a Dog
+Romania (29).
+
+Hunderettung Europa's `ships_to` is only the countries it names (DE, CH, NL,
+BE, LU); add Austria, France, Denmark, Poland or Czechia only if it confirms.
 
 ## Tools and accounts
 
