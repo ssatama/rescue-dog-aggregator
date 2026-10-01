@@ -108,6 +108,11 @@ class TestDogs:
         assert all("/template-" not in url for url in molly["image_urls"])
         assert len(molly["image_urls"]) == len(set(molly["image_urls"])) == 5
 
+    def test_the_foster_town_wins_over_a_leftover_romania_category(self, scraper):
+        tindra = {**POSTS[3], "categories": [*POSTS[3]["categories"], 83]}
+
+        assert _collect(scraper, posts=[tindra])[0]["Tindra"]["properties"]["location"] == "Blankenhof, Germany"
+
     def test_a_foster_dog(self, scraper):
         tindra = _collect(scraper)[0]["Tindra"]
 
@@ -219,6 +224,19 @@ class TestListing:
             return response
 
         with patch.object(scraper, "get_listing_page", side_effect=overlapping), pytest.raises(ListingIncompleteError, match="distinct items"):
+            scraper.collect_data()
+
+    def test_a_total_that_changes_between_pages_fails_loudly(self, scraper):
+        """A dog removed mid-run shifts the later pages: one present dog would go unread."""
+        get, _ = _rest(per_page_override=2)
+
+        def shrinking(url, params=None, headers=None):
+            response = get(url, params=params, headers=headers)
+            if url.endswith("/posts") and params["page"] == 2:
+                response.headers = {**response.headers, "X-WP-Total": "3"}
+            return response
+
+        with patch.object(scraper, "get_listing_page", side_effect=shrinking), pytest.raises(ListingIncompleteError, match="distinct items"):
             scraper.collect_data()
 
     def test_an_empty_listing_fails_loudly(self, scraper):

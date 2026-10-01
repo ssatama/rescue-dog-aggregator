@@ -128,14 +128,16 @@ class HunderettungEuropaScraper(BaseScraper):
         return dogs
 
     def _get_all(self, route: str, params: dict) -> list[dict]:
-        """Every item of a REST route, all pages, in id order.
+        """Every item of a REST route, all pages, asked for in id order.
 
-        WordPress pages categories by name by default, and this site has many
-        with the same name ("Erwachsen" in the dog and the adopted tree), so
-        pages overlapped and skipped categories (2026-10-01). By id the order
-        is stable, and the items read must add up to X-WP-Total.
+        Posts honour the order; the site's categories don't, which is why
+        _categories never pages. The total must stay the same on every page
+        and the distinct items read must add up to it: otherwise pages shifted
+        while being read (a dog added or removed mid-run) and one could be
+        missed.
         """
         items: list[dict] = []
+        totals: set[int] = set()
         page = 1
         while True:
             response = self.get_listing_page(
@@ -152,12 +154,11 @@ class HunderettungEuropaScraper(BaseScraper):
             if not batch and page <= total_pages:
                 raise ListingIncompleteError(f"{route} page {page} of {total_pages} is empty")
             items += batch
+            totals.add(int(response.headers.get("X-WP-Total", -1)))
             if page >= total_pages:
-                total = int(response.headers.get("X-WP-Total", -1))
                 unique = len({item["id"] for item in items})
-                if unique != total:
-                    # Pages shifted while being read (an item added or removed, or an unstable order)
-                    raise ListingIncompleteError(f"{route}: read {unique} distinct items, the site says {total}")
+                if len(totals) > 1 or unique not in totals:
+                    raise ListingIncompleteError(f"{route}: read {unique} distinct items, the site said {sorted(totals)}")
                 return items
             if page == MAX_PAGES:
                 raise ListingIncompleteError(f"{route} still has pages after {MAX_PAGES}")
@@ -287,11 +288,12 @@ class HunderettungEuropaScraper(BaseScraper):
 
     @staticmethod
     def _location(in_categories: set[int], facts: dict[str, str], categories: dict[str, Any]) -> str:
-        """ "Romania" for a dog in the shelter, "Viersen, Germany" for one in a foster home.
+        """ "Viersen, Germany" for a dog in a foster home, "Romania" for one in the shelter.
 
         The listing holds only dogs filed under Rumänien or the Deutschland tree.
+        The foster town wins: a dog that moved may keep its Rumänien category.
         """
-        if categories["romania"] in in_categories:
-            return "Romania"
         town = POSTCODE.sub("", _fact(facts, FOSTER_LABEL) or "").strip()
-        return f"{town}, Germany" if town else "Germany"
+        if town:
+            return f"{town}, Germany"
+        return "Romania" if categories["romania"] in in_categories else "Germany"
