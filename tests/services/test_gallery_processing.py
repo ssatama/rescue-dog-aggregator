@@ -355,8 +355,8 @@ class TestPacedGalleries:
         with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 4):
             counts = service.batch_process_galleries(dogs, {}, pace=lambda: None)
 
-        # (new, stored): the scraper logs these, so a backlog shows in the run's log
-        assert counts == (6, 4)
+        # (fetched, stored, left): the scraper logs these, so a backlog shows in the run's log
+        assert counts == (4, 4, 2)
         fetched = [call.args[0] for call in r2.upload_image_with_size.call_args_list]
         assert fetched == ["https://rescue.example/0/hero.jpg", "https://rescue.example/1/hero.jpg", "https://rescue.example/2/hero.jpg", "https://rescue.example/0/2.jpg"]
         assert [len(dog["images"]) for dog in dogs] == [2, 1, 1]
@@ -381,15 +381,18 @@ class TestPacedGalleries:
         r2.upload_image_with_size.side_effect = [UNUSABLE_PHOTO, UNUSABLE_PHOTO, UNUSABLE_PHOTO, None, None, None]
         dog = {"name": "Rex", "primary_image_url": sources[0], "image_urls": sources}
 
-        ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {}, pace=lambda: None)
+        counts = ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {}, pace=lambda: None)
 
         assert r2.upload_image_with_size.call_count == 6
+        # Dead links are fetched, never stored, and leave nothing for later
+        assert counts == (6, 0, 0)
         r2.upload_image_with_size.reset_mock(side_effect=True)
         r2.upload_image_with_size.side_effect = [None, None, None, photo(sources[3])]
 
-        ImageProcessingService(r2_service=r2).batch_process_galleries([{**dog}], {}, pace=lambda: None)
+        counts = ImageProcessingService(r2_service=r2).batch_process_galleries([{**dog}], {}, pace=lambda: None)
 
         assert r2.upload_image_with_size.call_count == 3
+        assert counts == (3, 0, 3)
 
     def test_without_pacing_nothing_changes(self):
         sources = [f"https://rescue.example/{i}.jpg" for i in range(4)]

@@ -42,7 +42,7 @@ class TestBaseScraperBatchUploads:
             # Mock image processing service
             mock_image_service_instance = Mock()
             mock_image_service_instance.batch_process_images = Mock(side_effect=lambda animals, *args, **kwargs: animals)
-            mock_image_service_instance.batch_process_galleries = Mock(return_value=(0, 0))
+            mock_image_service_instance.batch_process_galleries = Mock(return_value=(0, 0, 0))
             mock_image_service.return_value = mock_image_service_instance
 
             # Mock progress tracker
@@ -118,9 +118,10 @@ class TestBaseScraperBatchUploads:
     @pytest.mark.parametrize(
         ("paced", "counts", "line"),
         [
-            (True, (412, 150), "🖼️ Gallery photos: 150 of 412 new stored; the rest come on later runs"),
-            (False, (5, 5), "🖼️ Gallery photos: 5 of 5 new stored"),
-            (True, (0, 0), None),
+            (True, (150, 148, 262), "🖼️ Gallery photos: fetched 150, stored 148; 262 left for later runs"),
+            (True, (2, 0, 0), "🖼️ Gallery photos: fetched 2, stored 0"),
+            (False, (5, 5, 0), "🖼️ Gallery photos: fetched 5, stored 5"),
+            (True, (0, 0, 0), None),
         ],
     )
     def test_the_run_log_says_how_many_gallery_photos_were_stored(self, mock_services, paced, counts, line):
