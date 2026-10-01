@@ -21,7 +21,7 @@ Finding rescue dogs requires visiting multiple websites with different interface
 
 ### Search & Discovery
 
-- Unified search across 12 rescue organizations (UK, Ireland, Europe)
+- Unified search across 12 rescue organizations (UK and Europe)
 - Filter by breed, size, age, energy level, and personality traits
 - Swipe interface for browsing dogs (Tinder-style discovery)
 - Breed directory with statistics
@@ -86,7 +86,7 @@ Backend (FastAPI)
     ↓ Routes → Services → Database
 PostgreSQL 15 (JSONB for metadata)
     ↑ Data collection
-Scrapers (13 organizations)
+Scrapers (14 organizations)
     ↑ Configuration
 YAML configs + LLM prompts
 ```
@@ -98,12 +98,12 @@ api/                    # FastAPI backend
 ├── routes/             # 8 route modules (animals, swipe, llm, etc.)
 services/               # 16 core services
 ├── llm/                # LLM profiling pipeline (20 files)
-scrapers/               # 13 organization scrapers
+scrapers/               # 14 organization scrapers
 frontend/src/
 ├── app/                # Next.js App Router pages
 ├── components/         # Feature-organized UI (22 dirs)
 rescuedogs-mcp-server/  # MCP server for Claude integration
-configs/organizations/  # YAML configs (13 orgs)
+configs/organizations/  # YAML configs (14 orgs)
 tests/                  # 133 backend test files
 frontend/src/           # 270 frontend test files (colocated)
 migrations/             # Alembic database migrations

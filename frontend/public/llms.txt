@@ -12,12 +12,12 @@ Roughly 1,400 dogs from 12 organizations across 96 breeds. The rescues are
 based in the UK, Germany, Serbia, Bulgaria, Bosnia, Turkey and Cyprus, and many
 of their dogs wait in Romania.
 
-Adoption destinations vary a lot by organization and this matters: most
+Adoption destinations vary a lot by organization and this matters: half the
 organizations rehome to a single country, and the two largest (Dogs Trust and
 Tierschutzverein Europa) adopt only within the UK and Germany respectively.
 Hunderettung Europa adopts to Germany, Switzerland, the Netherlands, Belgium
-and Luxembourg. Four organizations rehome across roughly 30 European countries, covering about
-a fifth of the catalogue. Never assume a dog can be adopted to a given country
+and Luxembourg. Four organizations rehome across roughly 30 European
+countries, covering about a sixth of the catalogue. Never assume a dog can be adopted to a given country
 - filter on `available_to_country`, or check the organization's `ships_to`.
 
 Call the statistics endpoint below for live figures rather than relying on
@@ -53,7 +53,7 @@ https://api.rescuedogs.me — [OpenAPI spec](https://api.rescuedogs.me/openapi.j
   dogs that are likely already adopted.
 - `/api/animals/{slug}`: one dog in full, including its AI personality profile
 - [/api/animals/random](https://api.rescuedogs.me/api/animals/random): a random selection
-- [/api/animals/statistics](https://api.rescuedogs.me/api/animals/statistics): totals by country and organization
+- [/api/animals/statistics](https://api.rescuedogs.me/api/animals/statistics): totals by the rescue's base country and by organization
 - [/api/animals/breeds/stats](https://api.rescuedogs.me/api/animals/breeds/stats): breed counts and distributions
 - [/api/animals/meta/breeds](https://api.rescuedogs.me/api/animals/meta/breeds): breed names
 - [/api/animals/meta/breed_groups](https://api.rescuedogs.me/api/animals/meta/breed_groups): breed groups. These are AKC-style plus two
@@ -76,10 +76,9 @@ MCP endpoint is rate limited per IP at 120 requests/minute and 3,000/hour.
 - `/dogs/{slug}`: individual dog profile
 - [/dogs/puppies](https://www.rescuedogs.me/dogs/puppies): puppies
 - [/dogs/senior](https://www.rescuedogs.me/dogs/senior): senior dogs
-- `/dogs/country/{code}`: dogs from the rescues based in a
-  country. This is a filter on where the rescue is, not an adoption-destination
-  one, and
-  only countries that currently have dogs have a page; /dogs/country lists
+- `/dogs/country/{code}`: dogs from the rescues based in a country. This is
+  a filter on where the rescue is, not on where the dog is or where it can be
+  adopted, and only countries that currently have dogs have a page; /dogs/country lists
   them. For "can I adopt to X", use the API's `available_to_country` filter
   instead.
 - [/breeds](https://www.rescuedogs.me/breeds): breeds with availability
