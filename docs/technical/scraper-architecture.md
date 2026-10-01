@@ -532,7 +532,7 @@ def update_stale_data_detection(self) -> None:
 
 ## Organization-Specific Scrapers
 
-### Active Organizations (13)
+### Active Organizations (12)
 
 | Config ID                   | Country    | Technology | Notes                           |
 | --------------------------- | ---------- | ---------- | ------------------------------- |
@@ -544,13 +544,12 @@ def update_stale_data_detection(self) -> None:
 | `daisy_family_rescue`       | Greece     | Playwright | Two-phase scraping              |
 | `tierschutzverein_europa`   | Germany    | HTTP       | Translation layer               |
 | `theunderdog`               | Malta      | HTTP       | Standard WordPress              |
-| `furryrescueitaly`          | Italy      | HTTP       | Standard HTML                   |
 | `pets_in_turkey`            | Turkey     | HTTP       | Standard HTML                   |
 | `animalrescuebosnia`        | Bosnia     | HTTP       | Standard HTML                   |
 | `santerpawsbulgarianrescue` | Bulgaria   | HTTP       | Standard HTML                   |
 | `hunderettung-europa`       | Germany    | HTTP       | WordPress REST API only         |
 
-**Inactive:** `galgosdelsol` (Spain) - scraper exists but organization disabled.
+**Inactive:** `galgosdelsol` (Spain) and `furryrescueitaly` (Italy) - scrapers exist but the organizations are disabled.
 
 ### Common Implementation Pattern
 
@@ -842,8 +841,8 @@ Site quirks and the first-run incident: `docs/technical/operational-knowledge.md
   total on every page; a missing location category, page or paging header,
   or an empty listing, raises `ListingIncompleteError`.
 - IDs are `hre-<post id>`. A dog moving to a foster home is renamed
-  ("Pflegehund Tindra", `/pflegehund-tindra/`; the prefix goes to
-  `properties.raw_name`) but keeps its post ID, and the old link 301s.
+  ("Pflegehund Tindra", `/pflegehund-tindra/`; the whole title is
+  kept in `properties.raw_name`) but keeps its post ID, and the old link 301s.
 - Everything hidden on desktop (`.elementor-hidden-desktop`) is dropped
   before reading: it holds the editors' unfilled template ("HUNDENAME",
   "ca. xx – xx cm", stock photos), sometimes still shown on phones. Images
@@ -858,7 +857,7 @@ Site quirks and the first-run incident: `docs/technical/operational-knowledge.md
   Klein/Mittel/Groß category. Age: the birth text is `date_of_birth`, and
   `age_text` is "02/2026" (or "2016"). No breed: the rescue states none.
 - Location: the foster town ("Viersen, Germany"), else "Romania" when filed
-  under Rumänien.
+  under Rumänien, else "Germany".
 - `skip_existing_animals: false`, the only rescue: re-reading costs no
   request and dogs move from the shelter to foster homes. Unchanged dogs are
   `no_change`; photos are reused. Profiles still run only on create.
@@ -985,7 +984,7 @@ with the cron's `REVALIDATION_TOKEN`, and a plain laptop run skips that
 ("REVALIDATION_TOKEN not set"), so the rescue page kept "0 dogs listed"
 after its dogs arrived until the tags were purged by hand.
 
-The dry run must show only "Would create: <id>"; anything under "needs
+The dry run must show only "Would create: <id>"; anything under "Would
 update" means production differs from a config, so stop and look. The sync
 creates the org with `active = false` and logs its ID.
 
@@ -1019,7 +1018,7 @@ creates the org with `active = false` and logs its ID.
    is small), the single-org run in
    `docs/technical/operational-knowledge.md` ("Manual production runs from the laptop"). It profiles every new dog in its LLM phase.
 3. Check the run: `scrape_logs` row, dogs found vs. the site, Sentry, and
-   dogs without a profile (`llm_commands.py generate-profiles --ids <id>`
+   dogs without a profile (`llm_commands.py generate-profiles --ids <dog ids>`
    under `railway run` picks up failures). Hunderettung Europa's run: 150
    found, 150 added, every hero on R2, 149 profiled in the run and the last
    (a template-only dog whose description came out under 150 characters

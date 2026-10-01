@@ -449,6 +449,10 @@ Technical considerations or suggestions.
 
 ## Adding New Organizations
 
+Follow `docs/technical/scraper-architecture.md`, "Adding a New Rescue": a new
+rescue starts with `enabled: false` and is enabled in its own PR after the
+first production sync. The notes below are older and cover only the basics.
+
 To add a new rescue organization:
 
 ### 1. Create Configuration
