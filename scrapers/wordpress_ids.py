@@ -93,7 +93,7 @@ def key_on_post_ids(scraper: Any, animals: list[dict], *, route: str, url_of: Ca
     for key, animal in ordered:
         post_id = ids.get(key) or page_post_id(scraper, url_of(animal), headers)
         if post_id is None:
-            scraper.logger.warning(f"{url_of(animal)} is listed but its page is gone; skipped")
+            scraper.logger.warning(f"{url_of(animal)} is listed but leads to no page; skipped")
             continue
         external_id = f"{prefix}{post_id}"
         if external_id in keyed:
@@ -104,7 +104,12 @@ def key_on_post_ids(scraper: Any, animals: list[dict], *, route: str, url_of: Ca
 
 
 def page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
-    """The ID in a page's <body class>, or None if the page is gone (404)."""
+    """The ID in a page's <body class>, or None if the page is gone.
+
+    Gone is a 404, or a link that leads to a file: Bosnia linked /lucky/, the
+    slug of a 2024 photo, and WordPress sent it to lucky.jpg. An HTML page
+    with no ID still raises.
+    """
     try:
         response = scraper.get_listing_page(url, headers=headers)
     except ListingIncompleteError as e:
@@ -112,6 +117,8 @@ def page_post_id(scraper: Any, url: str, headers: dict | None) -> int | None:
         if isinstance(cause, requests.HTTPError) and getattr(cause.response, "status_code", None) in (404, 410):
             return None
         raise
+    if "html" not in response.headers.get("Content-Type", "text/html"):
+        return None
     post_id = body_post_id(BeautifulSoup(response.content, "html.parser"))
     if post_id is None:
         raise ListingIncompleteError(f"{url} carries no WordPress post ID")
