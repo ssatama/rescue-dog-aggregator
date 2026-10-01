@@ -52,3 +52,6 @@ class TestDogCountry:
         counts = client.get("/api/animals/meta/filter_counts").json()
 
         assert {o["value"]: o["count"] for o in counts["location_country_options"]} == {"RO": 2, "DE": 1}
+
+    def test_location_countries_lists_where_dogs_are(self, client: TestClient):
+        assert client.get("/api/animals/meta/location_countries").json() == ["DE", "RO"]

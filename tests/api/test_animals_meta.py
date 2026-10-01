@@ -10,8 +10,8 @@ class TestAnimalsMeta:
         [
             ("/api/animals/meta/breeds", None),
             ("/api/animals/meta/breed_groups", None),
-            ("/api/animals/meta/location_countries", None),
             ("/api/animals/meta/available_countries", None),
+            # location_countries needs dogs with a known country: test_dog_country.py
         ],
     )
     def test_get_meta_lists_are_string_arrays(self, client, endpoint, key):
@@ -39,13 +39,8 @@ class TestAnimalsMeta:
 
     def test_available_regions_with_country(self, client):
         """GET /api/animals/meta/available_regions?country=<X> returns string list."""
-        # First grab any valid country
-        countries = client.get("/api/animals/meta/location_countries").json()
-        if not countries:
-            pytest.skip("No countries present to test regions")
-        country = countries[0]
-
-        resp = client.get(f"/api/animals/meta/available_regions?country={country}")
+        # The fixture rescue's service region country (tests/conftest.py)
+        resp = client.get("/api/animals/meta/available_regions?country=Testland")
         assert resp.status_code == 200, resp.text
         regions = resp.json()
         assert isinstance(regions, list)

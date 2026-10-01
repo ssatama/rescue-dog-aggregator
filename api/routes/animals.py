@@ -108,16 +108,16 @@ async def get_distinct_breed_groups(
 async def get_distinct_location_countries(
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ):
-    """Get a distinct list of countries where organizations are located."""
+    """The countries the browsable dogs are in (#702)."""
     try:
-        # Query distinct, non-null, non-empty countries from the organizations
-        # table
         cursor.execute(
-            """
-            SELECT DISTINCT country
-            FROM organizations
-            WHERE country IS NOT NULL AND country != '' AND active = TRUE
-            ORDER BY country ASC
+            f"""
+            SELECT DISTINCT a.properties->>'location_country' AS country
+            FROM animals a
+            JOIN organizations o ON a.organization_id = o.id
+            WHERE {publicly_available("a")} AND o.active = TRUE
+              AND a.properties->>'location_country' IS NOT NULL
+            ORDER BY 1 ASC
             """
         )
         results = cursor.fetchall()
