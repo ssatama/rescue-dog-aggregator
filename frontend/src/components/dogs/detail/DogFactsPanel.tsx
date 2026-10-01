@@ -15,6 +15,7 @@ import { safeExternalUrl } from "@/utils/security";
 import { getCountryName } from "@/utils/countryNames";
 import {
   adoptionDomain,
+  assessedProfileValue,
   companionAnswer,
   dogLocation,
   isNeutered,
@@ -123,12 +124,11 @@ export function LivesWith({ dog, heading }: { dog: Dog; heading?: "h2" | "h4" })
 }
 
 export function GoodToKnow({ dog }: { dog: Dog }) {
-  const profile = dog.dog_profiler_data;
-  // An answer the profile scored 0.5 or less is a guess, left out as the other profile facts are (#517, #696)
-  const assessed = (field: string) => !((profile?.confidence_scores?.[field] ?? 1) <= 0.5);
+  const energy = assessedProfileValue(dog, "energy_level");
+  const experience = assessedProfileValue(dog, "experience_level");
   const facts = [
-    assessed("energy_level") && profile?.energy_level && ENERGY[profile.energy_level],
-    assessed("experience_level") && profile?.experience_level && EXPERIENCE[profile.experience_level],
+    energy && ENERGY[energy],
+    experience && EXPERIENCE[experience],
     isNeutered(dog) && "Neutered",
     isVaccinated(dog) && "Vaccinated",
   ].filter((f): f is string => Boolean(f));

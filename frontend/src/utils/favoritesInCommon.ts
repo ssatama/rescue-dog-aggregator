@@ -1,6 +1,6 @@
 import type { Dog } from "@/types/dog";
 import { formatSize, getAgeCategory } from "./dogHelpers";
-import { companionAnswer } from "./dogFacts";
+import { assessedProfileValue, companionAnswer } from "./dogFacts";
 
 /**
  * What every saved dog has in common, one line each (#498). A line appears
@@ -60,14 +60,14 @@ export function favoritesInCommon(dogs: Dog[]): string[] {
     if (dogs.every((dog) => companionAnswer(dog, field) === "yes")) lines.push(line);
   }
 
-  if (dogs.every((dog) => dog.dog_profiler_data?.experience_level === "first_time_ok")) {
+  if (dogs.every((dog) => assessedProfileValue(dog, "experience_level") === "first_time_ok")) {
     lines.push("All suit first-time owners");
   }
   if (dogs.every((dog) => dog.dog_profiler_data?.home_type === "apartment_ok")) {
     lines.push("All fine in an apartment");
   }
 
-  const energy = shared(dogs, (dog) => ENERGY[dog.dog_profiler_data?.energy_level ?? ""]);
+  const energy = shared(dogs, (dog) => ENERGY[assessedProfileValue(dog, "energy_level") ?? ""]);
   if (energy) lines.push(energy);
 
   const traitSets = dogs.map(
