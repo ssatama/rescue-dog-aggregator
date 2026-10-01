@@ -1,7 +1,7 @@
 schema_version: "1.0"
 id: "hunderettung-europa"
 name: "Hunderettung Europa e.V."
-enabled: false # Turned on in the rollout (#692)
+enabled: true
 scraper:
   class_name: "HunderettungEuropaScraper"
   module: "scrapers.hunderettung_europa.dogs_scraper"
