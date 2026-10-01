@@ -85,3 +85,10 @@ organizations:
     source_language: "en"
     target_language: "en"
     enabled: true # Configured and ready for testing
+
+  30:
+    name: "Hunderettung Europa"
+    prompt_file: "hunderettung_europa.yaml"
+    source_language: "de"
+    target_language: "en"
+    enabled: true

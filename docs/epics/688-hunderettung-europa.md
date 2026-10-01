@@ -11,10 +11,10 @@ file is deleted.
 
 | Issue | What | State |
 | --- | --- | --- |
-| #689 | Scraper (WordPress REST API) and disabled org config | this PR |
-| #691 | Site copy and country data (Romania) | |
-| #692 | Rollout up to the first production sync (gives the org its ID) | |
-| #690 | LLM prompt (German to English) and logo | |
+| #689 | Scraper (WordPress REST API) and disabled org config | merged (#693) |
+| #691 | Site copy and country data (Romania) | #694, merges once the rescue is enabled |
+| #692 | Rollout up to the first production sync (gives the org its ID) | done: org ID 30, 2026-10-01 |
+| #690 | LLM prompt (German to English) and logo | this PR |
 | #692 | Enable, first scrape, LLM batch, Chrome check, runbook | |
 
 ## Why this rescue
@@ -90,6 +90,31 @@ current rescues skipped).
   text, so a change to those trees logs a warning instead of failing the run.
 - **A post without its facts block** counts as a failed dog, not a half-read
   one, so a layout change shows up in the run's detail failures.
+
+## LLM profiles (#690)
+
+- Prompt `prompts/organizations/hunderettung_europa.yaml`, org 30, German
+  source. It names the rescue's boilerplate, measured as the sentences
+  repeated across the 150 stories (the "Zuhause gesucht" closing in 129, the
+  Tierschutz-FAQ link in 75, the new-dog and litter paragraphs, the
+  foster-home paragraph, the guardian-dog notice), so none of it becomes a
+  trait.
+- Dry run on 16 dogs (2026-10-01, `google/gemini-3.8-flash`, no database:
+  `DogProfilerPipeline(organization_id=30, dry_run=True).process_batch` on
+  the scraper's output): 16/16 profiled, no boilerplate in any description.
+  Two fixes came out of it: a Gnadenplatz dog's profile mentioned the waived
+  fee and called it "hospice/sanctuary placement" (now: never mention money;
+  a Gnadenplatz dog is a senior looking for a quiet home), and "no small
+  children, teenagers from 14" read as `no` (now `older_children`).
+  Puppies with only the litter template get short, honest profiles.
+- Profiles are written once (on create), and this rescue moves dogs, so the
+  prompt keeps where the dog is, its age in numbers and how long it has
+  waited out of every field; the page shows those from current data.
+  Re-checked on 8 dogs: none mention them.
+- Logo: the rescue's square paw-and-hand mark (512 px PNG from its site),
+  uploaded to R2 as `org-logo-hunderettung-europa.png`. Checking it right
+  before the upload cached a 404 at Cloudflare for a while; check with a
+  query string instead.
 
 ## Runners-up (for later)
 
