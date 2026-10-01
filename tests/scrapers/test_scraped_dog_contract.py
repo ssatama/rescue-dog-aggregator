@@ -127,7 +127,9 @@ def hunderettung():
 
     def get(url, **kwargs):
         data = json.loads((rest / ("posts.json" if url.endswith("/posts") else "categories.json")).read_text())
-        return Mock(json=Mock(return_value=data), headers={"X-WP-TotalPages": "1"})
+        if url.endswith("/categories"):
+            data = [category for category in data if category["slug"] in kwargs["params"]["slug"].split(",")]
+        return Mock(json=Mock(return_value=data), headers={"X-WP-TotalPages": "1", "X-WP-Total": str(len(data))})
 
     with patch.object(scraper, "get_listing_page", side_effect=get):
         return scraper.collect_data()[0]

@@ -47,11 +47,19 @@ current rescues skipped).
 - **The cron loads only whitelisted modules**
   (`utils/secure_scraper_loader.py`, `ALLOWED_MODULES`). A test now checks
   every config's module is on it; the first version of this scraper wasn't.
-- **Categories by slug, not number**: `hundekategorien` > `aufenthaltsort` >
-  `rumaenien` / `deutschland` (and its federal states). A missing location
-  category, a missing page, a missing `X-WP-TotalPages` header or an empty
-  listing raises `ListingIncompleteError`. Posts are paged oldest first
-  (`orderby=id`), so a dog published mid-run can't push another off a page.
+- **Categories by slug, in one request, never paged.** The site ignores
+  `orderby` on its category listing (a term-ordering plugin), and ties made
+  pages overlap and skip categories: the first production scrape
+  (2026-10-01 10:52 UTC) failed with "No category 'hundekategorien'", saving
+  nothing. Now `categories?slug=hundekategorien,aufenthaltsort,…` returns the
+  12 needed ones, each one's parent is checked, and the posts query asks
+  WordPress for the children (`categories[terms]=83,85&categories[include_children]=true`,
+  the same for excluding `happy-ends-hunde`). Plain `categories=83,85` would
+  miss the dogs filed only under a federal state (2 on 2026-10-01). Posts
+  page in id order (checked live), and every listing must add up to
+  `X-WP-Total` in distinct items, or it raises. A missing location category,
+  a missing page, a missing paging header or an empty listing raises
+  `ListingIncompleteError`.
 - **IDs** are `hre-<post id>`. A dog that moves to a foster home is renamed
   ("Pflegehund Tindra", `/pflegehund-tindra/`) but keeps its post ID.
 - **Template text and photos**: everything hidden on desktop
