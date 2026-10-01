@@ -326,3 +326,47 @@ def test_an_unusable_photo_is_skipped_and_the_gallery_still_saved():
     ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {})
 
     assert dog["images"] == [photo(HERO)]
+
+
+@pytest.mark.unit
+class TestPacedGalleries:
+    """A rescue whose site can't take a burst of photo requests (Hunderettung Europa, 2026-10-01)."""
+
+    def test_each_new_photo_waits_for_the_scrapers_request_slot_one_at_a_time(self):
+        sources = [HERO, "https://rescue.example/2.jpg", "https://rescue.example/3.jpg"]
+        events = []
+        r2 = Mock()
+        r2.upload_image_with_size.side_effect = lambda source, name, org: events.append(("fetch", source)) or photo(source)
+        dog = {"name": "Rex", "primary_image_url": HERO, "image_urls": sources}
+
+        ImageProcessingService(r2_service=r2).batch_process_galleries([dog], {}, pace=lambda: events.append(("wait", None)))
+
+        # One request in flight at a time, each after its slot
+        assert events == [event for source in sources for event in (("wait", None), ("fetch", source))]
+        assert [p["original_url"] for p in dog["images"]] == sources
+
+    def test_a_run_fetches_at_most_its_share_and_leaves_the_rest_for_later(self):
+        dogs = [
+            {"name": f"Dog {i}", "primary_image_url": f"https://rescue.example/{i}/hero.jpg", "image_urls": [f"https://rescue.example/{i}/hero.jpg", f"https://rescue.example/{i}/2.jpg"]}
+            for i in range(3)
+        ]
+        service, r2 = service_uploading({source: photo(source) for dog in dogs for source in dog["image_urls"]})
+
+        with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 3):
+            service.batch_process_galleries(dogs, {}, pace=lambda: None)
+
+        assert r2.upload_image_with_size.call_count == 3
+        # Dog 0 is done, dog 1 got its hero only, dog 2's hero wasn't tried: its stored gallery stays
+        assert len(dogs[0]["images"]) == 2
+        assert [p["original_url"] for p in dogs[1]["images"]] == ["https://rescue.example/1/hero.jpg"]
+        assert "images" not in dogs[2]
+
+    def test_without_pacing_nothing_changes(self):
+        sources = [f"https://rescue.example/{i}.jpg" for i in range(4)]
+        service, r2 = service_uploading({source: photo(source) for source in sources})
+        dog = {"name": "Rex", "primary_image_url": sources[0], "image_urls": sources}
+
+        with patch("services.image_processing_service.PACED_PHOTOS_PER_RUN", 1):
+            service.batch_process_galleries([dog], {})
+
+        assert r2.upload_image_with_size.call_count == 4

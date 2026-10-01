@@ -14,6 +14,7 @@ Following CLAUDE.md principles:
 """
 
 import logging
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import TYPE_CHECKING, Any
 
@@ -46,6 +47,10 @@ MAX_GALLERY_PHOTOS = 8
 MIN_GALLERY_SIDE = 300
 # Matches the R2 client's connection pool (max_pool_connections=5)
 GALLERY_UPLOAD_WORKERS = 5
+# A paced rescue's new photos per run, one at a time at its request rate: the
+# rest are fetched on later runs. Hunderettung Europa's site went down after
+# its first run fetched ~1,000 photos five at a time (2026-10-01).
+PACED_PHOTOS_PER_RUN = 150
 
 
 def build_gallery(sources: list[str], photos: dict[str, dict[str, Any] | None]) -> list[dict[str, Any]] | None:
@@ -92,6 +97,7 @@ class ImageProcessingService:
         animals_data: list[dict[str, Any]],
         stored_images: dict[str, list[dict[str, Any]]],
         organization_name: str = "unknown",
+        pace: Callable[[], None] | None = None,
     ) -> None:
         """Set each dog's `images` from its scraped source URLs, in one batch (in place).
 
@@ -102,6 +108,11 @@ class ImageProcessingService:
         changed one is rewritten, never appended. Every new photo across the
         run is uploaded once, in parallel. A dog with no usable photo gets no
         `images` key, and the stored one is kept.
+
+        With `pace` (the scraper's wait_for_request_slot, for a rescue whose
+        config sets pace_photo_downloads), photos are fetched one at a time,
+        each after its request slot, and at most PACED_PHOTOS_PER_RUN of them;
+        the others count as not fetched this run.
         """
         known: dict[str, dict[str, Any]] = {}
         for images in stored_images.values():
@@ -119,10 +130,21 @@ class ImageProcessingService:
         if pending and not self.r2_service.prepare_for_parallel_uploads():
             self.logger.info("R2 not configured; keeping stored galleries")
             return
+        if pace and len(pending) > PACED_PHOTOS_PER_RUN:
+            deferred = list(pending)[PACED_PHOTOS_PER_RUN:]
+            self.logger.info(f"🖼️ Paced: {len(deferred)} new gallery photos are left for later runs")
+            uploaded.update(dict.fromkeys(deferred))
+            pending = {source: pending[source] for source in list(pending)[:PACED_PHOTOS_PER_RUN]}
+
+        def fetch(source: str, name: str) -> dict[str, Any] | None:
+            if pace:
+                pace()
+            return self.r2_service.upload_image_with_size(source, name, organization_name)
+
         if pending:
             self.logger.info(f"🖼️ Checking {len(pending)} new gallery photos ({len(known)} already stored)")
-            with ThreadPoolExecutor(max_workers=GALLERY_UPLOAD_WORKERS) as pool:
-                futures = {pool.submit(self.r2_service.upload_image_with_size, source, name, organization_name): source for source, name in pending.items()}
+            with ThreadPoolExecutor(max_workers=1 if pace else GALLERY_UPLOAD_WORKERS) as pool:
+                futures = {pool.submit(fetch, source, name): source for source, name in pending.items()}
                 for future in as_completed(futures):
                     try:
                         uploaded[futures[future]] = future.result()
