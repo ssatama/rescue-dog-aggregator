@@ -69,13 +69,27 @@ describe("Sentry data collection", () => {
     });
   });
 
-  it("never sends the IP or geo headers, or the search query", () => {
+  it("lets no IP, geo or cookie request header through the allow-list", () => {
     const allowed = (
-      SENTRY_DATA_COLLECTION?.httpHeaders as { request: { allow: string[] } }
+      SENTRY_DATA_COLLECTION.httpHeaders as { request: { allow: string[] } }
     ).request.allow;
-    for (const header of ["x-forwarded-for", "x-real-ip", "x-vercel-ip-country", "cookie"]) {
-      expect(allowed).not.toContain(header);
+    const sensitive = [
+      "x-forwarded-for",
+      "x-real-ip",
+      "x-vercel-forwarded-for",
+      "x-vercel-ip-country",
+      "x-vercel-ip-city",
+      "forwarded",
+      "cookie",
+      "authorization",
+    ];
+    // Sentry matches an allow term anywhere in the header name, case-insensitively
+    for (const header of sensitive) {
+      expect(allowed.filter((term) => header.includes(term.toLowerCase()))).toEqual([]);
     }
-    expect(SENTRY_DATA_COLLECTION?.urlQueryParams).toEqual({ deny: ["search"] });
+  });
+
+  it("drops the search query param", () => {
+    expect(SENTRY_DATA_COLLECTION.urlQueryParams).toEqual({ deny: ["search"] });
   });
 });
