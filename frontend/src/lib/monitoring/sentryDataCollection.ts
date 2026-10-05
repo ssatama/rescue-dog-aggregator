@@ -16,8 +16,8 @@ type DataCollection = NonNullable<
  *   `sec-ch-ua` keeps Chromium's client hints, which Sentry reads for the OS;
  * - no cookies or stack-frame variables;
  * - `search`, what the visitor typed into the catalog search, is dropped from
- *   the query params Sentry parses. It still appears in the page URL and in
- *   breadcrumbs, which this option does not cover.
+ *   the query params Sentry parses. It still appears in the page URL, in
+ *   breadcrumbs and in the Referer header, which this option does not cover.
  */
 export const SENTRY_DATA_COLLECTION: DataCollection = {
   userInfo: false,
