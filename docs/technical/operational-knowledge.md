@@ -449,7 +449,10 @@ reconcile` against production text before trusting a resolver change.
   the card (2026-09), so a renamed label drops it to 0.
 - The dog page's compatibility answer is the AI profile's, and the rescue's
   "May live with" answer fills in when the AI says "unknown", has none, or
-  scored its own answer 0.5 or less (`companionAnswer`, #629, #517).
+  scored its own answer 0.5 or less (`companionAnswer`, #629, #517). The
+  "Good with" filters and their counts use the same rule in SQL
+  (`companion_answer` in `api/services/animal_service.py`, #658), and the
+  children filter takes the rescue's "Yes (N+)" as it takes `older_children`.
 
 **Woof Project lists available dogs first, then the adoption archive**
 (pages 2-5 on 2026-09-27). Since #565 the listing is plain HTML: an adopted or

@@ -264,7 +264,7 @@ The database employs a comprehensive indexing strategy with 50+ indexes optimize
   - `scrape_logs.detailed_metrics`
 
 ### Specialized Indexes
-- **Behavioral Traits**: `good_with_kids`, `good_with_dogs`, `good_with_cats` (filtered on properties JSONB)
+- **Behavioral Traits**: `good_with_kids`, `good_with_dogs`, `good_with_cats` (filtered on the AI profile, with the rescue's answer in properties behind an unknown or a guess, #658)
 - **Quality Filtering**: `idx_animals_quality_score` for high-quality profiles
 - **Swipe Feature**: `idx_animals_swipe_composite` for mobile swipe functionality
 - **SEO/Sitemap**: `idx_animals_sitemap_quality` for content quality ranking
