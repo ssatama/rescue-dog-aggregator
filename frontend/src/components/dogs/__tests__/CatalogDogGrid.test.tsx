@@ -37,6 +37,7 @@ describe("CatalogDogGrid back and forward (#684)", () => {
   // 2 columns in jsdom; rows estimated at 360px with a 12px gap
   const many = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, name: `Dog ${i + 1}`, slug: `dog-${i + 1}` })) as Dog[];
   let scrollTo: jest.Mock;
+  const originalScrollTo = window.scrollTo;
 
   function setScrollY(value: number) {
     Object.defineProperty(window, "scrollY", { value, writable: true, configurable: true });
@@ -60,18 +61,20 @@ describe("CatalogDogGrid back and forward (#684)", () => {
     jest.useRealTimers();
     jest.restoreAllMocks();
     jest.mocked(usePathname).mockReturnValue("/dogs");
+    window.scrollTo = originalScrollTo;
+    setScrollY(0);
     Object.defineProperty(document.documentElement, "scrollHeight", { value: 0, configurable: true });
   });
 
   const tops = () => scrollTo.mock.calls.map(([arg]) => (typeof arg === "object" ? arg.top : arg));
 
-  it("starts a fresh visit at the top, not where the last page was scrolled to", () => {
-    setScrollY(2400); // a client navigation keeps the previous page's position
+  it("leaves a visitor who scrolled before hydration where they are", () => {
+    setScrollY(1500);
     render(<CatalogDogGrid dogs={many} />);
-    expect(tops().at(-1)).toBe(0);
+    expect(tops()).not.toContain(0);
   });
 
-  it("ignores the last page's place on a client navigation, before Next.js updates the entry", () => {
+  it("starts a client navigation at the top, ignoring the last page's place", () => {
     jest.mocked(usePathname).mockReturnValue("/breeds/greyhound");
     window.history.replaceState({ catalogScroll: 3330, catalogDog: 40 }, "", "/dogs?page=3");
     setScrollY(3330);
@@ -94,11 +97,23 @@ describe("CatalogDogGrid back and forward (#684)", () => {
     expect(tops()).toContain(7236);
   });
 
-  it("ignores a saved dog the list doesn't reach", () => {
+  it("falls back to the saved position when the list no longer reaches the saved dog", () => {
     window.history.replaceState({ catalogScroll: 3477, catalogDog: 90 }, "", "/dogs");
-    setScrollY(3477);
     render(<CatalogDogGrid dogs={many} />);
-    expect(tops().every((top) => top === 3477)).toBe(true);
+    expect(scrollTo).toHaveBeenLastCalledWith(0, 3477);
+  });
+
+  it("saves the last row when the middle of the screen is below the list", () => {
+    window.history.replaceState(null, "", "/dogs");
+    render(<CatalogDogGrid dogs={many} />);
+
+    setScrollY(30 * 372 - 300); // the end of the list, Load more and the footer below it
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+      jest.advanceTimersByTime(300);
+    });
+
+    expect(window.history.state).toEqual({ catalogDog: 58 });
   });
 
   it("saves the dog in the middle of the screen as the page scrolls", () => {

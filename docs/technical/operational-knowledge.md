@@ -561,6 +561,25 @@ Model and cost details are in AGENTS.md. Operational points:
 - If OpenRouter spend alerts fire, check the pinned model first. A full
   re-profile of all dogs is a real cost; normal runs only profile new dogs.
 
+## Catalog scroll (back and forward)
+
+- **The catalog returns to a dog, not a pixel offset** (#684). `CatalogDogGrid`
+  saves the index of the dog in the middle of the screen in `history.state`
+  (`catalogDog`) and centres it with `scrollToIndex` on Back. Far down the
+  list, rows above the screen are only estimated (360px), so a saved
+  `scrollY` lands on other dogs. Near the top, `useScrollRestoration`'s
+  `catalogScroll` is used, since it's exact there.
+- **`useWindowVirtualizer` scrolls the window to `initialOffset` when it
+  starts** (default: `window.scrollY` at creation). After a client
+  navigation that's the last page's position, so the grid passes 0 then.
+- **On a client navigation, Next.js updates the URL and `history.state` only
+  after the new page renders.** During that render they still belong to the
+  last page; trust them only when `location.pathname` matches `usePathname()`.
+  On Back/Forward the browser has switched both before React renders.
+- **Checking this in a dev server:** Turbopack dev chunk names aren't
+  content-hashed, and Chrome kept running old chunks even after
+  cache-bypassing reloads. Open a fresh isolated browser context per check.
+
 ## Frontend tests
 
 - **Never `delete window.location`** or redefine it: jsdom 26 makes it
@@ -576,6 +595,10 @@ Model and cost details are in AGENTS.md. Operational points:
   reappear. `pnpm dev` pins `NODE_ENV=development` because any other value
   makes it add `.next/dev/dev/types` to `tsconfig.json`. Stage files by name,
   never `git add -A`, after running it.
+- **Virtualizer tests need a laid-out page.** jsdom reports
+  `documentElement.scrollHeight` as 0 (every scroll target clamps to 0) and
+  every row's `offsetHeight` as 0, which virtual-core measures rows with.
+  `CatalogDogGrid.test.tsx` sets both.
 
 ## Rescue candidates
 

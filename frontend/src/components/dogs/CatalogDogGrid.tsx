@@ -32,9 +32,9 @@ function VirtualRows({ dogs, columns, listContext }: { dogs: Dog[]; columns: num
   // On back and forward the browser has switched to this entry's URL and
   // state before this render. On a client navigation Next.js switches them
   // after it, so the state is still the last page's: not a place to return to.
-  const [{ returnTo, hasPlace }] = useState(() => {
+  const [{ ownEntry, returnTo }] = useState(() => {
     const ownEntry = window.location.pathname === pathname;
-    return { returnTo: ownEntry ? savedDogIndex() : null, hasPlace: ownEntry && (savedDogIndex() !== null || savedScroll() > 0) };
+    return { ownEntry, returnTo: ownEntry ? savedDogIndex() : null };
   });
   const gap = columns === 2 ? 12 : 16; // DOG_GRID's gap-3 / sm:gap-4
 
@@ -44,10 +44,10 @@ function VirtualRows({ dogs, columns, listContext }: { dogs: Dog[]; columns: num
     overscan: OVERSCAN,
     gap,
     scrollMargin: scrollMargin ?? 0,
-    // The virtualizer scrolls the window here when it starts. By default
-    // that's where the window is, which after a client navigation is the
-    // last page's position (#684). Without a place to return to, the top.
-    initialOffset: () => (hasPlace ? window.scrollY : 0),
+    // The virtualizer scrolls the window here when it starts: where the
+    // window is (after hydration, or a remount on the same page), except
+    // after a client navigation, where that's the last page's position (#684).
+    initialOffset: () => (ownEntry ? window.scrollY : 0),
   });
 
   // Back to the dog that was in the middle of the screen, once the list's
@@ -57,8 +57,11 @@ function VirtualRows({ dogs, columns, listContext }: { dogs: Dog[]; columns: num
   useEffect(() => {
     if (scrollMargin === null || restored.current) return;
     restored.current = true;
-    if (returnTo !== null && returnTo < dogs.length) {
+    if (returnTo === null) return;
+    if (returnTo < dogs.length) {
       rowVirtualizer.scrollToIndex(Math.floor(returnTo / columns), { align: "center" });
+    } else {
+      window.scrollTo(0, savedScroll()); // The list came back shorter
     }
   }, [scrollMargin, returnTo, dogs.length, columns, rowVirtualizer]);
 
@@ -66,7 +69,9 @@ function VirtualRows({ dogs, columns, listContext }: { dogs: Dog[]; columns: num
   // offset is exact, so useScrollRestoration's is used there instead.
   const saveDog = useDebouncedCallback(() => {
     const middle = window.scrollY + window.innerHeight / 2;
-    const row = rowVirtualizer.getVirtualItems().find((item) => item.end >= middle);
+    const items = rowVirtualizer.getVirtualItems();
+    // Below the last row (Load more and the footer fill the screen), the last row
+    const row = items.find((item) => item.end >= middle) ?? items.at(-1);
     const { [DOG_STATE_KEY]: _previous, ...state } = window.history.state ?? {};
     const pastListTop = window.scrollY > (scrollMargin ?? 0);
     window.history.replaceState(row && pastListTop ? { ...state, [DOG_STATE_KEY]: row.index * columns } : state, "");
