@@ -47,8 +47,8 @@ SIZE_SCALE_MEMBERS: dict[str, tuple[str, ...]] = {"Small": ("Tiny", "Small")}
 SIZE_SCALE_LABELS = {"Tiny": "Small", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Giant"}
 
 
-# The "Good with" filters (#495) match the answer the dog's card shows
-# (companion_answer, #658), and only a positive one: an unknown is never a yes.
+# The "Good with" filters (#495) read the answer the dog's card and page show
+# (companion_answer, #658), and match only a positive one: an unknown is never a yes.
 # Filter name -> (key, matching answers, matching answer prefixes). Rescues
 # qualify a yes for children by age ("Yes (11+)"), which the children filter
 # takes as it takes the profile's older_children.

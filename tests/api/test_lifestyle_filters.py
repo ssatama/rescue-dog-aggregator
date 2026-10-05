@@ -1,8 +1,8 @@
 """Lifestyle filters and their counts (#495).
 
-The filters read the LLM profile and match only dogs whose profile records a
-positive value: a missing profile, or a field stored as "unknown", is never a
-yes. Each count says how many dogs the filter would show and how many have the
+The filters match only a positive value: a missing answer, or one stored as
+"unknown", is never a yes. The "Good with" filters read the LLM profile, and
+the rescue's own answer behind an AI unknown or a guess (#658). Each count says how many dogs the filter would show and how many have the
 information at all, given every other active filter.
 """
 
