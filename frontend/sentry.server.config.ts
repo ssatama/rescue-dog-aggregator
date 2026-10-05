@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { SENTRY_DATA_COLLECTION } from "@/lib/monitoring/sentryDataCollection";
 
 // Determine environment
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
@@ -27,11 +28,8 @@ if (isProduction) {
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
 
-    // Enable logs to be sent to Sentry (only errors in production)
-    enableLogs: true,
-
-    // Explicit security setting
-    sendDefaultPii: false,
+    // No user info, IP, cookies or bodies (v10's sendDefaultPii: false)
+    dataCollection: SENTRY_DATA_COLLECTION,
 
     // Debug mode disabled (non-debug bundle in use)
     // debug: isDevelopment,

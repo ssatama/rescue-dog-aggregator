@@ -247,7 +247,7 @@ const nextConfig = {
 // Apply bundle analyzer first, then Sentry
 module.exports = withBundleAnalyzer(nextConfig);
 
-const { withSentryConfig } = require("@sentry/nextjs");
+const { withSentryConfig } = require("@sentry/nextjs/config");
 
 module.exports = withSentryConfig(
   module.exports,
