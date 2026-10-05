@@ -7,17 +7,30 @@ const RESTORE_DELAY_MS = 100;
 /** Where the catalog keeps its scroll position in the history entry's state. */
 export const SCROLL_STATE_KEY = "catalogScroll";
 
-function savedScroll(): number {
+/**
+ * Where it keeps the index of the dog in the middle of the screen (#684). Far
+ * down a virtualized list a pixel offset lands on other dogs, since rows not
+ * yet measured are only estimated, so the grid returns to this dog instead.
+ */
+export const DOG_STATE_KEY = "catalogDog";
+
+export function savedScroll(): number {
   const saved: unknown = window.history.state?.[SCROLL_STATE_KEY];
   return typeof saved === "number" && saved > 0 ? saved : 0;
 }
 
+export function savedDogIndex(): number | null {
+  const saved: unknown = window.history.state?.[DOG_STATE_KEY];
+  return typeof saved === "number" && saved >= 0 ? saved : null;
+}
+
 /**
  * Replaces the URL of the current history entry, keeping its saved scroll
- * position. Next.js copies its own state into ours when that has none.
+ * position and dog. Next.js copies its own state into ours when that has none.
  */
 export function replaceUrlKeepingScroll(url: string): void {
-  window.history.replaceState({ [SCROLL_STATE_KEY]: savedScroll() }, "", url);
+  const dog = savedDogIndex();
+  window.history.replaceState({ [SCROLL_STATE_KEY]: savedScroll(), ...(dog !== null && { [DOG_STATE_KEY]: dog }) }, "", url);
 }
 
 /**
@@ -61,7 +74,8 @@ export default function useScrollRestoration({
         params.toString() ? `${pathname}?${params.toString()}` : pathname,
       );
     }
-    if (target === 0) return;
+    // The grid returns to a saved dog itself, once the dogs have loaded
+    if (target === 0 || savedDogIndex() !== null) return;
 
     // A save fired by the restore itself would only store the same position
     const timer = setTimeout(() => window.scrollTo(0, target), RESTORE_DELAY_MS);

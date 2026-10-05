@@ -80,6 +80,17 @@ describe("useScrollRestoration (#670)", () => {
     expect(window.scrollTo).toHaveBeenCalledWith(0, 540);
   });
 
+  it("leaves a saved dog to the grid (#684)", () => {
+    window.history.replaceState({ catalogScroll: 3477, catalogDog: 40 }, "", "/dogs?page=3");
+    renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams("page=3"), pathname: "/dogs" }));
+
+    act(() => {
+      jest.advanceTimersByTime(100);
+    });
+
+    expect(window.scrollTo).not.toHaveBeenCalled();
+  });
+
   it("saves the top of the page over an older position", () => {
     window.history.replaceState({ catalogScroll: 1500 }, "", "/dogs");
     renderHook(() => useScrollRestoration({ searchParams: new URLSearchParams(), pathname: "/dogs" }));
@@ -119,5 +130,13 @@ describe("replaceUrlKeepingScroll", () => {
 
     expect(window.location.search).toBe("?page=2");
     expect(window.history.state).toEqual({ catalogScroll: 1200 });
+  });
+
+  it("keeps the saved dog: loading more doesn't move the dogs already listed", () => {
+    window.history.replaceState({ catalogScroll: 3477, catalogDog: 40 }, "", "/dogs?page=2");
+
+    replaceUrlKeepingScroll("/dogs?page=3");
+
+    expect(window.history.state).toEqual({ catalogScroll: 3477, catalogDog: 40 });
   });
 });
