@@ -1,8 +1,8 @@
 """Lifestyle filters and their counts (#495).
 
-The filters read the LLM profile and match only dogs whose profile records a
-positive value: a missing profile, or a field stored as "unknown", is never a
-yes. Each count says how many dogs the filter would show and how many have the
+The filters match only a positive value: a missing answer, or one stored as
+"unknown", is never a yes. The "Good with" filters read the LLM profile, and
+the rescue's own answer behind an AI unknown or a guess (#658). Each count says how many dogs the filter would show and how many have the
 information at all, given every other active filter.
 """
 
@@ -134,3 +134,66 @@ class TestLifestyleCounts:
     def test_total_agrees_with_the_list(self, client: TestClient):
         response = client.get("/api/animals/meta/filter_counts", params={"organization_id": 906, "good_with_kids": "true", "energy": "high"})
         assert response.json()["total"] == len(names(client, good_with_kids="true", energy="high")) == 1
+
+
+# Behind an AI "unknown", or an AI answer scored 0.5 or less, the rescue's own
+# answer (scraped properties) decides, as it does on the dog's card (#658).
+RESCUE_ANSWERS = {
+    # name: (dog_profiler_data, properties)
+    "Gus": ('{"good_with_cats": "unknown"}', '{"good_with_cats": true}'),
+    "Hal": ('{"good_with_dogs": "yes", "confidence_scores": {"good_with_dogs": 0.4}}', '{"good_with_dogs": false}'),
+    "Ivy": ('{"good_with_children": "no", "confidence_scores": {"good_with_children": 0.9}}', '{"good_with_children": "Yes (11+)"}'),
+    "Jo": (None, '{"good_with_children": "Yes (11+)", "good_with_dogs": "Yes (female dogs)"}'),
+    "Kit": ('{"good_with_cats": "yes", "confidence_scores": {"good_with_cats": 0.5}}', '{"good_with_children": "Unknown"}'),
+}
+
+
+@pytest.fixture
+def rescue_answer_dogs():
+    cursor_generator = override_get_db_cursor()
+    cursor = next(cursor_generator)
+    cursor.execute(
+        """
+        INSERT INTO organizations (id, name, slug, website_url, country, active)
+        VALUES (908, 'Scraped Rescue', 'scraped-rescue', 'http://example.com/s', 'GB', TRUE);
+        """
+    )
+    for index, (name, (profile, properties)) in enumerate(RESCUE_ANSWERS.items()):
+        cursor.execute(
+            """
+            INSERT INTO animals (id, name, slug, animal_type, status, active, availability_confidence,
+                                 organization_id, adoption_url, dog_profiler_data, properties)
+            VALUES (%s, %s, %s, 'dog', 'available', TRUE, 'high', 908, %s, %s::jsonb, %s::jsonb)
+            """,
+            (9801 + index, name, f"{name.lower()}-{9801 + index}", f"http://example.com/r{index}", profile, properties),
+        )
+    try:
+        cursor_generator.send(None)  # commit and close
+    except StopIteration:
+        pass
+
+
+@pytest.mark.database
+@pytest.mark.integration
+@pytest.mark.usefixtures("rescue_answer_dogs")
+class TestRescueAnswerFallback:
+    def test_rescue_yes_fills_in_behind_an_ai_unknown(self, client: TestClient):
+        assert names(client, organization_id=908, good_with_cats="true") == ["Gus"]
+
+    def test_rescue_no_stands_in_for_a_low_confidence_ai_yes(self, client: TestClient):
+        assert "Hal" not in names(client, organization_id=908, good_with_dogs="true")
+
+    def test_confident_ai_answer_wins_over_the_rescue(self, client: TestClient):
+        assert "Ivy" not in names(client, organization_id=908, good_with_kids="true")
+
+    def test_rescue_age_qualified_yes_matches_children(self, client: TestClient):
+        assert names(client, organization_id=908, good_with_kids="true") == ["Jo"]
+
+    def test_rescue_qualified_dogs_answer_is_not_a_yes(self, client: TestClient):
+        assert names(client, organization_id=908, good_with_dogs="true") == []
+
+    def test_counts_use_the_same_rule(self, client: TestClient):
+        counts = lifestyle(client, organization_id=908)
+        assert counts["good_with_kids"] == (1, 2)  # Jo; Ivy known, Kit's "Unknown" isn't
+        assert counts["good_with_dogs"] == (0, 2)  # Hal's rescue no, Jo's qualified yes
+        assert counts["good_with_cats"] == (1, 1)  # Gus; Kit's 0.5 is a guess

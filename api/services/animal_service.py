@@ -47,15 +47,41 @@ SIZE_SCALE_MEMBERS: dict[str, tuple[str, ...]] = {"Small": ("Tiny", "Small")}
 SIZE_SCALE_LABELS = {"Tiny": "Small", "Small": "Small", "Medium": "Medium", "Large": "Large", "XLarge": "Giant"}
 
 
-# Lifestyle filters (#495) read the LLM profile, never the scraped
-# properties.good_with_*, and match only dogs whose profile records a positive
-# value: an unknown is never a yes. Filter name -> (profile key, matching values).
-COMPATIBILITY_FILTERS: dict[str, tuple[str, tuple[str, ...]]] = {
-    "good_with_kids": ("good_with_children", ("yes", "older_children")),
-    "good_with_dogs": ("good_with_dogs", ("yes",)),
-    "good_with_cats": ("good_with_cats", ("yes", "with_training")),
+# The "Good with" filters (#495) read the answer the dog's card and page show
+# (companion_answer, #658), and match only a positive one: an unknown is never a yes.
+# Filter name -> (key, matching answers, matching answer prefixes). Rescues
+# qualify a yes for children by age ("Yes (11+)"), which the children filter
+# takes as it takes the profile's older_children.
+COMPATIBILITY_FILTERS: dict[str, tuple[str, tuple[str, ...], tuple[str, ...]]] = {
+    "good_with_kids": ("good_with_children", ("yes", "older_children"), ("yes (",)),
+    "good_with_dogs": ("good_with_dogs", ("yes",), ()),
+    "good_with_cats": ("good_with_cats", ("yes", "with_training"), ()),
 }
 ENERGY_BANDS: dict[str, tuple[str, ...]] = {"low": ("low",), "medium": ("medium",), "high": ("high", "very_high")}
+
+
+def _answer(column: str, key: str) -> str:
+    """SQL: a JSONB answer lowercased, booleans as yes/no, blank or unknown as NULL."""
+    value = f"lower(btrim({column}->>'{key}'))"
+    return f"CASE {value} WHEN 'true' THEN 'yes' WHEN 'false' THEN 'no' WHEN '' THEN NULL WHEN 'unknown' THEN NULL ELSE {value} END"
+
+
+def companion_answer(key: str) -> str:
+    """SQL: the dog's good_with_* answer, by the frontend's companionAnswer rule.
+    The profile's, unless it is unknown or scored 0.5 or less (#517); then the
+    rescue's own answer in the scraped properties (#629). NULL when neither has one."""
+    score = f"a.dog_profiler_data->'confidence_scores'->'{key}'"
+    guessed = f"CASE WHEN jsonb_typeof({score}) = 'number' THEN ({score})::numeric <= 0.5 ELSE FALSE END"
+    return f"COALESCE(CASE WHEN NOT ({guessed}) THEN {_answer('a.dog_profiler_data', key)} END, {_answer('a.properties', key)})"
+
+
+def compatibility_condition(name: str) -> tuple[str, list[Any]]:
+    """SQL and params: the dog's answer passes the "Good with" filter ``name``."""
+    key, values, prefixes = COMPATIBILITY_FILTERS[name]
+    answer = companion_answer(key)
+    if not prefixes:
+        return f"{answer} = ANY(%s)", [list(values)]
+    return f"({answer} = ANY(%s) OR {answer} ^@ ANY(%s))", [list(values), list(prefixes)]
 
 
 def profile_value_in(key: str) -> str:
@@ -1717,9 +1743,9 @@ class AnimalService:
         """The active lifestyle filters as (SQL, params) pairs, grouped by the
         dimension a lifestyle count leaves out when counting its own options."""
         active: dict[str, list[tuple[str, list[Any]]]] = {}
-        for name, (key, values) in COMPATIBILITY_FILTERS.items():
+        for name in COMPATIBILITY_FILTERS:
             if getattr(filters, name) is True:
-                active[name] = [(profile_value_in(key), [list(values)])]
+                active[name] = [compatibility_condition(name)]
         if filters.experience_level:
             active["experience"] = [(profile_value_in("experience_level"), [[filters.experience_level]])]
         energy = []
@@ -1752,20 +1778,20 @@ class AnimalService:
         joins, conditions, params = self._build_filter_clause(AnimalFilterRequest(**shared))
         active = self._lifestyle_conditions(filters)
 
-        # (option, dimension it belongs to, profile key, values that match)
-        options = [(name, name, key, values) for name, (key, values) in COMPATIBILITY_FILTERS.items()]
-        options.append(("first_time_friendly", "experience", "experience_level", ("first_time_ok",)))
-        options += [(f"energy_{band}", "energy", "energy_level", values) for band, values in ENERGY_BANDS.items()]
+        # (option, dimension it belongs to, (SQL, params) that match, SQL for "has the information")
+        options = [(name, name, compatibility_condition(name), f"{companion_answer(key)} IS NOT NULL") for name, (key, *_) in COMPATIBILITY_FILTERS.items()]
+        options.append(("first_time_friendly", "experience", (profile_value_in("experience_level"), [["first_time_ok"]]), profile_value_known("experience_level")))
+        options += [(f"energy_{band}", "energy", (profile_value_in("energy_level"), [list(values)]), profile_value_known("energy_level")) for band, values in ENERGY_BANDS.items()]
 
         selects: list[str] = []
         select_params: list[Any] = []
-        for name, dimension, key, values in options:
+        for name, dimension, (match_sql, match_params), known_sql in options:
             others = [pair for dim, group in active.items() if dim != dimension for pair in group]
             other_sql = "".join(f" AND {sql}" for sql, _ in others)
             other_params = [p for _, sql_params in others for p in sql_params]
-            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {profile_value_in(key)}{other_sql}) AS "{name}"')
-            select_params += [list(values), *other_params]
-            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {profile_value_known(key)}{other_sql}) AS "{name}_known"')
+            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {match_sql}{other_sql}) AS "{name}"')
+            select_params += [*match_params, *other_params]
+            selects.append(f'COUNT(DISTINCT a.id) FILTER (WHERE {known_sql}{other_sql}) AS "{name}_known"')
             select_params += other_params
 
         self.cursor.execute(
