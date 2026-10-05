@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { SENTRY_DATA_COLLECTION } from "@/lib/monitoring/sentryDataCollection";
 import posthog from "posthog-js";
 import { resolvePosthogOptOut } from "@/lib/posthogOptOut";
 import { registerDisplayMode, trackAppInstalls } from "@/lib/analytics";
@@ -110,6 +111,9 @@ if (
 
     // Environment configuration
     environment,
+
+    // No user info, IP, cookies or bodies (v10's sendDefaultPii: false)
+    dataCollection: SENTRY_DATA_COLLECTION,
 
     // Release tracking - uses VERCEL_GIT_COMMIT_SHA in production
     release:

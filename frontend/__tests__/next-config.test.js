@@ -34,8 +34,19 @@ describe('Next.js Configuration', () => {
   });
 
   test('should use Turbopack (no custom webpack config)', () => {
-    // Custom webpack config removed in favor of Turbopack's automatic optimizations
-    expect(nextConfig.webpack).toBeUndefined();
+    // Custom webpack config removed in favor of Turbopack's automatic optimizations.
+    // `next build` sets TURBOPACK, and withSentryConfig adds its webpack hook
+    // only when it is unset, so load the config the way a build does.
+    const savedTurbopack = process.env.TURBOPACK;
+    process.env.TURBOPACK = '1';
+    try {
+      jest.isolateModules(() => {
+        expect(require('../next.config.js').webpack).toBeUndefined();
+      });
+    } finally {
+      if (savedTurbopack === undefined) delete process.env.TURBOPACK;
+      else process.env.TURBOPACK = savedTurbopack;
+    }
   });
 
   test('should have proper image configuration', () => {
