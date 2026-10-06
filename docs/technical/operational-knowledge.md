@@ -569,7 +569,8 @@ Model and cost details are in AGENTS.md. Operational points:
   score the model didn't send stays missing (the answer shows, logged as
   "Model sent no confidence score"), and a null score is dropped. A field
   the normalizer fills in itself, because the model left it out or sent
-  null, "" or "unknown" (energy "medium"), is scored 0.1 so it's hidden. Until 2026-10 the profiler filled missing scores with 0.5 and the
+  null, "" or "unknown" (energy "medium"), is scored 0.1 so it's hidden.
+  Until 2026-10 the profiler filled missing scores with 0.5 and the
   normalizer stamped 0.2 on every profile without scores.
 
 ## Catalog scroll (back and forward)
