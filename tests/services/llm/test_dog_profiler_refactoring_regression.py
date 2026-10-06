@@ -336,16 +336,15 @@ class TestNormalizationRegression:
 
     def test_confidence_scores_normalization(self, pipeline):
         """Test confidence_scores field normalization."""
-        # Test missing confidence_scores
-        result = pipeline._normalize_profile_data({})
-        assert "confidence_scores" in result
-        assert result["confidence_scores"]["description"] == 0.2
-        assert result["confidence_scores"]["energy_level"] == 0.2
-        assert result["confidence_scores"]["trainability"] == 0.2
+        # Missing confidence_scores: only the values filled in here are scored, as guesses
+        result = pipeline._normalize_profile_data({"description": "Max loves walks.", "energy_level": "high"})
+        assert result["confidence_scores"]["trainability"] == 0.1
+        assert "energy_level" not in result["confidence_scores"]
+        assert "description" not in result["confidence_scores"]
 
-        # Test None values conversion
+        # A null score is no score, not a guess
         result = pipeline._normalize_profile_data({"confidence_scores": {"test_field": None, "valid_field": 0.8}})
-        assert result["confidence_scores"]["test_field"] == 0.0
+        assert "test_field" not in result["confidence_scores"]
         assert result["confidence_scores"]["valid_field"] == 0.8
 
     def test_required_fields_with_defaults(self, pipeline):
@@ -449,5 +448,8 @@ class TestFullPipelineRegression:
         assert len(result["medical_needs"]) <= 203  # 200 + "..."
         assert result["source_references"]["test"] == "not specified"
         assert result["source_references"]["list"] == "a; b"
-        assert result["confidence_scores"]["test"] == 0.0
+        assert "test" not in result["confidence_scores"]  # a null score is no score
         assert result["confidence_scores"]["valid"] == 0.9
+        # null answers are filled in by us, so scored as guesses
+        assert result["confidence_scores"]["ready_to_travel"] == 0.1
+        assert result["confidence_scores"]["neutered"] == 0.1

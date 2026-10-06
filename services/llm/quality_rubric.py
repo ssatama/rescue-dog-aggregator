@@ -121,7 +121,7 @@ class DogProfileQualityRubric:
         if "source_references" in profile_data:
             accuracy_score += 0.33
         # Check average confidence
-        if "confidence_scores" in profile_data:
+        if profile_data.get("confidence_scores"):
             avg_confidence = sum(profile_data["confidence_scores"].values()) / len(profile_data["confidence_scores"])
             if avg_confidence > 0.7:
                 accuracy_score += 0.34
