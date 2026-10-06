@@ -12,6 +12,25 @@ from typing import Any
 
 from services.llm.field_normalizers import FieldNormalizers
 
+# Filled in when the model doesn't answer. None of these fields has an
+# "unknown" value, so null, "" or "unknown" from the model also means no answer.
+DEFAULTS: dict[str, Any] = {
+    "trainability": "moderate",
+    "confidence": "moderate",
+    "yard_required": False,
+    "ready_to_travel": True,
+    "vaccinated": False,
+    "neutered": False,
+    "sociability": "selective",
+    "energy_level": "medium",
+    "experience_level": "some_experience",
+    "exercise_needs": "moderate",
+    "grooming_needs": "weekly",
+    "home_type": "house_preferred",
+    "personality_traits": ["friendly", "loyal", "gentle"],
+    "favorite_activities": ["walks", "play"],
+}
+
 
 class ExtractedProfileNormalizer:
     """Orchestrates profile data normalization."""
@@ -22,7 +41,7 @@ class ExtractedProfileNormalizer:
     def normalize(self, data: dict[str, Any]) -> dict[str, Any]:
         """Normalize profile data to match schema requirements."""
         # Create a deep copy to ensure immutability
-        result = copy.deepcopy(data)
+        result = self._drop_unanswered(data)
 
         # Normalize individual fields
         result = self._normalize_basic_fields(result)
@@ -34,6 +53,20 @@ class ExtractedProfileNormalizer:
         result = self._apply_field_specific_fixes(result)
         result = self._apply_defaults(result)
 
+        return result
+
+    def _drop_unanswered(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Treat a field the model left blank as missing, so _apply_defaults
+        fills it in and scores it as a guess, and keep only real scores: the
+        site hides an answer scored 0.5 or less (#517, #696), so a score is
+        the model's or none."""
+        result = copy.deepcopy(data)
+        for field in DEFAULTS:
+            value = result.get(field)
+            if value is None or (isinstance(value, str) and value.strip().lower() in ("", "unknown")):
+                result.pop(field, None)
+        scores = result.get("confidence_scores")
+        result["confidence_scores"] = {k: v for k, v in scores.items() if v is not None} if isinstance(scores, dict) else {}
         return result
 
     def _normalize_basic_fields(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -200,12 +233,6 @@ class ExtractedProfileNormalizer:
                 has_breed = "breed" in str(result)
                 result["source_references"]["personality_traits"] = "inferred from breed" if has_breed else "default values"
 
-        # Confidence scores
-        if "confidence_scores" in result and isinstance(result["confidence_scores"], dict):
-            for key in result["confidence_scores"]:
-                if result["confidence_scores"][key] is None:
-                    result["confidence_scores"][key] = 0.0
-
         return result
 
     def _apply_field_specific_fixes(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -240,35 +267,13 @@ class ExtractedProfileNormalizer:
         """Apply default values for missing required fields."""
         result = copy.deepcopy(data)
 
-        defaults = {
-            "trainability": "moderate",
-            "confidence": "moderate",
-            "yard_required": False,
-            "ready_to_travel": True,
-            "vaccinated": False,
-            "neutered": False,
-            "sociability": "selective",
-            "energy_level": "medium",
-            "experience_level": "some_experience",
-            "exercise_needs": "moderate",
-            "grooming_needs": "weekly",
-            "home_type": "house_preferred",
-            "personality_traits": ["friendly", "loyal", "gentle"],
-            "favorite_activities": ["walks", "play"],
-            "source_references": {},
-        }
-
         # A value filled in here is ours, not the model's, so it is scored as a
         # guess and the site hides it (#517, #696). A value the model gave keeps
         # whatever score it sent, or none.
-        if not isinstance(result.get("confidence_scores"), dict):
-            result["confidence_scores"] = {}
-        scores = result["confidence_scores"]
-        for field, default_value in defaults.items():
+        for field, default_value in DEFAULTS.items():
             if field not in result:
                 result[field] = copy.deepcopy(default_value)
-                if field != "source_references":
-                    scores[field] = 0.1
+                result["confidence_scores"][field] = 0.1
 
         # Ensure favorite_activities has at least 2 items
         if not result.get("favorite_activities"):

@@ -230,8 +230,7 @@ class DogProfilerPipeline:
         # A score the model didn't send stays missing. A filled-in 0.5 would
         # read as a guess, and the site hides guesses (#517, #696); a missing
         # score shows the answer, as for profiles from before scores existed.
-        scores = profile_data.setdefault("confidence_scores", {})
-        missing = [field for field in ("description", "energy_level", "trainability") if field not in scores]
+        missing = [field for field in ("description", "energy_level", "trainability") if field not in profile_data["confidence_scores"]]
         if missing:
             logger.warning(f"Model sent no confidence score for {', '.join(missing)} for dog {dog_id} ({dog_name})")
 

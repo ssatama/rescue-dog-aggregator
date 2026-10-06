@@ -81,6 +81,23 @@ class TestMissingConfidenceScores:
         assert profile.confidence_scores["energy_level"] <= 0.5
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("blank", [None, "", "unknown"])
+    async def test_a_blank_answer_filled_in_is_scored_as_a_guess(self, pipeline, blank):
+        profile = await profile_from(pipeline, {**PROFILE, "experience_level": blank, "confidence_scores": {"description": 0.9}})
+        assert profile.experience_level == "some_experience"
+        assert profile.confidence_scores["experience_level"] <= 0.5
+
+    @pytest.mark.asyncio
+    async def test_null_scores_with_padded_traits_still_profile_the_dog(self, pipeline):
+        profile = await profile_from(pipeline, {**PROFILE, "personality_traits": ["gentle"], "confidence_scores": None})
+        assert profile.confidence_scores["personality_traits"] <= 0.5
+
+    @pytest.mark.asyncio
+    async def test_a_null_score_is_dropped_not_made_a_guess(self, pipeline):
+        profile = await profile_from(pipeline, {**PROFILE, "confidence_scores": {"description": 0.9, "energy_level": None}})
+        assert "energy_level" not in profile.confidence_scores
+
+    @pytest.mark.asyncio
     async def test_null_scores_are_read_as_none(self, pipeline):
         profile = await profile_from(pipeline, {**PROFILE, "confidence_scores": None})
         assert profile.confidence_scores == {}
