@@ -426,7 +426,8 @@ reconcile` against production text before trusting a resolver change.
   `/wp-content/uploads/2023/11/template-*`.
 - About a quarter of the stories are only the rescue's template (new
   arrivals, litters). Their profiles are short, and their energy and
-  experience are scored low, so the dog page leaves them out (#696).
+  experience are scored low, so the dog page leaves them out (#696), and
+  so do the energy and first-time-friendly filters and their counts.
 - Profiles leave out where the dog is, its age in numbers and how long it
   has waited (the prompt says why): they are written once and the dogs move.
 - Gnadenplatz dogs are seniors up for adoption with a waived fee; the prompt

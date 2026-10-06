@@ -66,13 +66,18 @@ def _answer(column: str, key: str) -> str:
     return f"CASE {value} WHEN 'true' THEN 'yes' WHEN 'false' THEN 'no' WHEN '' THEN NULL WHEN 'unknown' THEN NULL ELSE {value} END"
 
 
+def _guessed(key: str) -> str:
+    """SQL: the profile scored its ``key`` answer 0.5 or less, which the dog
+    page treats as not assessed (#517, #696)."""
+    score = f"a.dog_profiler_data->'confidence_scores'->'{key}'"
+    return f"CASE WHEN jsonb_typeof({score}) = 'number' THEN ({score})::numeric <= 0.5 ELSE FALSE END"
+
+
 def companion_answer(key: str) -> str:
     """SQL: the dog's good_with_* answer, by the frontend's companionAnswer rule.
-    The profile's, unless it is unknown or scored 0.5 or less (#517); then the
-    rescue's own answer in the scraped properties (#629). NULL when neither has one."""
-    score = f"a.dog_profiler_data->'confidence_scores'->'{key}'"
-    guessed = f"CASE WHEN jsonb_typeof({score}) = 'number' THEN ({score})::numeric <= 0.5 ELSE FALSE END"
-    return f"COALESCE(CASE WHEN NOT ({guessed}) THEN {_answer('a.dog_profiler_data', key)} END, {_answer('a.properties', key)})"
+    The profile's, unless it is unknown or a guess; then the rescue's own answer
+    in the scraped properties (#629). NULL when neither has one."""
+    return f"COALESCE(CASE WHEN NOT ({_guessed(key)}) THEN {_answer('a.dog_profiler_data', key)} END, {_answer('a.properties', key)})"
 
 
 def compatibility_condition(name: str) -> tuple[str, list[Any]]:
@@ -84,14 +89,20 @@ def compatibility_condition(name: str) -> tuple[str, list[Any]]:
     return f"({answer} = ANY(%s) OR {answer} ^@ ANY(%s))", [list(values), list(prefixes)]
 
 
+def _assessed(key: str) -> str:
+    """SQL: the profile's ``key``, or NULL when it is a guess, as the frontend's
+    assessedProfileValue reads energy and experience."""
+    return f"CASE WHEN NOT ({_guessed(key)}) THEN a.dog_profiler_data->>'{key}' END"
+
+
 def profile_value_in(key: str) -> str:
-    """SQL predicate: the profile's ``key`` is one of a list passed as one param."""
-    return f"a.dog_profiler_data->>'{key}' = ANY(%s)"
+    """SQL predicate: the profile's assessed ``key`` is one of a list passed as one param."""
+    return f"{_assessed(key)} = ANY(%s)"
 
 
 def profile_value_known(key: str) -> str:
-    """SQL predicate: the profile records ``key`` as anything but unknown."""
-    return f"COALESCE(a.dog_profiler_data->>'{key}', 'unknown') <> 'unknown'"
+    """SQL predicate: the profile assesses ``key`` as anything but unknown."""
+    return f"COALESCE({_assessed(key)}, 'unknown') <> 'unknown'"
 
 
 def size_scale_values(size: StandardizedSize) -> list[str]:

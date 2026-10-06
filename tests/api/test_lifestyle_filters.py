@@ -145,6 +145,9 @@ RESCUE_ANSWERS = {
     "Ivy": ('{"good_with_children": "no", "confidence_scores": {"good_with_children": 0.9}}', '{"good_with_children": "Yes (11+)"}'),
     "Jo": (None, '{"good_with_children": "Yes (11+)", "good_with_dogs": "Yes (female dogs)"}'),
     "Kit": ('{"good_with_cats": "yes", "confidence_scores": {"good_with_cats": 0.5}}', '{"good_with_children": "Unknown"}'),
+    # Energy and experience scored 0.5 or less are guesses, left out as the dog page leaves them out (#696)
+    "Max": ('{"energy_level": "low", "experience_level": "first_time_ok", "confidence_scores": {"energy_level": 0.3, "experience_level": 0.5}}', None),
+    "Ned": ('{"energy_level": "low", "experience_level": "first_time_ok", "confidence_scores": {"energy_level": 0.8, "experience_level": 0.51}}', None),
 }
 
 
@@ -191,6 +194,18 @@ class TestRescueAnswerFallback:
 
     def test_rescue_qualified_dogs_answer_is_not_a_yes(self, client: TestClient):
         assert names(client, organization_id=908, good_with_dogs="true") == []
+
+    def test_guessed_energy_is_not_matched(self, client: TestClient):
+        assert names(client, organization_id=908, energy="low") == ["Ned"]
+        assert names(client, organization_id=908, energy_level="low") == ["Ned"]
+
+    def test_guessed_experience_is_not_matched(self, client: TestClient):
+        assert names(client, organization_id=908, experience_level="first_time_ok") == ["Ned"]
+
+    def test_counts_leave_guessed_energy_and_experience_out(self, client: TestClient):
+        counts = lifestyle(client, organization_id=908)
+        assert counts["energy_low"] == (1, 1)
+        assert counts["first_time_friendly"] == (1, 1)
 
     def test_counts_use_the_same_rule(self, client: TestClient):
         counts = lifestyle(client, organization_id=908)
