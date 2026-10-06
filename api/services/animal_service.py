@@ -947,27 +947,27 @@ class AnimalService:
                         COUNT(*) FILTER (WHERE a.standardized_size = 'Medium') as medium_count,
                         COUNT(*) FILTER (WHERE a.standardized_size = 'Large') as large_count,
                         COUNT(*) FILTER (WHERE a.standardized_size = 'XLarge') as xlarge_count,
-                        -- Experience level distribution
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'beginner') as first_time_ok_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'intermediate') as some_experience_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'experience_level' = 'experienced') as experienced_count,
+                        -- Experience level distribution: the profile's own answers, guesses left out (#696)
+                        COUNT(*) FILTER (WHERE {_assessed("experience_level")} = 'first_time_ok') as first_time_ok_count,
+                        COUNT(*) FILTER (WHERE {_assessed("experience_level")} = 'some_experience') as some_experience_count,
+                        COUNT(*) FILTER (WHERE {_assessed("experience_level")} = 'experienced_only') as experienced_count,
                         -- Sex distribution
                         COUNT(*) FILTER (WHERE a.sex = 'Male') as male_count,
                         COUNT(*) FILTER (WHERE a.sex = 'Female') as female_count,
                         -- Personality metrics for bar charts
                         COUNT(*) FILTER (WHERE a.dog_profiler_data IS NOT NULL) as total_with_profiler_data,
                         -- Energy Level
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'low') as energy_low_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'medium') as energy_medium_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'energy_level' = 'high') as energy_high_count,
+                        COUNT(*) FILTER (WHERE {_assessed("energy_level")} = 'low') as energy_low_count,
+                        COUNT(*) FILTER (WHERE {_assessed("energy_level")} = 'medium') as energy_medium_count,
+                        COUNT(*) FILTER (WHERE {_assessed("energy_level")} IN ('high', 'very_high')) as energy_high_count,
                         -- Confidence (as proxy for trainability/independence)
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('very_confident', 'confident')) as confidence_high_count,
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' = 'moderate') as confidence_moderate_count,
                         COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('shy', 'very_shy')) as confidence_low_count,
-                        -- Good with dogs (as proxy for affection/sociability)
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'yes') as good_with_dogs_yes_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'sometimes') as good_with_dogs_sometimes_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'good_with_dogs' = 'no') as good_with_dogs_no_count
+                        -- Good with dogs (as proxy for affection/sociability), as the dog's card answers it (#658)
+                        COUNT(*) FILTER (WHERE {companion_answer("good_with_dogs")} = 'yes') as good_with_dogs_yes_count,
+                        COUNT(*) FILTER (WHERE {companion_answer("good_with_dogs")} = 'selective') as good_with_dogs_sometimes_count,
+                        COUNT(*) FILTER (WHERE {companion_answer("good_with_dogs")} = 'no') as good_with_dogs_no_count
                     FROM animals a
                     JOIN organizations o ON a.organization_id = o.id
                     WHERE a.animal_type = 'dog'
