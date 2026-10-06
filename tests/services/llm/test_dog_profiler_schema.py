@@ -179,11 +179,9 @@ class TestDogProfilerDataSchema:
 
     def test_confidence_scores_validation(self, valid_profile_data):
         """Test confidence score validation."""
-        # Missing required confidence scores
+        # A field without a score is fine: nothing is filled in for the model
         valid_profile_data["confidence_scores"] = {"some_field": 0.5}
-        with pytest.raises(ValidationError) as exc_info:
-            DogProfilerData(**valid_profile_data)
-        assert "description" in str(exc_info.value)
+        assert "description" not in DogProfilerData(**valid_profile_data).confidence_scores
 
         # Invalid score range
         valid_profile_data["confidence_scores"] = {

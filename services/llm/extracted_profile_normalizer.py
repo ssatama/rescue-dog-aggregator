@@ -240,10 +240,6 @@ class ExtractedProfileNormalizer:
         """Apply default values for missing required fields."""
         result = copy.deepcopy(data)
 
-        # Track if we're setting defaults
-        personality_traits_defaulted = "personality_traits" not in result
-        favorite_activities_defaulted = "favorite_activities" not in result
-
         defaults = {
             "trainability": "moderate",
             "confidence": "moderate",
@@ -260,25 +256,19 @@ class ExtractedProfileNormalizer:
             "personality_traits": ["friendly", "loyal", "gentle"],
             "favorite_activities": ["walks", "play"],
             "source_references": {},
-            "confidence_scores": {
-                "description": 0.2,
-                "energy_level": 0.2,
-                "trainability": 0.2,
-            },
         }
 
+        # A value filled in here is ours, not the model's, so it is scored as a
+        # guess and the site hides it (#517, #696). A value the model gave keeps
+        # whatever score it sent, or none.
+        if not isinstance(result.get("confidence_scores"), dict):
+            result["confidence_scores"] = {}
+        scores = result["confidence_scores"]
         for field, default_value in defaults.items():
             if field not in result:
                 result[field] = copy.deepcopy(default_value)
-
-        # Add confidence scores if fields were defaulted
-        if personality_traits_defaulted or favorite_activities_defaulted:
-            if "confidence_scores" not in result:
-                result["confidence_scores"] = {}
-            if personality_traits_defaulted:
-                result["confidence_scores"]["personality_traits"] = 0.1
-            if favorite_activities_defaulted:
-                result["confidence_scores"]["favorite_activities"] = 0.1
+                if field != "source_references":
+                    scores[field] = 0.1
 
         # Ensure favorite_activities has at least 2 items
         if not result.get("favorite_activities"):

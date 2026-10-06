@@ -564,6 +564,13 @@ Model and cost details are in AGENTS.md. Operational points:
   (#434).
 - If OpenRouter spend alerts fire, check the pinned model first. A full
   re-profile of all dogs is a real cost; normal runs only profile new dogs.
+- **Confidence scores are the model's or none.** A score of 0.5 or less hides
+  the answer on the dog page and in the filters, so nothing may invent one. A
+  score the model didn't send stays missing (the answer shows, logged as
+  "Model sent no confidence score"); a field the normalizer fills in itself
+  (energy "medium" when the model left energy out) is scored 0.1 so it's
+  hidden. Until 2026-10 the profiler filled missing scores with 0.5 and the
+  normalizer stamped 0.2 on every profile without scores.
 
 ## Catalog scroll (back and forward)
 

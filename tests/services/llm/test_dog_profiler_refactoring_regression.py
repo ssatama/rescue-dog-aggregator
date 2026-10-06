@@ -336,12 +336,11 @@ class TestNormalizationRegression:
 
     def test_confidence_scores_normalization(self, pipeline):
         """Test confidence_scores field normalization."""
-        # Test missing confidence_scores
-        result = pipeline._normalize_profile_data({})
-        assert "confidence_scores" in result
-        assert result["confidence_scores"]["description"] == 0.2
-        assert result["confidence_scores"]["energy_level"] == 0.2
-        assert result["confidence_scores"]["trainability"] == 0.2
+        # Missing confidence_scores: only the values filled in here are scored, as guesses
+        result = pipeline._normalize_profile_data({"description": "Max loves walks.", "energy_level": "high"})
+        assert result["confidence_scores"]["trainability"] == 0.1
+        assert "energy_level" not in result["confidence_scores"]
+        assert "description" not in result["confidence_scores"]
 
         # Test None values conversion
         result = pipeline._normalize_profile_data({"confidence_scores": {"test_field": None, "valid_field": 0.8}})

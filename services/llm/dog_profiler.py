@@ -227,19 +227,13 @@ class DogProfilerPipeline:
         profile_data["prompt_version"] = self.prompt_builder.get_prompt_version()
         profile_data["model_used"] = profiler_result.get("model_used", self.model)
 
-        # Add confidence scores if not present (using defaults)
-        if "confidence_scores" not in profile_data:
-            profile_data["confidence_scores"] = {
-                "description": 0.8,
-                "energy_level": 0.7,
-                "trainability": 0.7,
-            }
-        else:
-            required_defaults = {"description": 0.5, "energy_level": 0.5, "trainability": 0.5}
-            for field, default in required_defaults.items():
-                if field not in profile_data["confidence_scores"]:
-                    profile_data["confidence_scores"][field] = default
-                    logger.warning(f"Backfilled missing confidence score '{field}' with default {default} for dog {dog_id} ({dog_name})")
+        # A score the model didn't send stays missing. A filled-in 0.5 would
+        # read as a guess, and the site hides guesses (#517, #696); a missing
+        # score shows the answer, as for profiles from before scores existed.
+        scores = profile_data.setdefault("confidence_scores", {})
+        missing = [field for field in ("description", "energy_level", "trainability") if field not in scores]
+        if missing:
+            logger.warning(f"Model sent no confidence score for {', '.join(missing)} for dog {dog_id} ({dog_name})")
 
         # Add source references if not present
         if "source_references" not in profile_data:

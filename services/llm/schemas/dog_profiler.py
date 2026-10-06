@@ -110,19 +110,12 @@ class DogProfilerData(BaseModel):
     @field_validator("confidence_scores")
     @classmethod
     def validate_confidence_scores(cls, v: dict[str, float]) -> dict[str, float]:
-        """Ensure confidence scores are valid probabilities."""
-        if not v:
-            raise ValueError("Confidence scores are required")
-
+        """Ensure confidence scores are valid probabilities. A field without a
+        score is left without one: 0.5 or less means a guess the site hides,
+        so nothing may be filled in for the model."""
         for field, score in v.items():
             if not 0.0 <= score <= 1.0:
                 raise ValueError(f"Invalid confidence score for {field}: {score}")
-
-        # Ensure critical fields have confidence scores
-        required_fields = ["description", "energy_level", "trainability"]
-        for field in required_fields:
-            if field not in v:
-                raise ValueError(f"Missing confidence score for required field: {field}")
 
         return v
 
