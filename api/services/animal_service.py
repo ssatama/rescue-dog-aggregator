@@ -961,9 +961,9 @@ class AnimalService:
                         COUNT(*) FILTER (WHERE {_assessed("energy_level")} = 'medium') as energy_medium_count,
                         COUNT(*) FILTER (WHERE {_assessed("energy_level")} IN ('high', 'very_high')) as energy_high_count,
                         -- Confidence (as proxy for trainability/independence)
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('very_confident', 'confident')) as confidence_high_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' = 'moderate') as confidence_moderate_count,
-                        COUNT(*) FILTER (WHERE a.dog_profiler_data->>'confidence' IN ('shy', 'very_shy')) as confidence_low_count,
+                        COUNT(*) FILTER (WHERE {_assessed("confidence")} IN ('very_confident', 'confident')) as confidence_high_count,
+                        COUNT(*) FILTER (WHERE {_assessed("confidence")} = 'moderate') as confidence_moderate_count,
+                        COUNT(*) FILTER (WHERE {_assessed("confidence")} IN ('shy', 'very_shy')) as confidence_low_count,
                         -- Good with dogs (as proxy for affection/sociability), as the dog's card answers it (#658)
                         COUNT(*) FILTER (WHERE {companion_answer("good_with_dogs")} = 'yes') as good_with_dogs_yes_count,
                         COUNT(*) FILTER (WHERE {companion_answer("good_with_dogs")} = 'selective') as good_with_dogs_sometimes_count,

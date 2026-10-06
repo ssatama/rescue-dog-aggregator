@@ -15,15 +15,16 @@ from api.services.animal_service import AnimalService
 from tests.conftest import override_get_db_cursor
 
 PROFILES = [
-    {"experience_level": "first_time_ok", "energy_level": "very_high", "good_with_dogs": "selective"},
-    {"experience_level": "some_experience", "energy_level": "low", "good_with_dogs": "yes"},
-    {"experience_level": "experienced_only", "energy_level": "low", "good_with_dogs": "no"},
+    {"experience_level": "first_time_ok", "energy_level": "very_high", "good_with_dogs": "selective", "confidence": "confident"},
+    {"experience_level": "some_experience", "energy_level": "low", "good_with_dogs": "yes", "confidence": "moderate"},
+    {"experience_level": "experienced_only", "energy_level": "low", "good_with_dogs": "no", "confidence": "shy"},
     # Guesses: counted nowhere
     {
         "experience_level": "first_time_ok",
         "energy_level": "low",
         "good_with_dogs": "yes",
-        "confidence_scores": {"experience_level": 0.4, "energy_level": 0.5, "good_with_dogs": 0.3},
+        "confidence": "very_shy",
+        "confidence_scores": {"experience_level": 0.4, "energy_level": 0.5, "good_with_dogs": 0.3, "confidence": 0.2},
     },
 ]
 
@@ -62,3 +63,7 @@ class TestBreedStatsProfileValues:
     def test_affection_counts_selective_and_skips_the_guess(self, podenco):
         # yes 3 + selective 2 + no 1 = 6 / 9 = 66%
         assert podenco["personality_metrics"]["affection"]["percentage"] == 66
+
+    def test_trainability_skips_the_guessed_confidence(self, podenco):
+        # confident 3 + moderate 2 + shy 1 = 6 / 9 = 66%
+        assert podenco["personality_metrics"]["trainability"]["percentage"] == 66
