@@ -441,7 +441,6 @@ psql -d rescue_dogs
 
 # Emergency ops
 python management/emergency_operations.py status
-python management/emergency_operations.py --fix-duplicates
 ```
 
 ### Deployment

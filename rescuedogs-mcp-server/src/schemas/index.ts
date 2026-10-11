@@ -200,15 +200,15 @@ export const MatchPreferencesInputSchema = z
     has_children: z
       .boolean()
       .optional()
-      .describe("Whether you have children at home. Not applied as a filter yet; check each dog's compatibility in rescuedogs_get_dog_details"),
+      .describe("Whether you have children at home. Not applied as a filter"),
     has_other_dogs: z
       .boolean()
       .optional()
-      .describe("Whether you have other dogs at home. Not applied as a filter yet; check each dog's compatibility in rescuedogs_get_dog_details"),
+      .describe("Whether you have other dogs at home. Not applied as a filter"),
     has_cats: z
       .boolean()
       .optional()
-      .describe("Whether you have cats at home. Not applied as a filter yet; check each dog's compatibility in rescuedogs_get_dog_details"),
+      .describe("Whether you have cats at home. Not applied as a filter"),
     adoptable_to_country: z
       .string()
       .optional()

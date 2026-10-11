@@ -29,7 +29,7 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 1. Think Before Coding
 
-**"Don't assume. Don't hide confusion. Surface tradeoffs."**
+**"Don't hide confusion. Surface tradeoffs."**
 
 - Make routine judgment calls yourself and state the assumption; check in
   only when different readings would lead to materially different work
@@ -344,7 +344,8 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
   missing env var silently falls back to the router
 - Tuning: `LLM_DEFAULT_MODEL` (and `LLM_COST_TIER`, which only applies to
   `openrouter/auto`). Profiling takes its model from these alone; the
-  Instagram photo analyzer still hardcodes `google/gemini-2.5-flash-image`
+  Instagram photo analyzer (`google/gemini-2.5-flash-image`) and the unused
+  defaults of `call_vision_api` and `RetryConfig` still hardcode one
 - Why pinned: the auto-router caused two silent failure classes - 400s from
   reasoning-only endpoints (123 dogs unprofiled) and reasoning models spending
   the budget so the JSON answer was truncated (#409). Re-check for a newer

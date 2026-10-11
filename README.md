@@ -201,7 +201,7 @@ uv run pytest -m "not slow and not browser" --maxfail=3
 uv run pytest
 
 # Single test
-uv run pytest tests/api/test_swipe.py::test_name -v
+uv run pytest tests/api/test_swipe_endpoint.py::test_name -v
 ```
 
 ### Frontend Tests

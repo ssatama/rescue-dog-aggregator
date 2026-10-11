@@ -44,10 +44,11 @@ class PhotoAnalysisResponse(BaseModel):
         rather than asked of the model; any values the model sends are replaced."""
         if not isinstance(data, dict):
             return data
-        scores = [data.get(k) for k in ("quality_score", "visibility_score", "appeal_score", "background_score")]
-        if all(isinstance(s, int | float) for s in scores):
-            overall = sum(scores) / 4.0
-            data = {**data, "overall_score": overall, "ig_ready": overall >= 8.0}
-        return data
+        try:
+            scores = [float(data[k]) for k in ("quality_score", "visibility_score", "appeal_score", "background_score")]
+        except (KeyError, TypeError, ValueError):
+            return data  # field validation reports the bad or missing score
+        overall = sum(scores) / 4.0
+        return {**data, "overall_score": overall, "ig_ready": overall >= 8.0}
 
     model_config = ConfigDict(validate_assignment=True)

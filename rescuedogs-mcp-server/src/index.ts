@@ -164,7 +164,7 @@ server.tool(
 // Tool 2: Get Dog Details
 server.tool(
   "rescuedogs_get_dog_details",
-  "Get the full listing for one dog by its slug (from rescuedogs_search_dogs or rescuedogs_match_preferences results): the rescue's listing data plus the AI-generated personality profile, home and experience requirements, and compatibility with dogs, cats and children where the rescue stated it. The AI profile is missing for some dogs; the rest of the listing is still returned. Adoption itself happens on the rescue's own site.",
+  "Get the full listing for one dog by its slug (from rescuedogs_search_dogs or rescuedogs_match_preferences results): the rescue's listing data plus the AI-generated personality profile and its home and experience requirements. The AI profile is missing for some dogs; the rest of the listing is still returned. Adoption itself happens on the rescue's own site.",
   GetDogDetailsInputSchema.shape,
   async (input) => {
     const parsed = GetDogDetailsInputSchema.parse(input);
@@ -414,7 +414,7 @@ server.tool(
 // Tool 7: Match Preferences
 server.tool(
   "rescuedogs_match_preferences",
-  "Find dogs for a person's lifestyle. Maps living_situation to home type, activity_level to energy level, and experience to required owner experience, then searches with those filters (and adoptable_to_country if given). has_children, has_other_dogs and has_cats are accepted but not applied as filters yet: before telling a user a dog suits their household, check that dog's compatibility with rescuedogs_get_dog_details.",
+  "Find dogs for a person's lifestyle. Maps living_situation to home type, activity_level to energy level, and experience to required owner experience, then searches with those filters (and adoptable_to_country if given). has_children, has_other_dogs and has_cats are accepted but not applied, and these tools don't report compatibility with children, dogs or cats: don't tell a user a dog suits their household; send them to the rescue's listing to ask.",
   MatchPreferencesInputSchema.shape,
   async (input) => {
     const parsed = MatchPreferencesInputSchema.parse(input);
