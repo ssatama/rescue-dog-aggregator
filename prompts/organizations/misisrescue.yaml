@@ -116,10 +116,8 @@ extraction_prompt: |
   - neutered: null if NOT mentioned. ONLY true if text contains "neutered", "spayed", "castrated", or similar. Do NOT assume.
 
   METADATA (required):
-  - processing_time_ms: (system will fill)
   - confidence_scores: MUST be a dict with AT LEAST these required keys: "description", "energy_level", "trainability". Add more fields as appropriate. All values 0.0-1.0.
   - source_references: MUST be a dict (NOT a string!) with AT LEAST these required keys: "description", "personality_traits". Each value should be a brief quote from the source text.
-  - prompt_version: "1.0.0"
 
   MISIS RESCUE SPECIFIC PATTERNS:
   1. Age often embedded in narrative (e.g., "we reckon he's 8-10 years old")
@@ -158,81 +156,3 @@ serbia_terminology:
   secure garden: fenced yard
   dog savvy: experienced with dogs
   adults only: no children
-
-few_shot_examples:
-  - input: |
-      Name: Fluffy Poodle Mix
-      Properties: {
-        "description": "This beautiful fluffy poodle mix has a gorgeous coat and loves to play. She's very friendly with everyone.",
-        "raw_bullet_points": ["Friendly", "Playful", "Good with kids", "Beautiful fluffy coat"]
-      }
-    
-    output: |
-      {
-        "grooming_needs": null,
-        "vaccinated": null,
-        "neutered": null,
-        "medical_needs": null
-      }
-    explanation: "CRITICAL: Even though this is a fluffy poodle with a beautiful coat, grooming is NOT explicitly mentioned so grooming_needs MUST be null. Never assume grooming based on breed or coat type!"
-
-  - input: |
-      Name: Beky
-      Properties: {
-        "weight": "20.0kg",
-        "raw_name": "💙 Beky {He's a boy 🤪!}",
-        "description": "Beky is the boss of our shelter. We reckon he's somewhere between 8-10 years old... Beky is still the life and soul of the party & a really cheeky character. We found him on the streets... That's why it's hard to know how old he is, but our vet has had a guess. He's medium-sized, under 20kg...",
-        "raw_bullet_points": ["A really funny guy. Cheeky & loves some fuss", "Good at walking on the lead", "Could be rehomed with a dog savvy cat", "Vaccinated & castrated", "Beky can be a bit dominant with male dogs"]
-      }
-
-    output: |
-      {
-        "description": "Charismatic Beky brings years of wisdom and cheeky charm to brighten your days. This shelter boss seeks a home where he can be your one and only, sharing walks, chats, and endless laughs as your devoted companion.",
-        "tagline": "Cheeky charmer seeks solo spotlight",
-        "energy_level": "medium",
-        "trainability": "easy",
-        "sociability": "social",
-        "confidence": "confident",
-        "good_with_dogs": "selective",
-        "good_with_cats": "yes",
-        "good_with_children": "yes",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["cheeky", "funny", "social", "confident", "affectionate"],
-        "favorite_activities": ["walks", "chatting", "getting fuss"],
-        "unique_quirk": "loves to do a bit of a bork & have a chat with you",
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "confidence_scores": {
-          "description": 0.9,
-          "tagline": 0.9,
-          "energy_level": 0.7,
-          "trainability": 0.8,
-          "sociability": 1.0,
-          "confidence": 1.0,
-          "good_with_dogs": 0.9,
-          "good_with_cats": 0.8,
-          "vaccinated": 1.0,
-          "neutered": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.85,
-          "unique_quirk": 0.9
-        },
-        "source_references": {
-          "description": "life and soul of the party & a really cheeky character",
-          "personality_traits": "cheeky, funny, life and soul of the party, boss of shelter",
-          "confidence": "boss of our shelter",
-          "good_with_dogs": "can be a bit dominant with male dogs",
-          "good_with_cats": "Could be rehomed with a dog savvy cat",
-          "vaccinated": "Vaccinated & castrated",
-          "neutered": "castrated"
-        },
-        "prompt_version": "1.0.0"
-      }

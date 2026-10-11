@@ -97,10 +97,8 @@ extraction_prompt: |
   - neutered: true if "neutered" or "spayed" mentioned, null otherwise
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but transform it into engaging copy
@@ -134,65 +132,3 @@ bulgarian_rescue_terminology:
   child lover: great with kids
   water nymph: loves water/swimming
   
-few_shot_examples:
-  - input: |
-      Name: Luna
-      Breed: Mixed Breed
-      Age: 2 years
-      Properties: {
-        "description": "Luna is a sweet girl who loves children. Cat and dog friendly. Medium sized. Neutered, vaccinated and passport ready. Home check applies."
-      }
-
-    output: |
-      {
-        "description": "Gentle Luna dreams of a family to shower with unconditional love. This sweet soul adores children, welcoming both feline and canine siblings with open paws. Ready to travel, she promises to fill your home with warmth and devotion.",
-        "tagline": "Sweet Luna seeks her loving family",
-        "energy_level": "medium",
-        "trainability": "moderate",
-        "sociability": "social",
-        "confidence": "moderate",
-        "good_with_dogs": "yes",
-        "good_with_cats": "yes",
-        "good_with_children": "yes",
-        "home_type": "house_preferred",
-        "yard_required": null,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["sweet", "loving", "gentle"],
-        "favorite_activities": ["family time", "walks", "cuddles"],
-        "unique_quirk": null,
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 0.7,
-          "trainability": 0.7,
-          "sociability": 0.85,
-          "good_with_dogs": 1.0,
-          "good_with_cats": 1.0,
-          "good_with_children": 1.0,
-          "ready_to_travel": 1.0,
-          "vaccinated": 1.0,
-          "neutered": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.85
-        },
-        "source_references": {
-          "description": "Luna is a sweet girl who loves children",
-          "good_with_dogs": "dog friendly",
-          "good_with_cats": "Cat and dog friendly",
-          "good_with_children": "loves children",
-          "ready_to_travel": "passport ready",
-          "vaccinated": "vaccinated",
-          "neutered": "Neutered"
-        },
-        "prompt_version": "1.0.0"
-      }

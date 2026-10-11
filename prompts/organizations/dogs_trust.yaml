@@ -98,10 +98,8 @@ extraction_prompt: |
   - neutered: true unless explicitly stated otherwise
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.1.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but you can rephrase for engagement
@@ -160,63 +158,3 @@ uk_terminology:
   older children: children over 10-12
   adult only: no children
   
-few_shot_examples:
-  - input: |
-      Name: Lilo
-      Breed: Jack Russell Terrier Mix
-      Age: 6 - 12 months
-      Properties: {
-        "description": "Lilo is a fabulous 6-month-old Jack Russell Pug Crossbreed. She's full of personality and full of energy! She's a little standoffish when she first meets you, but with a few treats and a little space she soon comes round. once you're in the club you'll see how playful and downright adorable she is! She'll need her adopters to put in some time initially to settle her into her new home and slowly build her confidence around new people. She's a resilient little girl though so this should be relatively easy with a bit of consistency. He home will need to have a secure garden as she loves to play off-lead and it will help with her house training too. Lilo needs a home with no other pets or children."
-      }
-
-    output: |
-      {
-        "description": "Playful Lilo is ready to thrive with patient adopters who'll help her confidence soar. This resilient Jack Russell mix offers boundless energy and adorable antics to those who earn her trust with treats and time.",
-        "tagline": "Energetic pup seeks patient confidence builders",
-        "energy_level": "high",
-        "trainability": "moderate",
-        "sociability": "selective",
-        "confidence": "moderate",
-        "good_with_dogs": "no",
-        "good_with_cats": "no",
-        "good_with_children": "no",
-        "home_type": "house_preferred",
-        "yard_required": true,
-        "experience_level": "some_experience",
-        "exercise_needs": "high",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": "Needs time to build confidence with new people",
-        "personality_traits": ["playful", "energetic", "resilient", "adorable"],
-        "favorite_activities": ["off-lead play", "quiet time"],
-        "unique_quirk": "Standoffish at first but warms up with treats",
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 1.0,
-          "trainability": 0.8,
-          "sociability": 0.9,
-          "confidence": 0.8,
-          "good_with_dogs": 1.0,
-          "good_with_cats": 1.0,
-          "good_with_children": 1.0,
-          "yard_required": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.9
-        },
-        "source_references": {
-          "energy_level": "full of personality and full of energy",
-          "sociability": "a little standoffish when she first meets you",
-          "confidence": "resilient little girl",
-          "good_with_dogs": "no other pets",
-          "good_with_children": "no other pets or children",
-          "yard_required": "secure garden"
-        },
-        "prompt_version": "1.1.0"
-      }

@@ -37,15 +37,17 @@ class PhotoAnalysisResponse(BaseModel):
     reasoning: str = Field(..., description="Explanation of the scores")
     flags: list[str] = Field(default_factory=list, description="Issues or notable features")
 
-    @model_validator(mode="after")
-    def validate_overall_score(self) -> "PhotoAnalysisResponse":
-        """Ensure overall_score equals the average of the 4 dimension scores."""
-        expected = (self.quality_score + self.visibility_score + self.appeal_score + self.background_score) / 4.0
-
-        # Allow small floating point tolerance
-        if abs(self.overall_score - expected) > 0.01:
-            raise ValueError(f"overall_score {self.overall_score} does not equal average {expected:.2f}")
-
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def compute_overall_score(cls, data: dict) -> dict:
+        """overall_score and ig_ready are arithmetic, so they are computed here
+        rather than asked of the model; any values the model sends are replaced."""
+        if not isinstance(data, dict):
+            return data
+        scores = [data.get(k) for k in ("quality_score", "visibility_score", "appeal_score", "background_score")]
+        if all(isinstance(s, int | float) for s in scores):
+            overall = sum(scores) / 4.0
+            data = {**data, "overall_score": overall, "ig_ready": overall >= 8.0}
+        return data
 
     model_config = ConfigDict(validate_assignment=True)

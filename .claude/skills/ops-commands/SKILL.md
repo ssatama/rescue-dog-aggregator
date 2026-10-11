@@ -1,6 +1,6 @@
 ---
 name: ops-commands
-description: Operational runbook for the Rescue Dog Aggregator - organization config sync, LLM profiling batches, and emergency recovery commands (stale data reset, environment rebuilds, single-test invocation). Use when managing org configs, running LLM enrichment, or recovering a broken local/database state.
+description: Operational runbook for the Rescue Dog Aggregator - organization config sync, LLM profiling batches, and emergency commands (system status, backup/rollback/recover, environment rebuilds, single-test invocation). Use when managing org configs, running LLM enrichment, or recovering a broken local/database state.
 ---
 
 # Operational Commands
@@ -38,7 +38,7 @@ uv run python management/backfill_commands.py apply --orgs rean --steps clear-fa
 # Database
 psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE active = true;"
 # Or use Postgres MCP: mcp__postgres__query tool
-uv run python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py status  # also: emergency-stop, backup|rollback|recover <org_id>
 
 # Frontend rebuild
 cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
@@ -47,6 +47,6 @@ cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
 rm -rf .venv && uv sync
 
 # Single test
-uv run pytest tests/api/test_swipe.py::test_name -v
+uv run pytest tests/api/test_swipe_endpoint.py::test_name -v
 pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 ```

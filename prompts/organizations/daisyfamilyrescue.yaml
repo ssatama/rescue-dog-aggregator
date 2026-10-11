@@ -106,10 +106,8 @@ extraction_prompt: |
   - neutered: Check "sex_german" for "kastriert" or "spayed_neutered" field
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the source text that supports it
-  - prompt_version: "1.0.0"
 
   CRITICAL RULES FOR DATA INTEGRITY:
   1. NEVER invent data - if information is not in the text, return null
@@ -163,64 +161,3 @@ german_keywords:
   Monate: months
   ca.: approximately
   
-few_shot_examples:
-  - input: |
-      Name: Rachel
-      Breed: Mixed Breed
-      Age: 12/2023
-      Properties: {
-        "character": "aufgeschlossen, friendly, active, clever, calm, playful, cuddly",
-        "character_german": "aufgeschlossen, freundlich, aktiv, clever, ruhig, verspielt, verschmust",
-        "container_text": "Rachel\n12/2023 • ca. 55cm • 18kg",
-        "compatibility": "dogs: yes",
-        "sex_german": "weiblich, kastriert",
-        "current_location": "North Macedonia"
-      }
-
-    output: |
-      {
-        "description": "Rachel is a brilliantly clever and playful mixed breed with the perfect balance of energy and calm. This affectionate girl combines curiosity with cuddles, making her an ideal companion for active families who appreciate both adventure and cozy evenings.",
-        "tagline": "Smart, sweet Rachel ready to steal your heart!",
-        "energy_level": "medium",
-        "trainability": "easy",
-        "sociability": "very_social",
-        "confidence": "confident",
-        "good_with_dogs": "yes",
-        "good_with_cats": "unknown",
-        "good_with_children": "unknown",
-        "home_type": "apartment_ok",
-        "yard_required": false,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["clever", "playful", "affectionate", "calm", "friendly"],
-        "favorite_activities": ["playing", "cuddling", "learning", "socializing"],
-        "unique_quirk": "perfect balance of playful energy and calm cuddles",
-        "adoption_fee_euros": 580,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 0.95,
-          "tagline": 0.9,
-          "energy_level": 0.9,
-          "trainability": 0.8,
-          "sociability": 0.85,
-          "good_with_dogs": 1.0,
-          "vaccinated": 0.9,
-          "neutered": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.85
-        },
-        "source_references": {
-          "description": "aufgeschlossen, friendly, active, clever, calm, playful, cuddly",
-          "good_with_dogs": "dogs: yes",
-          "neutered": "weiblich, kastriert",
-          "personality_traits": "character: aufgeschlossen, friendly, active, clever, calm, playful, cuddly"
-        },
-        "prompt_version": "1.0.0"
-      }

@@ -106,10 +106,8 @@ extraction_prompt: |
   - neutered: Check for "neutered", "spayed" in medical_status or description
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: MUST be a dict with AT LEAST these required keys: "description", "energy_level", "trainability". Add more fields as appropriate. All values 0.0-1.0.
   - source_references: MUST be a dict (NOT a string!) with AT LEAST these required keys: "description", "personality_traits". Map each to the source text that supports it.
-  - prompt_version: "1.0.0"
 
   CRITICAL RULES FOR DATA INTEGRITY:
   1. NEVER invent data - if information is not in the text, return null
@@ -118,66 +116,3 @@ extraction_prompt: |
   4. Create engaging, world-class copy that would make someone fall in love with the dog
   5. Use exact enum values listed above - no variations!
   6. Keep descriptions concise but emotionally powerful
-
-few_shot_examples:
-  - input: |
-      Name: George
-      Breed: Unknown
-      Age: 4.5 years
-      Properties: {
-        "description": "George has been stuck in kennels for over a year. He's a friendly boy, very excitable, loves attention, and needs lots of exercise. He's a funny boy, making us laugh all the time. George needs a home who like long walks and a big garden, as he loves being outside, and playing. is is a very high energy doggy. Neutered, vaccinated and chipped.",
-        "urgency_level": "urgent",
-        "medical_status": "neutered, vaccinated and chipped",
-        "current_location": "Norfolk",
-        "rescue_context": "rescue story available"
-      }
-
-    output: |
-      {
-        "description": "George has endured over a year in kennels but remains a hilarious, loving soul! This energetic comedian loves making people laugh, adores attention, and thrives on long walks and outdoor play. He urgently needs a home with space to run and hearts to fill with joy.",
-        "tagline": "Kennel survivor seeking laughter-filled home!",
-        "energy_level": "very_high",
-        "trainability": "moderate",
-        "sociability": "very_social",
-        "confidence": "confident",
-        "good_with_dogs": "unknown",
-        "good_with_cats": "unknown",
-        "good_with_children": "unknown",
-        "home_type": "house_required",
-        "yard_required": true,
-        "experience_level": "some_experience",
-        "exercise_needs": "very_high",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": "needs lots of exercise and big garden",
-        "personality_traits": ["friendly", "excitable", "funny", "attention-loving", "playful"],
-        "favorite_activities": ["long walks", "playing outside", "making people laugh", "getting attention"],
-        "unique_quirk": "makes everyone laugh all the time",
-        "adoption_fee_euros": null,
-        "ready_to_travel": false,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 0.95,
-          "tagline": 0.9,
-          "energy_level": 1.0,
-          "trainability": 0.6,
-          "sociability": 0.9,
-          "confidence": 0.8,
-          "good_with_dogs": 0.0,
-          "vaccinated": 1.0,
-          "neutered": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.85,
-          "unique_quirk": 0.9
-        },
-        "source_references": {
-          "description": "stuck in kennels for over a year... friendly boy, very excitable, loves attention",
-          "personality_traits": "friendly boy, very excitable, loves attention, funny boy making us laugh",
-          "energy_level": "very high energy doggy",
-          "neutered": "Neutered, vaccinated and chipped",
-          "yard_required": "needs a home who like long walks and a big garden"
-        },
-        "prompt_version": "1.0.0"
-      }

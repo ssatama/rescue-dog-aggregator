@@ -103,10 +103,8 @@ extraction_prompt: |
   - neutered: Look for mentions of spay/neuter status in description
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but you can rephrase for world-class engagement
@@ -154,69 +152,3 @@ uk_terminology:
   semi-rural: suburban/countryside
   active lifestyle: high exercise needs
   
-few_shot_examples:
-  - input: |
-      Name: Luna
-      Properties: {
-        "raw_qa_data": {
-          "How big?": "Medium",
-          "How old?": "Adult (around 3 years)",
-          "Living with dogs?": "I can live with other dogs",
-          "Living with cats?": "I've not been tested with cats",
-          "Living with kids?": "I can live with children (8+)"
-        },
-        "description": "Luna is a beautiful shepherd mix who was found wandering the streets. She's intelligent, loyal, and loves to play fetch. She can be nervous of new people initially but warms up quickly with treats. Luna would thrive in an active home where she can go on adventures."
-      }
-
-    output: |
-      {
-        "description": "Brilliant Luna transforms from street survivor to devoted companion! This shepherd beauty combines intelligence with playful fetch obsession, warming hearts with treat-motivated trust. Ready for adventures with her active new family.",
-        "tagline": "Smart shepherd seeks adventure partners",
-        "energy_level": "high",
-        "trainability": "easy",
-        "sociability": "selective",
-        "confidence": "shy",
-        "good_with_dogs": "yes",
-        "good_with_cats": "unknown",
-        "good_with_children": "yes",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "some_experience",
-        "exercise_needs": "high",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["intelligent", "loyal", "playful", "nervous initially", "treat-motivated"],
-        "favorite_activities": ["fetch", "adventures"],
-        "unique_quirk": "warms up quickly with treats",
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 0.8,
-          "trainability": 1.0,
-          "sociability": 0.9,
-          "confidence": 1.0,
-          "good_with_dogs": 1.0,
-          "good_with_cats": 1.0,
-          "good_with_children": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.85,
-          "unique_quirk": 0.9
-        },
-        "source_references": {
-          "description": "beautiful shepherd mix who was found wandering the streets. She's intelligent, loyal, and loves to play fetch",
-          "energy_level": "would thrive in an active home where she can go on adventures",
-          "trainability": "She's intelligent",
-          "sociability": "can be nervous of new people initially but warms up quickly",
-          "confidence": "nervous of new people initially",
-          "good_with_dogs": "I can live with other dogs",
-          "good_with_cats": "I've not been tested with cats",
-          "good_with_children": "I can live with children (8+)"
-        },
-        "prompt_version": "1.0.0"
-      }
