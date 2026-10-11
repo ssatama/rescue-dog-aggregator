@@ -97,10 +97,8 @@ extraction_prompt: |
   - neutered: Look for "operated on" or spay/neuter mentions, otherwise null
 
   METADATA (required):
-  - processing_time_ms: System-filled
   - confidence_scores: Rate 0.0-1.0 per field
   - source_references: Map to exact source text
-  - prompt_version: "1.0.0"
 
   WORLD-CLASS COPY GUIDELINES:
   1. Lead with transformation potential: "Ready to bloom into..." 
@@ -127,61 +125,3 @@ extraction_prompt: |
   3. Confidence = 1.0 only for direct quotes
   4. Source references must be exact text, not paraphrased
   5. Default to conservative estimates when information is vague
-
-few_shot_examples:
-  - input: |
-      Name: Diesel
-      Breed: Galgo
-      Properties: {
-        "sex": "Male",
-        "breed": "Galgo",
-        "description": "Meet Diesel! This easy-going charmer was either abandoned at a petrol station or wandered there on his own. He calmly waited, as if knowing someone would come to help. Friends of GDS brought him to us, and he settled in without a fuss. Luckily, Diesel had no microchip, so there was no need to involve the police or track down an owner. Who wouldn't want this calm, handsome brindle boy by their side? Please reach out for more information — Diesel is ready for a home!",
-        "date_of_birth": "TBD"
-      }
-
-    output: |
-      {
-        "description": "Handsome Diesel embodies the gentle Galgo spirit - calm, patient, and ready to be someone's devoted companion. This brindle charmer will bring quiet grace and unwavering loyalty to his loving new family.",
-        "tagline": "Gentle soul seeks loving companion",
-        "energy_level": "medium",
-        "trainability": "moderate",
-        "sociability": "social",
-        "confidence": "confident",
-        "good_with_dogs": null,
-        "good_with_cats": null,
-        "good_with_children": null,
-        "home_type": "house_preferred",
-        "yard_required": true,
-        "experience_level": "some_experience",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["easy-going", "calm", "charming", "patient", "handsome"],
-        "favorite_activities": ["walks", "quiet time"],
-        "unique_quirk": "calmly waited at petrol station as if knowing help would come",
-        "adoption_fee_euros": 650,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": null,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 0.7,
-          "trainability": 0.7,
-          "sociability": 0.9,
-          "confidence": 0.9,
-          "personality_traits": 1.0,
-          "favorite_activities": 0.8,
-          "unique_quirk": 1.0
-        },
-        "source_references": {
-          "description": "easy-going charmer... calm, handsome brindle boy",
-          "sociability": "settled in without a fuss",
-          "confidence": "He calmly waited",
-          "personality_traits": "easy-going charmer... calm, handsome brindle boy",
-          "unique_quirk": "He calmly waited, as if knowing someone would come to help"
-        },
-        "prompt_version": "1.0.0"
-      }

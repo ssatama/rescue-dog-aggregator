@@ -96,10 +96,8 @@ extraction_prompt: |
   - neutered: true if sterilization mentioned, false for young puppies, null if unclear
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
 
   DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but rephrase for emotional impact
@@ -138,63 +136,3 @@ rescue_context:
   affectionate: Loves human contact
   smart: Quick learner
   wonderful: Well-adjusted
-
-few_shot_examples:
-  - input: |
-      Name: Dia
-      Breed: Mix
-      Properties: {
-        "description": "Dia was left in a cardboard box in front of our shelter in September 2024. Sadly, this is a common occurrence in our city. After receiving the necessary medical care, we placed her in a group with our other puppies. That's where Dia met her best friend – our cheerful Mery Joy. Dia loves to play, both with other dogs and with people. She is very smart and a quick learner, making her an ideal companion for families looking for an active and intelligent pup.",
-        "weight": "11 kg",
-        "height": "46 cm",
-        "date_of_birth": "August 2024"
-      }
-
-    output: |
-      {
-        "description": "Smart Dia transforms her rough start into pure joy, bringing playful intelligence and boundless love to families ready for an active companion who learns quickly and plays enthusiastically.",
-        "tagline": "Clever pup ready to love and learn",
-        "energy_level": "high",
-        "trainability": "easy",
-        "sociability": "very_social",
-        "confidence": "confident",
-        "good_with_dogs": "yes",
-        "good_with_cats": null,
-        "good_with_children": "yes",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "high",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["playful", "smart", "quick learner", "social", "active"],
-        "favorite_activities": ["playing", "learning", "socializing"],
-        "unique_quirk": "best friend with cheerful Mery Joy",
-        "adoption_fee_euros": 450,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": false,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 0.9,
-          "tagline": 0.9,
-          "energy_level": 1.0,
-          "trainability": 1.0,
-          "sociability": 1.0,
-          "confidence": 0.8,
-          "good_with_dogs": 1.0,
-          "good_with_children": 0.8,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.9
-        },
-        "source_references": {
-          "energy_level": "Dia loves to play... active and intelligent pup",
-          "trainability": "She is very smart and a quick learner",
-          "sociability": "loves to play, both with other dogs and with people",
-          "good_with_dogs": "placed her in a group with our other puppies... met her best friend",
-          "good_with_children": "ideal companion for families"
-        },
-        "prompt_version": "1.0.0"
-      }

@@ -41,7 +41,7 @@ const AGE_CATEGORY_MAP: Record<string, string> = {
 // Tool 1: Search Dogs
 server.tool(
   "rescuedogs_search_dogs",
-  "Search for rescue dogs available for adoption from European and UK organizations. Returns matching dogs with basic info. Use rescuedogs_get_dog_details for full profiles.",
+  "Search rescue dogs listed by European and UK rescue organizations, filtered by breed, size, age, sex, AI-profile traits, rescue, or the country a dog can be adopted to. Returns one page of dogs with basic info and each dog's slug; page with limit (max 50) and offset. Photos are omitted unless include_images is true. For a dog's full profile, pass its slug to rescuedogs_get_dog_details; to match a person's lifestyle rather than explicit filters, use rescuedogs_match_preferences.",
   SearchDogsInputSchema.shape,
   async (input) => {
     const parsed = SearchDogsInputSchema.parse(input);
@@ -164,7 +164,7 @@ server.tool(
 // Tool 2: Get Dog Details
 server.tool(
   "rescuedogs_get_dog_details",
-  "Get full details for a specific rescue dog including AI-generated personality profile, requirements, and adoption info.",
+  "Get the full listing for one dog by its slug (from rescuedogs_search_dogs or rescuedogs_match_preferences results): the rescue's listing data plus the AI-generated personality profile and its home and experience requirements. The AI profile is missing for some dogs; the rest of the listing is still returned. Adoption itself happens on the rescue's own site.",
   GetDogDetailsInputSchema.shape,
   async (input) => {
     const parsed = GetDogDetailsInputSchema.parse(input);
@@ -313,7 +313,7 @@ server.tool(
 // Tool 5: Get Filter Counts
 server.tool(
   "rescuedogs_get_filter_counts",
-  "Get available filter options with counts based on current filter context. Use this to show users valid filter choices that won't result in empty searches.",
+  "Get the values each search filter can take, with how many dogs match each, given the filters already chosen in current_filters (breed, size, age_category, sex, adoptable_to_country). Use it before suggesting a filter value, so a search never comes back empty. It returns counts only, not dogs.",
   GetFilterCountsInputSchema.shape,
   async (input) => {
     const parsed = GetFilterCountsInputSchema.parse(input);
@@ -414,7 +414,7 @@ server.tool(
 // Tool 7: Match Preferences
 server.tool(
   "rescuedogs_match_preferences",
-  "Find dogs that match your lifestyle preferences. Translates your living situation, activity level, and experience into appropriate filters.",
+  "Find dogs for a person's lifestyle. Maps living_situation to home type, activity_level to energy level, and experience to required owner experience, then searches with those filters (and adoptable_to_country if given). has_children, has_other_dogs and has_cats are accepted but not applied, and these tools don't report compatibility with children, dogs or cats: don't tell a user a dog suits their household; send them to the rescue's listing to ask.",
   MatchPreferencesInputSchema.shape,
   async (input) => {
     const parsed = MatchPreferencesInputSchema.parse(input);
@@ -536,7 +536,7 @@ ${parsed.adoptable_to_country ? `- Adopting to: ${parsed.adoptable_to_country}` 
 // Tool 8: Get Adoption Guide
 server.tool(
   "rescuedogs_get_adoption_guide",
-  "Get information about the rescue dog adoption process including transport, fees, requirements, and timeline.",
+  "Get general guidance on adopting a rescue dog from abroad, by topic: overview, transport, fees, requirements, or timeline; a country code adds a short country note. The text is the same for every dog. Fee and transport figures are typical ranges, not any rescue's actual price: send users to the rescue's own listing for a specific dog's fee and process.",
   GetAdoptionGuideInputSchema.shape,
   async (input) => {
     const parsed = GetAdoptionGuideInputSchema.parse(input);

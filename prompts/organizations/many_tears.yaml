@@ -97,10 +97,8 @@ extraction_prompt: |
   - neutered: true unless explicitly stated otherwise
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - but you can rephrase for engagement
@@ -155,65 +153,3 @@ uk_terminology:
   no full-time workers: someone home during day
   older children: children over 10-12
   
-few_shot_examples:
-  - input: |
-      Name: Shadow
-      Breed: Chow Chow
-      Age: 6 months
-      Properties: {
-        "description": "Shadow originally came to us from a breeder as a puppy. He needs a home more experienced with the breed. Shadow is nervous and can be unsure of people.",
-        "training_needs": "Requires experienced owner familiar with Chow Chows",
-        "can_live_with_dogs": "Yes, with proper introduction",
-        "human_family_requirements": "Adults only, experienced with breed"
-      }
-
-    output: |
-      {
-        "description": "Young Shadow seeks experienced Chow Chow lovers who can help this nervous puppy build confidence. With patience and understanding, he'll become a loyal companion in a calm, breed-savvy home.",
-        "tagline": "Nervous puppy seeks patient Chow experts",
-        "energy_level": null,
-        "trainability": null,
-        "sociability": "needs_work",
-        "confidence": "shy",
-        "good_with_dogs": "selective",
-        "good_with_cats": null,
-        "good_with_children": "no",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "experienced_only",
-        "exercise_needs": null,
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": "Requires owner experienced with Chow Chows",
-        "personality_traits": ["nervous", "unsure", "needs patience"],
-        "favorite_activities": null,
-        "unique_quirk": null,
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": null,
-        "neutered": null,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 0.7,
-          "trainability": 0.8,
-          "sociability": 0.9,
-          "confidence": 1.0,
-          "good_with_dogs": 0.8,
-          "good_with_children": 0.9,
-          "experience_level": 1.0,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.85
-        },
-        "source_references": {
-          "description": "Shadow originally came to us from a breeder as a puppy",
-          "sociability": "nervous and can be unsure of people",
-          "confidence": "nervous",
-          "good_with_dogs": "can_live_with_dogs: Yes, with proper introduction",
-          "good_with_children": "human_family_requirements: Adults only",
-          "experience_level": "Requires experienced owner familiar with Chow Chows"
-        },
-        "prompt_version": "1.0.0"
-      }

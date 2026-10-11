@@ -97,10 +97,8 @@ extraction_prompt: |
   - neutered: Check for spay/neuter mentions, default to false for puppies under 6 months
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the exact source text
-  - prompt_version: "1.0.0"
 
   CRITICAL DATA INTEGRITY RULES:
   1. Every fact must exist in the source - rephrase for engagement but preserve truth
@@ -138,62 +136,3 @@ italian_context:
   adoption: forever home
   transport: international travel arranged
   
-few_shot_examples:
-  - input: |
-      Name: Berry
-      Properties: {
-        "description": "BERRY\n\nLooking for foster or adoption across Europe and UK\n\nHi everyone! Let me introduce myself: my name is Berry.\n\nI was found wandering the streets alone and scared.\n\nI'm a wonderful little dog: sweet, affectionate and sociable with people, dogs and even cats.",
-        "personality": "super sweet, sociable and playful",
-        "good_with": "people, dogs, cats",
-        "born": "February 2024",
-        "size": "Small medium (approx 15 kg)",
-        "breed": "Mixed Breed"
-      }
-
-    output: |
-      {
-        "description": "Young Berry is a super sweet mixed breed ready to trade street life for family love. This sociable pup gets along wonderfully with dogs, cats and people, bringing playful energy and affection to any home. At 15kg, Berry is the perfect size for adventures and cuddles alike.",
-        "tagline": "Sweet street survivor seeks loving home",
-        "energy_level": "medium",
-        "trainability": "moderate",
-        "sociability": "very_social",
-        "confidence": "moderate",
-        "good_with_dogs": "yes",
-        "good_with_cats": "yes",
-        "good_with_children": "unknown",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["super sweet", "sociable", "playful", "affectionate"],
-        "favorite_activities": ["playing", "socializing"],
-        "unique_quirk": "gets along with cats",
-        "adoption_fee_euros": 450,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": false,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 1.0,
-          "tagline": 0.9,
-          "energy_level": 0.7,
-          "trainability": 0.7,
-          "sociability": 1.0,
-          "good_with_dogs": 1.0,
-          "good_with_cats": 1.0,
-          "personality_traits": 1.0,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.85
-        },
-        "source_references": {
-          "description": "sweet, affectionate and sociable with people, dogs and even cats",
-          "sociability": "sociable with people, dogs and even cats",
-          "good_with_dogs": "good_with: people, dogs, cats",
-          "good_with_cats": "good_with: people, dogs, cats",
-          "personality_traits": "personality: super sweet, sociable and playful"
-        },
-        "prompt_version": "1.0.0"
-      }

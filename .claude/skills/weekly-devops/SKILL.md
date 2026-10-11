@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Weekly DevOps Run
 
-Follow AGENTS.md (branches, TDD, conventional commits, pre-commit checks). Every merge to main deploys to production on Vercel and Railway.
+Follow AGENTS.md (branches, conventional commits, pre-commit checks). Every merge to main deploys to production on Vercel and Railway.
 
 1. **Baseline**: on an up-to-date main, run ruff check/format, `uv run pytest -m "not browser"`, and in frontend/ run tsc, lint and jest. Check https://api.rescuedogs.me/health, active dog counts per org (Postgres MCP, flag any org at 0), and 5 random dog pages for real content. Check the last 3 scraper cron runs on the Railway service `thriving-appreciation`.
 2. **Sentry** (org sampo-cr, EU region, projects python-fastapi and javascript-nextjs): issues new or regressed in the last 7 days. For each actionable one, open a GitHub issue and a fix PR (failing test first).

@@ -99,10 +99,8 @@ extraction_prompt: |
   - neutered: Look for "kastriert", "sterilisiert"
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the German text that supports it
-  - prompt_version: "1.0.0"
 
   CRITICAL RULES FOR DATA INTEGRITY:
   1. NEVER invent data - if information is not in the German text, return null
@@ -156,59 +154,3 @@ german_keywords:
   senior: senior
   Jahre: years
   Monate: months
-
-few_shot_examples:
-  - input: |
-      Name: Max
-      Breed: Schäferhund-Mix
-      Age: 3 Jahre
-      Properties: {"description": "Max ist ein freundlicher und ruhiger Rüde, der sehr verträglich mit anderen Hunden ist. Er ist geimpft, kastriert und sucht ein liebevolles Zuhause mit Garten."}
-
-    output: |
-      {
-        "description": "Max is a friendly and calm 3-year-old Shepherd mix who gets along wonderfully with other dogs. This gentle soul is looking for a loving home where he can share his affectionate nature.",
-        "tagline": "Calm shepherd ready for his next chapter",
-        "energy_level": "medium",
-        "trainability": "easy",
-        "sociability": "very_social",
-        "confidence": "confident",
-        "good_with_dogs": "yes",
-        "good_with_cats": "unknown",
-        "good_with_children": "unknown",
-        "home_type": "house_preferred",
-        "yard_required": true,
-        "experience_level": "first_time_ok",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["friendly", "calm", "social", "gentle"],
-        "favorite_activities": ["socializing", "garden time"],
-        "unique_quirk": null,
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": true,
-        "neutered": true,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 0.95,
-          "tagline": 0.9,
-          "energy_level": 0.85,
-          "trainability": 0.8,
-          "sociability": 0.85,
-          "good_with_dogs": 0.95,
-          "vaccinated": 0.95,
-          "neutered": 0.95,
-          "personality_traits": 0.9,
-          "favorite_activities": 0.8,
-          "unique_quirk": 0.85
-        },
-        "source_references": {
-          "description": "freundlicher und ruhiger Rüde",
-          "good_with_dogs": "sehr verträglich mit anderen Hunden",
-          "vaccinated": "geimpft",
-          "neutered": "kastriert",
-          "yard_required": "Zuhause mit Garten"
-        },
-        "prompt_version": "1.0.0"
-      }

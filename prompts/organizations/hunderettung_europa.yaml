@@ -167,10 +167,8 @@ extraction_prompt: |
   - neutered: Look for "kastriert", "sterilisiert" in this dog's text
 
   METADATA (required for transparency):
-  - processing_time_ms: Time taken (will be filled by system)
   - confidence_scores: Rate 0.0-1.0 for each field based on source clarity
   - source_references: Map each conclusion to the German text that supports it
-  - prompt_version: "1.0.0"
 
   CRITICAL RULES FOR DATA INTEGRITY:
   1. NEVER invent data - if information is not in the German text, return null
@@ -222,58 +220,3 @@ german_keywords:
 
 # Documentation, like the other rescues' prompts: PromptBuilder sends only
 # system_prompt and extraction_prompt
-few_shot_examples:
-  - input: |
-      Name: Tindra
-      Breed: null
-      Age: 05/2025
-      Properties: {"Geschlecht": "Weiblich", "Geschätzte Schulterhöhe": "ca. 50 – 59 cm", "Auf Pflegestelle in": "17039 Blankenhof", "location": "Blankenhof, Germany", "description": "Kontaktfreudige Tindra sucht in 17039 Blankenhof ihre Herzensmenschen!\nTindra hatte das Glück und durfte aus dem rumänischen Tierheim auf eine deutsche Pflegestelle reisen. Das hat viele Vorteile: Hier kann das neue Leben in einem Haushalt kennengelernt und der Charakter besser eingeschätzt werden.\nTindra zeigte sich im Shelter als sehr aufgeschlossene junge Hündin. Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut. Auch Menschen gegenüber war Tindra sehr freundlich. Hörte man auf sie zu streicheln, stupste sie einen sanft mit ihrer Nase an.\nZuhause gesucht\nWir wünschen uns für diese Fellnase Menschen, denen bewusst ist, dass Tierschutzhunde eine gewisse Geschichte mitbringen. Deswegen suchen wir Menschen, die Geduld, Durchhaltevermögen und Wohlwollen mitbringen."}
-
-    output: |
-      {
-        "description": "Tindra is an outgoing young female who got on very well with the dog she shared her shelter space with. She loves attention and nudges your hand with her nose the moment the stroking stops.",
-        "tagline": "Stops petting? Expect a nose nudge",
-        "energy_level": "medium",
-        "trainability": "moderate",
-        "sociability": "very_social",
-        "confidence": "confident",
-        "good_with_dogs": "yes",
-        "good_with_cats": "unknown",
-        "good_with_children": "unknown",
-        "home_type": "house_preferred",
-        "yard_required": false,
-        "experience_level": "some_experience",
-        "exercise_needs": "moderate",
-        "grooming_needs": null,
-        "medical_needs": null,
-        "special_needs": null,
-        "personality_traits": ["outgoing", "friendly", "affectionate", "sociable"],
-        "favorite_activities": ["attention from people", "being stroked"],
-        "unique_quirk": "nudges you with her nose when you stop stroking her",
-        "adoption_fee_euros": null,
-        "ready_to_travel": true,
-        "vaccinated": null,
-        "neutered": null,
-        "processing_time_ms": 1250,
-        "confidence_scores": {
-          "description": 0.9,
-          "tagline": 0.85,
-          "energy_level": 0.4,
-          "trainability": 0.2,
-          "home_type": 0.2,
-          "experience_level": 0.2,
-          "sociability": 0.85,
-          "confidence": 0.6,
-          "good_with_dogs": 0.8,
-          "personality_traits": 0.85,
-          "favorite_activities": 0.7,
-          "unique_quirk": 0.95
-        },
-        "source_references": {
-          "description": "sehr aufgeschlossene junge Hündin; Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
-          "good_with_dogs": "Mit ihrer tierischen Mitbewohnerin verstand sie sich sehr gut",
-          "unique_quirk": "Hörte man auf sie zu streicheln, stupste sie einen sanft mit ihrer Nase an",
-          "personality_traits": "sehr aufgeschlossene junge Hündin; Auch Menschen gegenüber war Tindra sehr freundlich"
-        },
-        "prompt_version": "1.0.0"
-      }

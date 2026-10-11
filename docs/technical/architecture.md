@@ -440,8 +440,7 @@ psql -d rescue_dogs
 # Or via MCP: use postgres__query tool
 
 # Emergency ops
-python management/emergency_operations.py --reset-stale-data
-python management/emergency_operations.py --fix-duplicates
+python management/emergency_operations.py status
 ```
 
 ### Deployment
@@ -557,7 +556,7 @@ uv run python management/llm_commands.py generate-profiles
 uv run python management/llm_commands.py cost-report
 
 # Emergency
-uv run python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py status
 ```
 
 ## Environment Variables

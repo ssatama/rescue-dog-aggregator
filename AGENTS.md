@@ -16,7 +16,6 @@ Build an open-source platform aggregating rescue dogs from multiple organization
   `frontend/src/lib/analytics.ts`; `adoption_link_clicked` is the conversion event
 - Package Management: **uv** (backend), **pnpm** (frontend)
 - Linting: **ruff** (replaces black/isort/flake8)
-- Current: 187 backend test files, 272 frontend test files, ~1,400 active dogs
 
 ## Status
 
@@ -30,12 +29,12 @@ Build an open-source platform aggregating rescue dogs from multiple organization
 
 ### 1. Think Before Coding
 
-**"Don't assume. Don't hide confusion. Surface tradeoffs."**
+**"Don't hide confusion. Surface tradeoffs."**
 
-- State assumptions explicitly and ask if uncertain
-- Present multiple interpretations rather than choosing silently
-- Advocate for simpler approaches when they exist
-- Stop to clarify anything confusing
+- Make routine judgment calls yourself and state the assumption; check in
+  only when different readings would lead to materially different work
+- If a simpler or better approach exists, say so in a sentence, then do the
+  task as asked
 
 ### 2. Simplicity First
 
@@ -105,16 +104,16 @@ the rescue. From the 2026 UX refresh (epic #484):
 ```
 api/              # FastAPI backend with async routes
 ├── routes/       # animals, organizations, swipe, llm, monitoring
-services/         # Core services (14 modules)
-├── llm/          # AI profiling pipeline (14 files)
+services/         # Core services
+├── llm/          # AI profiling pipeline
 scrapers/         # Organization scrapers
 frontend/         # Next.js 16 App Router
-├── app/          # Pages: dogs/, swipe/, favorites/, breeds/, guides/
-├── components/   # UI components organized by feature (23 dirs)
+├── src/app/      # Pages: dogs/, swipe/, favorites/, breeds/, guides/
+├── src/components/  # UI components organized by feature
 tests/            # Backend tests with fixtures
 configs/          # Organization YAMLs (14: 12 enabled, 11 of them LLM-profiled)
 migrations/railway/  # Alembic migrations for production
-management/       # CLI tools (11 scripts)
+management/       # CLI tools
 docs/
 ├── features/     # Feature documentation
 ├── technical/    # Architecture docs
@@ -127,7 +126,7 @@ docs/
 - `services/llm/dog_profiler.py`: AI personality profiling pipeline
 - `services/adoption_detection.py`: Track adopted dogs
 - `services/metrics_collector.py`: Performance monitoring
-- `services/session_manager.py`: User preferences
+- `services/session_manager.py`: Scrape sessions and stale-data detection
 
 ## Quality Gates (Required for ANY commit)
 
@@ -300,9 +299,9 @@ uv run python management/llm_commands.py generate-profiles       # Batch enrichm
 ## Database Schema Highlights
 
 ```sql
-animals: 42 columns including id, name, breed, standardized_breed, properties(JSONB),
+animals: columns include id, name, breed, standardized_breed, properties(JSONB),
          dog_profiler_data(JSONB), status, availability_confidence, slug, blur_data_url
-organizations: 21 columns including id, name, slug, config_id, active, ships_to(JSONB),
+organizations: columns include id, name, slug, config_id, active, ships_to(JSONB),
                website_url, country, city, social_media(JSONB)
 -- GIN indexes on JSONB columns for performance
 -- See docs/technical/architecture.md for complete schema
@@ -314,7 +313,7 @@ organizations: 21 columns including id, name, slug, config_id, active, ships_to(
 # Database
 psql -d rescue_dogs -c "SELECT COUNT(*) FROM animals WHERE active = true;"
 # Or use Postgres MCP: mcp__postgres__query tool
-uv run python management/emergency_operations.py --reset-stale-data
+uv run python management/emergency_operations.py status  # also: emergency-stop, backup|rollback|recover <org_id>
 
 # Frontend rebuild
 cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
@@ -323,14 +322,14 @@ cd frontend && rm -rf node_modules .next && pnpm install && pnpm build
 rm -rf .venv && uv sync
 
 # Single test
-uv run pytest tests/api/test_swipe.py::test_name -v
+uv run pytest tests/api/test_swipe_endpoint.py::test_name -v
 pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
 ```
 
 ## API Endpoints
 
 - `/api/animals`: CRUD + filtering, search, stats, breeds
-- `/api/enhanced_animals`: AI-enriched data, semantic search
+- `/api/enhanced_animals`: AI-enriched profile data
 - `/api/swipe`: Tinder-like discovery interface
 - `/api/llm`: Enrichment coverage stats (admin-key gated; enrichment itself runs in the cron)
 - `/api/organizations`: Org management, metrics, stats
@@ -344,7 +343,9 @@ pnpm jest --testNamePattern="PersonalityTraits" --watchAll=false
   like-for-like test). The code default is still `openrouter/auto`, so a
   missing env var silently falls back to the router
 - Tuning: `LLM_DEFAULT_MODEL` (and `LLM_COST_TIER`, which only applies to
-  `openrouter/auto`) - no model strings in code
+  `openrouter/auto`). Profiling takes its model from these alone; the
+  Instagram photo analyzer (`google/gemini-2.5-flash-image`) and the unused
+  defaults of `call_vision_api` and `RetryConfig` still hardcode one
 - Why pinned: the auto-router caused two silent failure classes - 400s from
   reasoning-only endpoints (123 dogs unprofiled) and reasoning models spending
   the budget so the JSON answer was truncated (#409). Re-check for a newer

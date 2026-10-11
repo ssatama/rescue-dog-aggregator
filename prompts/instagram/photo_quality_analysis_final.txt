@@ -57,17 +57,15 @@ Return ONLY valid JSON (no markdown, no code blocks, no explanations):
   "visibility_score": <1-10>,
   "appeal_score": <1-10>,
   "background_score": <1-10>,
-  "overall_score": <average of 4 scores>,
-  "ig_ready": <true if overall >= 8.0, false otherwise>,
   "confidence": "<low|medium|high>",
   "reasoning": "<one concise sentence explaining the overall assessment>",
   "flags": ["<any specific issues: 'blurry', 'kennel_bars', 'poor_lighting', 'dog_obscured', 'awkward_angle', 'hands_visible'>"]
 }
 
 Examples of score combinations:
-- EXCELLENT (IG-ready): Q:9, V:9, A:9, B:9 → Overall: 9.0
-- VERY GOOD (IG-ready): Q:8, V:9, A:9, B:8 → Overall: 8.5
-- GOOD (close but not quite): Q:8, V:8, A:7, B:6 → Overall: 7.25
-- MEDIOCRE (background issues): Q:7, V:7, A:7, B:4 → Overall: 6.25
-- POOR (quality issues): Q:4, V:5, A:5, B:6 → Overall: 5.0
-- BAD (awkward angle): Q:6, V:6, A:5, B:5 → Overall: 5.5 (top-down angle with hands visible)
+- EXCELLENT (IG-ready): Q:9, V:9, A:9, B:9
+- VERY GOOD (IG-ready): Q:8, V:9, A:9, B:8
+- GOOD (close but not quite): Q:8, V:8, A:7, B:6
+- MEDIOCRE (background issues): Q:7, V:7, A:7, B:4
+- POOR (quality issues): Q:4, V:5, A:5, B:6
+- BAD (awkward angle): Q:6, V:6, A:5, B:5 (top-down angle with hands visible)

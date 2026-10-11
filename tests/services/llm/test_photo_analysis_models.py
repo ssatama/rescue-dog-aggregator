@@ -161,11 +161,10 @@ class TestPhotoAnalysisResponse:
         response = PhotoAnalysisResponse(**valid_response_data)
         assert response.overall_score == 6.5
 
-        # Incorrect average should fail
-        valid_response_data["overall_score"] = 7.0  # Wrong! Should be 6.5
-        with pytest.raises(ValidationError) as exc_info:
-            PhotoAnalysisResponse(**valid_response_data)
-        assert "overall_score" in str(exc_info.value).lower()
+        # A wrong average from the model is replaced by the computed one
+        valid_response_data["overall_score"] = 7.0
+        response = PhotoAnalysisResponse(**valid_response_data)
+        assert response.overall_score == 6.5
 
     def test_overall_score_calculation_edge_cases(self, valid_response_data):
         """Test overall_score calculation with edge cases."""
@@ -302,8 +301,6 @@ class TestPhotoAnalysisResponse:
             "visibility_score",
             "appeal_score",
             "background_score",
-            "overall_score",
-            "ig_ready",
             "confidence",
             "reasoning",
         ]
@@ -322,13 +319,23 @@ class TestPhotoAnalysisResponse:
         with pytest.raises(ValidationError):
             PhotoAnalysisResponse(**valid_response_data)
 
-        # Reset
+        # Reset: a junk overall_score from the model is replaced, not rejected
         valid_response_data["quality_score"] = 8
-
-        # String instead of float for overall_score
         valid_response_data["overall_score"] = "seven point five"
-        with pytest.raises(ValidationError):
-            PhotoAnalysisResponse(**valid_response_data)
+        assert isinstance(PhotoAnalysisResponse(**valid_response_data).overall_score, float)
+
+    def test_overall_score_and_ig_ready_are_computed(self, valid_response_data):
+        """The model doesn't send overall_score or ig_ready; both come from the scores."""
+        data = {k: v for k, v in valid_response_data.items() if k not in ("overall_score", "ig_ready")}
+        data.update({"quality_score": "9", "visibility_score": 8, "appeal_score": 8, "background_score": 7})
+        response = PhotoAnalysisResponse(**data)
+        assert response.overall_score == 8.0
+        assert response.ig_ready is True
+
+        data.update({"background_score": 6, "ig_ready": True})
+        response = PhotoAnalysisResponse(**data)
+        assert response.overall_score == 7.75
+        assert response.ig_ready is False
 
     def test_json_serialization(self, valid_response_data):
         """Test JSON serialization of response."""
