@@ -29,7 +29,6 @@ Linting:       ruff (Python) + ESLint (TypeScript)
 /frontend/src
   /app                  # Next.js App Router pages
   /components           # Feature-organized UI components (21 dirs)
-/rescuedogs-mcp-server  # MCP server for Claude integration
   /src                  # TypeScript source (8 tools)
 /configs/organizations  # YAML configs (13 orgs, 12 active)
 /tests                  # 125 backend test files
@@ -467,7 +466,7 @@ Health Checks → Rollback on Failure
 
 The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discover rescue dogs through natural conversation.
 
-**Location:** `/rescuedogs-mcp-server/`
+**Source:** [ssatama/rescuedogs-mcp-server](https://github.com/ssatama/rescuedogs-mcp-server) (hosted at `https://mcp.rescuedogs.me/mcp`)
 **Documentation:** `docs/technical/mcp-server.md`
 
 ### Quick Setup (Claude Desktop)

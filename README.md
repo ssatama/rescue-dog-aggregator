@@ -102,7 +102,6 @@ scrapers/               # 14 organization scrapers
 frontend/src/
 ├── app/                # Next.js App Router pages
 ├── components/         # Feature-organized UI (22 dirs)
-rescuedogs-mcp-server/  # MCP server for Claude integration
 configs/organizations/  # YAML configs (14 orgs)
 tests/                  # 133 backend test files
 frontend/src/           # 270 frontend test files (colocated)

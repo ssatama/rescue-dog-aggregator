@@ -20,7 +20,7 @@ These documents describe how the system works.
 | --- | --- |
 | [technical/architecture.md](technical/architecture.md) | System overview, services, data flow |
 | [technical/scraper-architecture.md](technical/scraper-architecture.md) | Scraper base classes and per-org structure |
-| [technical/mcp-server.md](technical/mcp-server.md) | The `rescuedogs` MCP server in `rescuedogs-mcp-server/` |
+| [technical/mcp-server.md](technical/mcp-server.md) | The `rescuedogs` MCP server (its own repo) and how this repo uses it |
 | [reference/database-schema.md](reference/database-schema.md) | Column-level schema reference |
 
 ## Features

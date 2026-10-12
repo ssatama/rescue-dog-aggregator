@@ -22,16 +22,19 @@ Only tooling notes that apply to Claude Code and nowhere else belong below.
 
 ### MCP servers
 
-Committed in `.mcp.json`, the same on the laptop and in cloud sessions. Both
-start through `scripts/mcp-server.sh`, so the file holds no paths or secrets:
+Committed in `.mcp.json`, the same on the laptop and in cloud sessions. It
+holds no paths or secrets:
 
 - `postgres` - read-only SQL against the **production** Railway database, as
   the `claude_ro` role (`scripts/sql/create_claude_ro.sql`). On the laptop it
   connects with `PROD_RO_DATABASE_URL` from `.env`; in cloud sessions, which
   can't reach Postgres, it goes over HTTPS via `POST /api/admin/query`.
-  Prefer it over shelling out to `psql` for inspection.
-- `rescuedogs` - this repo's own MCP server (`rescuedogs-mcp-server/`): dog
-  search, filter counts, statistics against the live API. Built on first use.
+  Prefer it over shelling out to `psql` for inspection. Started by
+  `scripts/mcp-server.sh`.
+- `rescuedogs` - the project's public MCP server: dog search, filter counts,
+  statistics against the live API. It connects to the hosted endpoint
+  (`https://mcp.rescuedogs.me/mcp`), so nothing is installed locally; source in
+  `ssatama/rescuedogs-mcp-server`.
 
 Laptop only, added with `claude mcp add --scope local`: `Railway` (deployment
 status, logs, variables; cloud sessions have no Railway credentials).
