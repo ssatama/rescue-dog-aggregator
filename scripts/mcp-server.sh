@@ -1,12 +1,12 @@
 #!/bin/bash
-# Launch one of the project MCP servers declared in .mcp.json. Shared by
-# laptop and cloud sessions, so the config holds no paths or secrets.
+# Launch a project MCP server declared in .mcp.json. Shared by laptop and
+# cloud sessions, so the config holds no paths or secrets. (The rescuedogs
+# server needs no launcher: .mcp.json points at the hosted endpoint.)
 #
 #   postgres    read-only production SQL as claude_ro. With PROD_RO_DATABASE_URL
 #               (environment or .env, i.e. the laptop) it connects directly. In
 #               cloud sessions, which can't reach Postgres, it goes over HTTPS
 #               through the API's /api/admin/query (scripts/mcp_prod_query.py).
-#   rescuedogs  this repo's MCP server against the public API; built on first use.
 #
 # The Railway MCP server is laptop-only (it needs a railway login), so it is
 # added with `claude mcp add --scope local` rather than committed here.
@@ -30,17 +30,13 @@ case "${1:-}" in
     # The URL uses libpq's sslmode=require (encrypt, don't verify), which psql
     # understands. node-postgres reads "require" as verify-full and rejects
     # Railway's self-signed proxy certificate; its spelling is "no-verify".
-    exec npx -y @modelcontextprotocol/server-postgres "${url/sslmode=require/sslmode=no-verify}"
-    ;;
-  rescuedogs)
-    cd rescuedogs-mcp-server
-    if [ ! -f dist/index.js ]; then
-      { npm install --no-audit --no-fund && npm run build; } >&2
-    fi
-    exec node dist/index.js
+    # Pinned so a new release of the server can't run with the production URL
+    # (its dependencies, e.g. pg ^8, still resolve fresh). Upstream archived
+    # the package; 0.6.2 is its last release.
+    exec npx -y @modelcontextprotocol/server-postgres@0.6.2 "${url/sslmode=require/sslmode=no-verify}"
     ;;
   *)
-    echo "usage: $0 postgres|rescuedogs" >&2
+    echo "usage: $0 postgres" >&2
     exit 2
     ;;
 esac
