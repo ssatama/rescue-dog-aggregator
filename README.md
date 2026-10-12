@@ -45,17 +45,12 @@ Finding rescue dogs requires visiting multiple websites with different interface
 
 ### MCP Server Integration
 
-Claude Code and Claude Desktop users can discover rescue dogs through natural conversation:
+Claude users can discover rescue dogs through natural conversation. Add the
+connector from the [Claude Connectors Directory](https://claude.ai/directory/connectors/rescue-dogs),
+or in Claude Code:
 
-```json
-{
-  "mcpServers": {
-    "rescuedogs": {
-      "command": "npx",
-      "args": ["-y", "rescuedogs-mcp-server"]
-    }
-  }
-}
+```bash
+claude mcp add --transport http rescuedogs https://mcp.rescuedogs.me/mcp
 ```
 
 8 tools available: search, details, breeds, stats, filters, organizations, preferences matching, adoption guide.

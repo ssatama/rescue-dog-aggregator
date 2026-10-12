@@ -9,7 +9,7 @@ Production:    www.rescuedogs.me
 Data:          1,500+ active dogs | 12 active organizations
 Backend:       Python 3.12+/FastAPI + PostgreSQL 15 + Alembic
 Frontend:      Next.js 16 App Router + React 19 + TypeScript 5
-MCP Server:    TypeScript + @modelcontextprotocol/sdk (npm: rescuedogs-mcp-server)
+MCP Server:    own repo (ssatama/rescuedogs-mcp-server), hosted at mcp.rescuedogs.me
 LLM:           OpenRouter, pinned to google/gemini-3.8-flash (LLM_DEFAULT_MODEL)
 Monitoring:    Sentry (dev + prod) for errors
 Analytics:     PostHog EU (cookieless, via e.rescuedogs.me), Vercel Analytics
@@ -29,7 +29,6 @@ Linting:       ruff (Python) + ESLint (TypeScript)
 /frontend/src
   /app                  # Next.js App Router pages
   /components           # Feature-organized UI components (21 dirs)
-  /src                  # TypeScript source (8 tools)
 /configs/organizations  # YAML configs (13 orgs, 12 active)
 /tests                  # 125 backend test files
 /frontend/src           # 267 frontend test files
@@ -464,43 +463,10 @@ Health Checks → Rollback on Failure
 
 ## MCP Server Integration
 
-The `rescuedogs-mcp-server` enables LLMs (Claude Code, Claude Desktop) to discover rescue dogs through natural conversation.
-
-**Source:** [ssatama/rescuedogs-mcp-server](https://github.com/ssatama/rescuedogs-mcp-server) (hosted at `https://mcp.rescuedogs.me/mcp`)
-**Documentation:** `docs/technical/mcp-server.md`
-
-### Quick Setup (Claude Desktop)
-
-```json
-{
-  "mcpServers": {
-    "rescuedogs": {
-      "command": "npx",
-      "args": ["-y", "rescuedogs-mcp-server"]
-    }
-  }
-}
-```
-
-### Available Tools (8 total)
-
-| Tool                            | Purpose                                             |
-| ------------------------------- | --------------------------------------------------- |
-| `rescuedogs_search_dogs`        | Search with filters (breed, size, energy, location) |
-| `rescuedogs_get_dog_details`    | Full profile with AI personality data               |
-| `rescuedogs_list_breeds`        | Available breeds with statistics                    |
-| `rescuedogs_get_statistics`     | Platform overview                                   |
-| `rescuedogs_get_filter_counts`  | Valid filter options to prevent empty searches      |
-| `rescuedogs_list_organizations` | Rescue organizations with dog counts                |
-| `rescuedogs_match_preferences`  | Match dogs to lifestyle preferences                 |
-| `rescuedogs_get_adoption_guide` | Static adoption process guide                       |
-
-### Key Features
-
-- **Opt-in images**: `include_images: true` for inline dog photos
-- **Dual format**: `response_format: "markdown" | "json"`
-- **Caching**: 10-min TTL for breeds/stats/orgs, 5-min for filter counts
-- **Active filter**: All queries filter `status=available` automatically
+The `rescuedogs` MCP server lets LLM clients search the dogs through natural
+conversation. It lives in its own repo and calls the public API; see
+`docs/technical/mcp-server.md` for where it is published and how this repo
+uses it.
 
 ## Key Architectural Decisions
 
