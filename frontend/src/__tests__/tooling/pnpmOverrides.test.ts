@@ -11,7 +11,8 @@
  *
  * These overrides pin patched versions of transitive dependencies. A lockfile
  * without them resolves the unpatched ones, so this is a supply-chain check,
- * not a tidiness check.
+ * not a tidiness check. For the same reason, no resolved package may still
+ * fall inside a range an override exists to keep out.
  */
 import fs from "fs";
 import path from "path";
@@ -91,7 +92,8 @@ function compareVersions(a: string, b: string): number {
 function inRange(version: string, range: string): boolean {
   return range.split(" ").every((bound) => {
     const [, op, target] = bound.match(/^(<=|>=|<|>)(\d+\.\d+\.\d+)$/) ?? [];
-    if (!op) return false;
+    // Fail loudly rather than pass on a range form this can't read (`^1.2`, `||`, ...).
+    if (!op) throw new Error(`Unsupported override range "${range}"`);
     const cmp = compareVersions(version, target);
     return { "<": cmp < 0, "<=": cmp <= 0, ">": cmp > 0, ">=": cmp >= 0 }[op]!;
   });
