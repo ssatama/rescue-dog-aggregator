@@ -22,8 +22,9 @@ function declaredOverrides(): Record<string, string> {
   const packageJson: unknown = JSON.parse(
     fs.readFileSync(path.join(frontendRoot, "package.json"), "utf8"),
   );
-  const overrides = (packageJson as { pnpm?: { overrides?: Record<string, string> } })
-    .pnpm?.overrides;
+  const overrides = (
+    packageJson as { pnpm?: { overrides?: Record<string, string> } }
+  ).pnpm?.overrides;
   return overrides ?? {};
 }
 
@@ -63,7 +64,56 @@ function lockfileOverridesBlock(): string {
   return end === -1 ? rest : rest.slice(0, end);
 }
 
+/** Every `name@version` the lockfile resolves, from its `packages:` section. */
+function resolvedPackages(): Array<{ name: string; version: string }> {
+  const lockfile = fs.readFileSync(
+    path.join(frontendRoot, "pnpm-lock.yaml"),
+    "utf8",
+  );
+  const packages = lockfile.slice(
+    lockfile.indexOf("\npackages:\n"),
+    lockfile.indexOf("\nsnapshots:\n"),
+  );
+  return [
+    ...packages.matchAll(/^ {2}'?(@?[^@\s']+)@(\d+\.\d+\.\d+)[^:]*'?:$/gm),
+  ].map(([, name, version]) => ({ name, version }));
+}
+
+function compareVersions(a: string, b: string): number {
+  const [x, y] = [a, b].map((v) => v.split(".").map(Number));
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] - y[i];
+  }
+  return 0;
+}
+
+/** True when `version` matches a selector range like `<1.2.2`, `<=4.28.6` or `>=4.0.0 <5.0.9`. */
+function inRange(version: string, range: string): boolean {
+  return range.split(" ").every((bound) => {
+    const [, op, target] = bound.match(/^(<=|>=|<|>)(\d+\.\d+\.\d+)$/) ?? [];
+    if (!op) return false;
+    const cmp = compareVersions(version, target);
+    return { "<": cmp < 0, "<=": cmp <= 0, ">": cmp > 0, ">=": cmp >= 0 }[op]!;
+  });
+}
+
 describe("pnpm overrides survive lockfile regeneration", () => {
+  it("resolves no package inside a range an override exists to keep out", () => {
+    const packages = resolvedPackages();
+    expect(packages.length).toBeGreaterThan(0);
+
+    const leaks = Object.keys(declaredOverrides()).flatMap((selector) => {
+      const at = selector.lastIndexOf("@");
+      if (at <= 0) return []; // unranged selector such as `nwsapi`
+      const [name, range] = [selector.slice(0, at), selector.slice(at + 1)];
+      return packages
+        .filter((p) => p.name === name && inRange(p.version, range))
+        .map((p) => `${p.name}@${p.version} (override ${selector})`);
+    });
+
+    expect(leaks).toEqual([]);
+  });
+
   it("declares overrides worth protecting", () => {
     expect(Object.keys(declaredOverrides()).length).toBeGreaterThan(0);
   });
