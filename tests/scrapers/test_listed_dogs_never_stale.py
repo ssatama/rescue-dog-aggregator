@@ -125,6 +125,29 @@ class TestAgainstTheDatabase:
         db.execute("SELECT active FROM animals WHERE id = 9001")
         assert db.fetchone()[0] is False, "only a successful save brings a dog back"
 
+    def test_a_dog_retired_by_stale_detection_has_its_page_purged(self, db):
+        """Its cached page still says "for adoption" without noindex until purged (#735)."""
+        db.execute("UPDATE animals SET consecutive_scrapes_missing = 2 WHERE id IN (9003, 9004)")
+        db.execute("UPDATE animals SET status = 'unknown', active = false WHERE id = 9004")
+        db.connection.commit()
+        session_manager = SessionManager(DB_CONFIG, organization_id=ORG_ID)
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog("ext-9001")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(9001, "no_change")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            assert scraper._run_with_connection() is True
+
+        db.execute("SELECT active FROM animals WHERE id = 9003")
+        assert db.fetchone()[0] is False
+        (purged,) = [c.args[0] for c in scraper.database_service.get_slugs_for_animals.call_args_list]
+        assert 9003 in purged, "retired this run"
+        assert 9004 not in purged, "already retired: its page is already right"
+        assert 9002 not in purged, "missed again but still listed"
+
 
 @pytest.mark.unit
 class TestTooManyNotSavedIsAPartialFailure:
@@ -222,6 +245,22 @@ class TestTooManyNotSavedIsAPartialFailure:
             scraper._run_with_connection()
 
         session_manager.update_stale_data_detection.assert_called_once()
+
+    def test_retired_dogs_reported_by_the_session_manager_are_purged(self):
+        session_manager = Mock()
+        session_manager.get_historical_average_dogs_found.return_value = None
+        session_manager.retired_animal_ids = [42]
+        scraper = _scraper(session_manager)
+        scraper.dogs = [_dog("a")]
+
+        with (
+            patch.object(scraper, "save_animal", return_value=(1, "no_change")),
+            patch.object(scraper, "detect_partial_failure", return_value=False),
+            patch("services.revalidation_client.invalidate_sync"),
+        ):
+            scraper._run_with_connection()
+
+        scraper.database_service.get_slugs_for_animals.assert_called_once_with([42])
 
     def test_a_failed_stale_update_is_noted(self):
         session_manager = Mock()

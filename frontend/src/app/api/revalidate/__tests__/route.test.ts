@@ -89,8 +89,8 @@ describe("POST /api/revalidate", () => {
       paths: ["/dogs/buddy-1"],
     });
     expect(revalidateTag).toHaveBeenCalledTimes(2);
-    expect(revalidateTag).toHaveBeenCalledWith("animals", "max");
-    expect(revalidateTag).toHaveBeenCalledWith("statistics", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("animals", { expire: 0 });
+    expect(revalidateTag).toHaveBeenCalledWith("statistics", { expire: 0 });
     expect(revalidatePath).toHaveBeenCalledTimes(1);
     expect(revalidatePath).toHaveBeenCalledWith("/dogs/buddy-1");
   });
@@ -135,7 +135,7 @@ describe("POST /api/revalidate", () => {
     );
     expect(res.status).toBe(200);
     expect(revalidateTag).toHaveBeenCalledTimes(1);
-    expect(revalidateTag).toHaveBeenCalledWith("good", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("good", { expire: 0 });
     expect(revalidatePath).toHaveBeenCalledTimes(1);
     expect(revalidatePath).toHaveBeenCalledWith("/ok");
   });

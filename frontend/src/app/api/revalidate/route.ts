@@ -38,7 +38,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  for (const tag of tags) revalidateTag(tag, "max");
+  // Expire now rather than stale-while-revalidate ("max"): the page and its
+  // fetch share a tag, so with "max" the next request rebuilt the page from
+  // the still-stale fetch and cached that for the whole revalidate window (#735)
+  for (const tag of tags) revalidateTag(tag, { expire: 0 });
   for (const path of paths) revalidatePath(path);
 
   return NextResponse.json({

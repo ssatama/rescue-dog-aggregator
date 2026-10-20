@@ -19,6 +19,38 @@ from datetime import datetime
 
 import psycopg2
 
+# Ages out animals not seen in the current scrape. The CASEs read the value
+# before the increment, so >= 2 retires a dog on its third miss. `retired`
+# marks the rows this statement flipped from active to inactive.
+_STALE_UPDATE_SQL = """
+    WITH previous AS (
+        SELECT id, active AS was_active FROM animals
+        WHERE organization_id = %(org)s
+        AND (last_seen_at IS NULL OR last_seen_at < %(session)s)
+        AND status NOT IN ('adopted', 'reserved')
+    )
+    UPDATE animals
+    SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
+        availability_confidence = CASE
+            WHEN consecutive_scrapes_missing = 0 THEN 'medium'
+            ELSE 'low'
+        END,
+        status = CASE
+            WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'
+            ELSE status
+        END,
+        active = CASE
+            WHEN consecutive_scrapes_missing >= 2 THEN false
+            ELSE active
+        END
+    FROM previous
+    WHERE animals.id = previous.id
+    -- Repeated so a row another run marked seen meanwhile is rechecked and skipped
+    AND (last_seen_at IS NULL OR last_seen_at < %(session)s)
+    AND status NOT IN ('adopted', 'reserved')
+    RETURNING animals.id, previous.was_active AND NOT animals.active AS retired
+"""
+
 
 class SessionManager:
     """Service for session management and stale data detection extracted from BaseScraper."""
@@ -52,6 +84,9 @@ class SessionManager:
         # detail pages cache a noindex plus a retirement banner, so they
         # need purging even when the scraped data itself is unchanged.
         self.reactivated_animal_ids: list[int] = []
+        # The reverse: animals stale detection retired this run. Their cached
+        # pages still offer a live, indexable listing until purged (#735).
+        self.retired_animal_ids: list[int] = []
 
     def connect(self) -> bool:
         """Establish database connection.
@@ -146,6 +181,18 @@ class SessionManager:
         if was_active is False and animal_id not in self.reactivated_animal_ids:
             self.reactivated_animal_ids.append(animal_id)
 
+    def _record_retired(self, cursor) -> None:
+        """Note the animals _STALE_UPDATE_SQL just flipped to inactive."""
+        # Bookkeeping only, like _record_if_reactivated: the stale update has
+        # run and must commit even if its result rows can't be read.
+        try:
+            for row in cursor.fetchall():
+                animal_id, retired = (row["id"], row["retired"]) if isinstance(row, dict) else (row[0], row[1])
+                if retired and animal_id not in self.retired_animal_ids:
+                    self.retired_animal_ids.append(animal_id)
+        except Exception as e:
+            self.logger.warning(f"Could not read retired animals, so their pages won't be purged: {e}")
+
     def mark_animal_as_seen(self, animal_id: int) -> bool:
         """Mark an animal as seen in the current scrape session.
 
@@ -238,34 +285,10 @@ class SessionManager:
             try:
                 with self.connection_pool.get_connection_context() as conn:
                     cursor = conn.cursor()
-
-                    # Update animals not seen in current scrape
-                    # FIXED: Use >= 2 because CASE evaluates BEFORE increment
-                    # So after 3 misses: pre-increment value is 2, >= 2 triggers active=false
-                    cursor.execute(
-                        """
-                        UPDATE animals
-                        SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
-                            availability_confidence = CASE
-                                WHEN consecutive_scrapes_missing = 0 THEN 'medium'
-                                ELSE 'low'
-                            END,
-                            status = CASE
-                                WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'
-                                ELSE status
-                            END,
-                            active = CASE
-                                WHEN consecutive_scrapes_missing >= 2 THEN false
-                                ELSE active
-                            END
-                        WHERE organization_id = %s
-                        AND (last_seen_at IS NULL OR last_seen_at < %s)
-                        AND status NOT IN ('adopted', 'reserved')
-                        """,
-                        (self.organization_id, self.current_scrape_session),
-                    )
+                    cursor.execute(_STALE_UPDATE_SQL, {"org": self.organization_id, "session": self.current_scrape_session})
 
                     rows_affected = cursor.rowcount
+                    self._record_retired(cursor)
                     conn.commit()
                     cursor.close()
 
@@ -284,34 +307,10 @@ class SessionManager:
 
         try:
             cursor = self.conn.cursor()
-
-            # Update animals not seen in current scrape
-            # FIXED: Use >= 2 because CASE evaluates BEFORE increment
-            # So after 3 misses: pre-increment value is 2, >= 2 triggers active=false
-            cursor.execute(
-                """
-                UPDATE animals
-                SET consecutive_scrapes_missing = consecutive_scrapes_missing + 1,
-                    availability_confidence = CASE
-                        WHEN consecutive_scrapes_missing = 0 THEN 'medium'
-                        ELSE 'low'
-                    END,
-                    status = CASE
-                        WHEN consecutive_scrapes_missing >= 2 THEN 'unknown'
-                        ELSE status
-                    END,
-                    active = CASE
-                        WHEN consecutive_scrapes_missing >= 2 THEN false
-                        ELSE active
-                    END
-                WHERE organization_id = %s
-                AND (last_seen_at IS NULL OR last_seen_at < %s)
-                AND status NOT IN ('adopted', 'reserved')
-                """,
-                (self.organization_id, self.current_scrape_session),
-            )
+            cursor.execute(_STALE_UPDATE_SQL, {"org": self.organization_id, "session": self.current_scrape_session})
 
             rows_affected = cursor.rowcount
+            self._record_retired(cursor)
             self.conn.commit()
             cursor.close()
 
