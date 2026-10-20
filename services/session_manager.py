@@ -191,7 +191,7 @@ class SessionManager:
                 if retired and animal_id not in self.retired_animal_ids:
                     self.retired_animal_ids.append(animal_id)
         except Exception as e:
-            self.logger.debug(f"Could not read retired animals: {e}")
+            self.logger.warning(f"Could not read retired animals, so their pages won't be purged: {e}")
 
     def mark_animal_as_seen(self, animal_id: int) -> bool:
         """Mark an animal as seen in the current scrape session.
