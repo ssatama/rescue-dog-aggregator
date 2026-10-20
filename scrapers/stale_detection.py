@@ -50,6 +50,8 @@ class StaleDetection:
                     self._run_notes.append("Stale detection skipped - found dogs could not be marked as seen")
                 elif not self.session_manager.update_stale_data_detection():
                     self._run_notes.append("Stale detection failed")
+                else:
+                    self._purge_retired()
             else:
                 self._log_service_unavailable("SessionManager", "stale data detection disabled")
 
@@ -60,6 +62,17 @@ class StaleDetection:
 
         phase_duration = (datetime.now() - phase_start).total_seconds()
         self.metrics_collector.track_phase_timing("stale_data_detection", phase_duration)
+
+    def _purge_retired(self):
+        """Purge the pages of dogs stale detection just retired (#735).
+
+        Otherwise each keeps its cached live listing, indexable and without
+        the "no longer listed" notice, for at least the revalidate window.
+        """
+        retired = getattr(self.session_manager, "retired_animal_ids", None)
+        if isinstance(retired, list):
+            for animal_id in retired:
+                self.mark_animal_changed(animal_id)
 
     def _record_all_found_external_ids(self, animals_data):
         """Record all external_ids from discovered animals for accurate stale detection.
