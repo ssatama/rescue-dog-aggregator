@@ -215,9 +215,16 @@ purging bare `"animal"` invalidates all detail pages. ISR writes ≈ reads is
 the signature. Lengthening `revalidate` can't help against a purge (#205
 tried); scope purges to changed slugs (#315).
 
-**`revalidateTag` is stale-while-revalidate** (`"max"`), and the Vercel data
-cache survives deploys. After a production data write: purge, request the
-page, wait, purge again, then verify with `curl` + `grep`. Purges need
+**`/api/revalidate` expires tags at once** (`{ expire: 0 }`, #735). It used
+`"max"`, which is stale-while-revalidate: the page and its fetch share the
+slug tag, so the request after a purge rebuilt the page from the still-stale
+fetch and cached that for the 48h window. Retired dogs (`robby-12114`) kept a
+live, indexable listing for 8+ days that way, and stale detection didn't purge
+them at all until #735. The scrapers purge a dog's slug when it is added,
+updated, reactivated or retired; the adoption check's status changes and the
+bulk `mark_found_animals_as_seen` reactivation still purge nothing. The Vercel
+data cache survives deploys. After a production data write: purge, then verify
+with `curl` + `grep`. Purges need
 `REVALIDATION_TOKEN`, which lives only on `thriving-appreciation` (use
 `railway run --service thriving-appreciation`). The sitemap routes are
 different: they send `s-maxage=86400`, so Vercel's CDN keeps each one for up

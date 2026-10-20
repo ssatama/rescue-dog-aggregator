@@ -25,8 +25,8 @@ import psycopg2
 _STALE_UPDATE_SQL = """
     WITH previous AS (
         SELECT id, active AS was_active FROM animals
-        WHERE organization_id = %s
-        AND (last_seen_at IS NULL OR last_seen_at < %s)
+        WHERE organization_id = %(org)s
+        AND (last_seen_at IS NULL OR last_seen_at < %(session)s)
         AND status NOT IN ('adopted', 'reserved')
     )
     UPDATE animals
@@ -45,6 +45,9 @@ _STALE_UPDATE_SQL = """
         END
     FROM previous
     WHERE animals.id = previous.id
+    -- Repeated so a row another run marked seen meanwhile is rechecked and skipped
+    AND (last_seen_at IS NULL OR last_seen_at < %(session)s)
+    AND status NOT IN ('adopted', 'reserved')
     RETURNING animals.id, previous.was_active AND NOT animals.active AS retired
 """
 
@@ -183,15 +186,12 @@ class SessionManager:
         # Bookkeeping only, like _record_if_reactivated: the stale update has
         # run and must commit even if its result rows can't be read.
         try:
-            rows = cursor.fetchall()
+            for row in cursor.fetchall():
+                animal_id, retired = (row["id"], row["retired"]) if isinstance(row, dict) else (row[0], row[1])
+                if retired and animal_id not in self.retired_animal_ids:
+                    self.retired_animal_ids.append(animal_id)
         except Exception as e:
             self.logger.debug(f"Could not read retired animals: {e}")
-            return
-
-        for row in rows:
-            animal_id, retired = (row["id"], row["retired"]) if isinstance(row, dict) else (row[0], row[1])
-            if retired and animal_id not in self.retired_animal_ids:
-                self.retired_animal_ids.append(animal_id)
 
     def mark_animal_as_seen(self, animal_id: int) -> bool:
         """Mark an animal as seen in the current scrape session.
@@ -285,7 +285,7 @@ class SessionManager:
             try:
                 with self.connection_pool.get_connection_context() as conn:
                     cursor = conn.cursor()
-                    cursor.execute(_STALE_UPDATE_SQL, (self.organization_id, self.current_scrape_session))
+                    cursor.execute(_STALE_UPDATE_SQL, {"org": self.organization_id, "session": self.current_scrape_session})
 
                     rows_affected = cursor.rowcount
                     self._record_retired(cursor)
@@ -307,7 +307,7 @@ class SessionManager:
 
         try:
             cursor = self.conn.cursor()
-            cursor.execute(_STALE_UPDATE_SQL, (self.organization_id, self.current_scrape_session))
+            cursor.execute(_STALE_UPDATE_SQL, {"org": self.organization_id, "session": self.current_scrape_session})
 
             rows_affected = cursor.rowcount
             self._record_retired(cursor)
