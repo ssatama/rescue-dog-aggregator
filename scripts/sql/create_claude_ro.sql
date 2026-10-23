@@ -5,8 +5,11 @@
 --   \i scripts/sql/create_claude_ro.sql
 -- psql prompts for the new password, so it never reaches shell history.
 -- Then use the role in two places:
--- - Laptop .env, for the postgres MCP server (public TCP proxy):
---     PROD_RO_DATABASE_URL=postgresql://claude_ro:PASSWORD@RAILWAY_TCP_PROXY_DOMAIN:RAILWAY_TCP_PROXY_PORT/railway?sslmode=require
+-- - Laptop .env, for the postgres MCP server. There is no public proxy; it
+--   goes through `railway connect Postgres --tunnel-only --port 54329`:
+--     PROD_RO_DATABASE_URL=postgresql://claude_ro:PASSWORD@localhost:54329/railway
+-- To rotate the password later: ALTER ROLE claude_ro PASSWORD '...' as
+-- postgres through the tunnel, then update both URLs and redeploy the API.
 -- - Railway, API service rescue-dog-aggregator, for POST /api/admin/query
 --   (cloud sessions; private network, no TLS needed):
 --     READONLY_DATABASE_URL=postgresql://claude_ro:PASSWORD@postgres.railway.internal:5432/railway

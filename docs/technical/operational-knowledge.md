@@ -12,6 +12,57 @@ PR) whenever you learn something the next session would otherwise rediscover.
 `Browserless`, `rescuedogs-mcp`. Cron-specific variables go on
 `thriving-appreciation`.
 
+**Secrets and where they live** (after the 2026-10-23 rotation). Every one
+was rotated after Railway's environment-variable breach of 2026-10-21, in
+which an attacker read customer variables, AI keys first.
+- API: `ADMIN_API_KEY`, `DB_PASSWORD`, `READONLY_DATABASE_URL` (`claude_ro`),
+  `SENTRY_DSN_BACKEND`. The API never touches R2.
+- Cron: `OPENROUTER_API_KEY`, `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` (an
+  Object Read & Write token scoped to the images bucket), `DATABASE_URL`,
+  `BROWSER_TOKEN` + `BROWSERLESS_WS_ENDPOINT` (which embeds the token),
+  `REVALIDATION_TOKEN` (also on Vercel), `INDEXNOW_KEY`, `SENTRY_DSN_BACKEND`.
+- Browserless: `TOKEN` and `BROWSER_TOKEN`, the same value.
+- Copies elsewhere: laptop `.env` (`OPENROUTER_API_KEY`, `R2_*`,
+  `ADMIN_API_KEY`, both database URLs). The claude.ai cloud environment's
+  `ADMIN_API_KEY` was **not** updated, so `/api/admin/query` (and the
+  Postgres MCP) fail in cloud sessions until it is.
+
+Rotating, learned the hard way:
+- Revoke at the provider first; deleting a Railway variable un-leaks nothing.
+- A variable change only reaches a service on its next deploy. Use **Deploy
+  latest commit**: redeploying a build from before 2026-10-21 errors.
+- The API's `DB_PASSWORD` is a literal copy, not a reference. Regenerating
+  the Postgres password (Postgres → Database → Credentials → Regenerate)
+  updates `PGPASSWORD`, `DATABASE_URL` and the cron's `DATABASE_URL`, but not
+  this one, and the API answers 503 on every new connection until it is set
+  and redeployed (3 minutes of 503s on 2026-10-23).
+- Cloudflare shows three values for a new R2 token. `R2_ACCESS_KEY_ID` is the
+  32-character Access Key ID and `R2_SECRET_ACCESS_KEY` the 64-character
+  Secret Access Key, never the Token value.
+
+**The production database is private** (since 2026-10-23). The public TCP
+proxy (`hopper.proxy.rlwy.net`) is gone; the API and cron use
+`postgres.railway.internal`. From the laptop, open a tunnel and keep it
+running in its own terminal:
+
+```bash
+railway connect Postgres --tunnel-only --port 54329
+```
+
+`.env` points `RAILWAY_DATABASE_URL` (as `postgres`) and
+`PROD_RO_DATABASE_URL` (as `claude_ro`) at `localhost:54329`, so migrations,
+manual production runs and the Postgres MCP work only while it is open.
+**The tunnel accepts any password** (it ends inside the container, where local
+connections are trusted, and your Railway login is the guard), so a login
+through it proves nothing about a password. Check one against the stored
+SCRAM verifier in `pg_authid` instead.
+
+**Backups.** The Hobby plan can't create Railway backups. Dump through the
+tunnel with a client at least as new as the server (Postgres 16):
+`brew install postgresql@17`, then
+`/opt/homebrew/opt/postgresql@17/bin/pg_dump -h localhost -p 54329 -U postgres -d railway -Fc -f <file>`.
+The database was about 80 MB (12 MB dumped) on 2026-10-23.
+
 **Cron schedule** is Mon/Thu/Sat 15:00 UTC (dashboard, 2026-07-15). Neither
 the CLI nor the Railway MCP exposes `cronSchedule`; only the dashboard's Cron
 Runs tab does. Repo docs once claimed "Tue/Thu/Sat 6am" and caused a false
@@ -49,8 +100,8 @@ the pagination says it exists, and fetch plain-HTTP listings with
 
 **Playwright is the only browser path** (Selenium removed in #566). Tests
 patch the scraper module's `get_playwright_service` with
-`tests/fixtures/playwright_fakes.py` and serve saved HTML; nothing reads
-`USE_PLAYWRIGHT` any more, so the Railway variable can go.
+`tests/fixtures/playwright_fakes.py` and serve saved HTML. Nothing reads
+`USE_PLAYWRIGHT` any more, and the Railway variable was deleted on 2026-10-22.
 
 **Cron import quirk (#211/#212, reverted in #213).** New modules under
 `services/` once failed with `ModuleNotFoundError` in the cron container even
@@ -667,7 +718,9 @@ BE, LU); add Austria, France, Denmark, Poland or Czechia only if it confirms.
   console errors; ignore them.
 - **Postgres MCP is production.** Its findings are production facts; say so
   when reporting. It runs as the read-only `claude_ro` role: directly via
-  `PROD_RO_DATABASE_URL` on the laptop, via `POST /api/admin/query` in cloud
-  sessions (see `scripts/sql/create_claude_ro.sql`). A read-only *session* is
+  `PROD_RO_DATABASE_URL` on the laptop (only while the Railway tunnel is
+  open, see "The production database is private"), via
+  `POST /api/admin/query` in cloud sessions (see
+  `scripts/sql/create_claude_ro.sql`). A read-only *session* is
   not a guard (a query can switch it back to read-write); the role's grants
   are, and the endpoint refuses any role that could write.
