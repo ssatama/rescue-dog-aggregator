@@ -27,9 +27,10 @@ case "${1:-}" in
       echo "PROD_RO_DATABASE_URL is not set (environment or .env); see scripts/sql/create_claude_ro.sql" >&2
       exit 1
     fi
-    # The URL uses libpq's sslmode=require (encrypt, don't verify), which psql
-    # understands. node-postgres reads "require" as verify-full and rejects
-    # Railway's self-signed proxy certificate; its spelling is "no-verify".
+    # The laptop URL goes through the Railway tunnel and carries no sslmode.
+    # If one says sslmode=require (libpq: encrypt, don't verify), node-postgres
+    # would read it as verify-full and reject Railway's self-signed
+    # certificate; its spelling is "no-verify".
     # Pinned so a new release of the server can't run with the production URL
     # (its dependencies, e.g. pg ^8, still resolve fresh). Upstream archived
     # the package; 0.6.2 is its last release.

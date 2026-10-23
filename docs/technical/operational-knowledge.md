@@ -19,7 +19,8 @@ which an attacker read customer variables, AI keys first.
   `SENTRY_DSN_BACKEND`. The API never touches R2.
 - Cron: `OPENROUTER_API_KEY`, `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` (an
   Object Read & Write token scoped to the images bucket), `DATABASE_URL`,
-  `BROWSER_TOKEN` + `BROWSERLESS_WS_ENDPOINT` (which embeds the token),
+  `BROWSERLESS_WS_ENDPOINT` (the token is its `?token=`; the code's
+  `BROWSERLESS_TOKEN` is unset, and the cron's `BROWSER_TOKEN` copy is unread),
   `REVALIDATION_TOKEN` (also on Vercel), `INDEXNOW_KEY`, `SENTRY_DSN_BACKEND`.
 - Browserless: `TOKEN` and `BROWSER_TOKEN`, the same value.
 - Copies elsewhere: laptop `.env` (`OPENROUTER_API_KEY`, `R2_*`,
