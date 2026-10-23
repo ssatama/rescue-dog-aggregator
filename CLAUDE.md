@@ -27,7 +27,9 @@ holds no paths or secrets:
 
 - `postgres` - read-only SQL against the **production** Railway database, as
   the `claude_ro` role (`scripts/sql/create_claude_ro.sql`). On the laptop it
-  connects with `PROD_RO_DATABASE_URL` from `.env`; in cloud sessions, which
+  connects with `PROD_RO_DATABASE_URL` from `.env`, through a Railway tunnel
+  that must be open (`railway connect Postgres --tunnel-only --port 54329`;
+  the database has no public address); in cloud sessions, which
   can't reach Postgres, it goes over HTTPS via `POST /api/admin/query`.
   Prefer it over shelling out to `psql` for inspection. Started by
   `scripts/mcp-server.sh`.
