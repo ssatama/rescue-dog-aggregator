@@ -102,6 +102,7 @@
       "brace-expansion@>=4.0.0 <5.0.9": "^5.0.9",
       "browserslist@<=4.28.6": "^4.28.7",
       "nwsapi": "2.2.24",
+      "fast-uri@<3.1.9": "^3.1.9",
       "seroval@<1.6.3": "~1.6.8",
       "seroval-plugins@<1.6.3": "~1.6.8",
       "source-map-js@<1.2.2": "^1.2.2"
