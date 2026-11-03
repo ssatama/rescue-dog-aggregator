@@ -15,6 +15,10 @@ AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(years?|yrs?|yo|y|months?|weeks?)?", re.I
 SEXES = {"male": "Male", "female": "Female"}
 
 
+def _host(netloc: str) -> str:
+    return netloc.lower().removeprefix("www.")
+
+
 class PetsInTurkeyScraper(BaseScraper):
     """Pets in Turkey lists every dog on /dogs, one card per dog.
 
@@ -58,7 +62,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
         dogs_data = []
         for card in BeautifulSoup(response.text, "html.parser").select("a.animal-card"):
-            if card.get("data-species", "dog") != "dog":
+            if card.get("data-species", "dog").lower() != "dog":
                 continue
             # One odd card is skipped, not the whole run: a run that fails
             # freezes every dog, as from 2026-10-29 (#747)
@@ -95,7 +99,7 @@ class PetsInTurkeyScraper(BaseScraper):
 
         link = urlparse(urljoin(f"{self.base_url}/", card.get("href") or ""))
         page = DOG_PAGE.fullmatch(link.path)
-        if page and link.netloc == urlparse(self.base_url).netloc:
+        if page and _host(link.netloc) == _host(urlparse(self.base_url).netloc):
             slug = page.group(1).lower()
             dog_data["external_id"] = f"pit-{slug}"
             dog_data["adoption_url"] = f"{self.base_url}/dogs/{slug}"

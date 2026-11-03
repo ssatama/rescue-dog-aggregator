@@ -113,7 +113,9 @@ def apply_rekeys(cursor, rekeys: list[Rekey]) -> list[Rekey]:
     """Write the new ids; return the rekeys that changed a row.
 
     The UPDATE is guarded by the old id, so a row re-keyed since the plan was
-    read (a scrape, a second run) is not counted as done.
+    read (a second run) is not counted as done. If a scrape inserted a new id
+    meanwhile, UNIQUE(external_id, organization_id) raises and the caller
+    commits nothing: run the dry run again.
     """
     changed = []
     for rekey in rekeys:
@@ -130,7 +132,6 @@ def _listed_dogs() -> tuple[str, list[dict]]:
     from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 
     scraper = PetsInTurkeyScraper()
-    scraper.session_manager = None
     return scraper.listing_url, scraper.collect_data()
 
 

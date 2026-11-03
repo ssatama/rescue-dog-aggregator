@@ -121,7 +121,7 @@ class TestPetsInTurkeyScraper:
 
         assert dog["external_id"] is None
 
-    @pytest.mark.parametrize("href", ["/dogs/aliza/", "/dogs/aliza?ref=home", "/dogs/aliza#photos", "https://www.petsinturkey.org/dogs/aliza"])
+    @pytest.mark.parametrize("href", ["/dogs/aliza/", "/dogs/aliza?ref=home", "/dogs/aliza#photos", "https://www.petsinturkey.org/dogs/aliza", "https://petsinturkey.org/dogs/aliza"])
     def test_the_slug_ignores_query_fragment_and_host(self, scraper, href):
         dog = self._extract(scraper, _card(href=href))
 
@@ -170,6 +170,10 @@ class TestPetsInTurkeyScraper:
 
         assert [dog["name"] for dog in dogs] == ["Aliza"]
         scraper.logger.warning.assert_called_once()
+
+    def test_the_species_is_read_in_any_case(self, scraper):
+        with patch.object(scraper, "get_listing_page", return_value=MagicMock(text=_page(_card(species="Dog")))):
+            assert [dog["name"] for dog in scraper.collect_data()] == ["Aliza"]
 
     def test_found_dogs_are_recorded_for_stale_detection(self, scraper):
         scraper.session_manager = MagicMock()
