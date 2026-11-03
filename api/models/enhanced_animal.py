@@ -68,8 +68,8 @@ class BulkEnhancedRequest(BaseModel):
 
     animal_ids: list[int] = Field(
         ...,
-        min_items=1,
-        max_items=100,
+        min_length=1,
+        max_length=100,
         description="List of animal IDs to fetch (max 100)",
     )
     include_fields: list[str] | None = Field(None, description="Optional list of specific fields to include")
@@ -95,8 +95,8 @@ class DetailContentResponse(BaseModel):
 class AttributesRequest(BaseModel):
     """Request for specific attributes."""
 
-    animal_ids: list[int] = Field(..., min_items=1, max_items=1000, description="Animal IDs to query")
-    attributes: list[str] = Field(..., min_items=1, max_items=20, description="Attribute names to fetch")
+    animal_ids: list[int] = Field(..., min_length=1, max_length=1000, description="Animal IDs to query")
+    attributes: list[str] = Field(..., min_length=1, max_length=20, description="Attribute names to fetch")
 
     @field_validator("animal_ids")
     @classmethod

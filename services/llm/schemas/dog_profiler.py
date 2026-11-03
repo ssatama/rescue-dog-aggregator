@@ -60,8 +60,8 @@ class DogProfilerData(BaseModel):
     special_needs: str | None = Field(None, max_length=250, description="Any special requirements or considerations")
 
     # ===== PERSONALITY =====
-    personality_traits: list[str] = Field(..., min_items=3, max_items=5, description="Key personality characteristics")
-    favorite_activities: list[str] = Field(..., min_items=2, max_items=4, description="Things the dog enjoys doing")
+    personality_traits: list[str] = Field(..., min_length=3, max_length=5, description="Key personality characteristics")
+    favorite_activities: list[str] = Field(..., min_length=2, max_length=4, description="Things the dog enjoys doing")
     unique_quirk: str | None = Field(None, max_length=200, description="A unique or endearing trait")
 
     # ===== ADOPTION INFO =====

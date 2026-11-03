@@ -73,7 +73,7 @@ async def get_enhanced_animal(animal_id: int, cursor: RealDictCursor = Depends(g
     description="Ultra-fast endpoint for fetching description + tagline for detail pages",
 )
 async def get_detail_content(
-    animal_ids: list[int] = Query(..., min_items=1, max_items=100),
+    animal_ids: list[int] = Query(..., min_length=1, max_length=100),
     cursor: RealDictCursor = Depends(get_pooled_db_cursor),
 ) -> list[DetailContentResponse]:
     """
