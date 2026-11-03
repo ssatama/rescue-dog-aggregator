@@ -378,7 +378,8 @@ has no LLM profiles), 17 first attempts too short and fixed on retry, no
   #618 found and fixed);
   0 active dogs with a story only under an old key (#568).
 - Pets in Turkey has no `description` on purpose: its "Ready to fly /
-  Currently in" line is where the dog is, not a story (#564).
+  Currently in" line is where the dog is, not a story (#564). Since #747 the
+  per-dog pages do have a story; reading it would mean one fetch per dog.
 - Found after the run: `/breeds/with-images` grouped 52 dogs with no breed
   under a NULL `primary_breed` (a missing breed is NULL since #568), and the
   /breeds page's schema rejected the response (JAVASCRIPT-NEXTJS-88). Fixed
@@ -533,10 +534,16 @@ no per-dog id); 39 rows were re-keyed on 2026-09-23. Any future id-scheme
 change needs the same re-key before the next cron. REAN ages come from the
 heading first because GoDaddy leaks a neighbour's sentence into a block.
 
-**Pets in Turkey ids are `pit-{wix media id}`** of the card photo since #564.
-The Wix repeater slots are reused for new dogs, so their ids are not per dog.
-Re-keyed with `management/pets_in_turkey_rekey.py`. A photo swap for the same
-dog re-creates it.
+**Pets in Turkey ids are `pit-{page slug}`** since #747. The site left Wix in
+late October 2026 (the scraper found 0 dogs from 2026-10-29); every dog now
+has its own page, `/dogs/<slug>`, which is also its `adoption_url`, and a
+second dog with a taken name gets `-2` (`/dogs/mona-2`). Rows from the Wix era
+(#564: `pit-{wix media id}` of the card photo) were re-keyed by name with
+`management/pets_in_turkey_rekey.py`, which also sets the per-dog link,
+because a save never rewrites `adoption_url`. The photo is
+`/photos/<n>/large.webp`; any unknown name under `/photos/` answers 200 with
+a fallback image, so a 200 there proves nothing. The dog's page has a story,
+height and spay status the listing lacks; the scraper doesn't read it yet.
 
 **Santer Paws and Animal Rescue Bosnia ids are WordPress post ids** since
 #570: `spbr-{post id}` and `arb-{page id}`. Names and slugs change and repeat;
