@@ -2,15 +2,16 @@
 
 import re
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
 from scrapers.base_scraper import BaseScraper
 
+DOG_PAGE = re.compile(r"/dogs/([a-z0-9-]+)/?", re.IGNORECASE)
 WEIGHT = re.compile(r"(\d+(?:[.,]\d+)?)\s*kg", re.IGNORECASE)
-# "1 year", "1.5 years", "9 months"; a bare "1,5" is years
-AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(years?|months?)?", re.IGNORECASE)
+# "1 year", "1.5 years", "2 yo", "9 months", "10 weeks"; a bare "1,5" is years
+AGE = re.compile(r"(\d+(?:[.,]\d+)?)\s*(years?|yrs?|yo|y|months?|weeks?)?", re.IGNORECASE)
 SEXES = {"male": "Male", "female": "Female"}
 
 
@@ -59,11 +60,16 @@ class PetsInTurkeyScraper(BaseScraper):
         for card in BeautifulSoup(response.text, "html.parser").select("a.animal-card"):
             if card.get("data-species", "dog") != "dog":
                 continue
-            dog_data = self._extract_dog_data(card)
-            if not dog_data.get("external_id") or not dog_data.get("name"):
-                self.logger.warning(f"Skipping a card without a name or page link: {card.get('href')!r}")
-                continue
-            dogs_data.append(self._apply_standardization(dog_data))
+            # One odd card is skipped, not the whole run: a run that fails
+            # freezes every dog, as from 2026-10-29 (#747)
+            try:
+                dog_data = self._extract_dog_data(card)
+                if not dog_data.get("external_id") or not dog_data.get("name"):
+                    self.logger.warning(f"Skipping a card without a name or dog page link: {card.get('href')!r}")
+                    continue
+                dogs_data.append(self._apply_standardization(dog_data))
+            except Exception as e:
+                self.logger.error(f"Skipping card {card.get('href')!r}: {e}")
 
         self.logger.info(f"Extracted {len(dogs_data)} dogs")
 
@@ -87,10 +93,12 @@ class PetsInTurkeyScraper(BaseScraper):
             "external_id": None,
         }
 
-        slug = (card.get("href") or "").rstrip("/").rsplit("/", 1)[-1]
-        if slug:
+        link = urlparse(urljoin(f"{self.base_url}/", card.get("href") or ""))
+        page = DOG_PAGE.fullmatch(link.path)
+        if page and link.netloc == urlparse(self.base_url).netloc:
+            slug = page.group(1).lower()
             dog_data["external_id"] = f"pit-{slug}"
-            dog_data["adoption_url"] = urljoin(f"{self.base_url}/", card["href"])
+            dog_data["adoption_url"] = f"{self.base_url}/dogs/{slug}"
 
         name = card.select_one(".animal-name")
         if name:
@@ -116,15 +124,21 @@ class PetsInTurkeyScraper(BaseScraper):
 
         weight = WEIGHT.fullmatch(part)
         if weight:
-            kg = float(weight.group(1).replace(",", "."))
-            dog_data["properties"]["weight"] = f"{weight.group(1)} kg"
-            dog_data["size"] = self._calculate_size_from_weight(kg)
+            kg = weight.group(1).replace(",", ".")
+            dog_data["properties"]["weight"] = f"{kg} kg"
+            dog_data["size"] = self._calculate_size_from_weight(float(kg))
             return
 
         age = AGE.fullmatch(part)
         if age:
-            unit = "months" if (age.group(2) or "").lower().startswith("month") else "years"
+            unit = (age.group(2) or "y").lower()
+            unit = "months" if unit.startswith("month") else "weeks" if unit.startswith("week") else "years"
             dog_data["age"] = f"{age.group(1).replace(',', '.')} {unit}"
+            return
+
+        # A breed has no digits; a number we can't read ("10-12 kg") is left out
+        if any(char.isdigit() for char in part):
+            self.logger.debug(f"Unread fact {part!r}")
             return
 
         dog_data["breed"] = part

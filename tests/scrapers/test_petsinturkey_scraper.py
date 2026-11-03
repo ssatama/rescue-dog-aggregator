@@ -98,6 +98,51 @@ class TestPetsInTurkeyScraper:
         assert dog["age"] is None
         assert dog["breed"] is None
 
+    @pytest.mark.parametrize("facts", ["Male · 10 weeks · 4 kg", "Male · 10-12 kg", "Male · 2 yo"])
+    def test_a_number_that_isnt_read_is_never_the_breed(self, scraper, facts):
+        dog = self._extract(scraper, _card(facts=facts))
+
+        assert dog["breed"] is None
+
+    @pytest.mark.parametrize(("age", "expected"), [("10 weeks", "10 weeks"), ("2 yo", "2 years"), ("3 y", "3 years")])
+    def test_short_and_weekly_ages(self, scraper, age, expected):
+        dog = self._extract(scraper, _card(facts=f"Male · {age} · 4 kg · Mix"))
+
+        assert dog["age"] == expected
+
+    def test_a_comma_weight_is_stored_with_a_dot(self, scraper):
+        dog = self._extract(scraper, _card(facts="Male · 7,5 kg"))
+
+        assert dog["properties"]["weight"] == "7.5 kg"
+
+    @pytest.mark.parametrize("href", ["/dogs", "/dogs/", "/cats/tom", "https://elsewhere.org/dogs/aliza"])
+    def test_only_a_dogs_own_page_gives_an_id(self, scraper, href):
+        dog = self._extract(scraper, _card(href=href))
+
+        assert dog["external_id"] is None
+
+    @pytest.mark.parametrize("href", ["/dogs/aliza/", "/dogs/aliza?ref=home", "/dogs/aliza#photos", "https://www.petsinturkey.org/dogs/aliza"])
+    def test_the_slug_ignores_query_fragment_and_host(self, scraper, href):
+        dog = self._extract(scraper, _card(href=href))
+
+        assert dog["external_id"] == "pit-aliza"
+        assert dog["adoption_url"] == "https://www.petsinturkey.org/dogs/aliza"
+
+    def test_one_card_that_fails_does_not_sink_the_rest(self, scraper):
+        page = _page(_card(href="/dogs/odd", name="Odd"), _card())
+        real = scraper._apply_standardization
+
+        def flaky(dog):
+            if dog["name"] == "Odd":
+                raise ValueError("bad breed text")
+            return real(dog)
+
+        with patch.object(scraper, "get_listing_page", return_value=MagicMock(text=page)), patch.object(scraper, "_apply_standardization", side_effect=flaky):
+            dogs = scraper.collect_data()
+
+        assert [dog["name"] for dog in dogs] == ["Aliza"]
+        scraper.logger.error.assert_called_once()
+
     def test_calculate_size_from_weight(self, scraper):
         assert scraper._calculate_size_from_weight(3) == "Tiny"
         assert scraper._calculate_size_from_weight(8) == "Small"
@@ -118,7 +163,7 @@ class TestPetsInTurkeyScraper:
         assert standardized["animal_type"] == "dog"
 
     def test_cards_without_a_page_or_that_are_not_dogs_are_skipped(self, scraper):
-        page = _page(_card(), _card(href=None, name="Ghost"), _card(href="/cats/tom", name="Tom", species="cat"))
+        page = _page(_card(), _card(href=None, name="Ghost"), _card(href="/dogs/tom", name="Tom", species="cat"))
 
         with patch.object(scraper, "get_listing_page", return_value=MagicMock(text=page)):
             dogs = scraper.collect_data()

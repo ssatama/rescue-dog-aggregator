@@ -109,12 +109,29 @@ def _connect():
     return psycopg2.connect(**DB_CONFIG)
 
 
-def _listed_dogs() -> list[dict]:
+def apply_rekeys(cursor, rekeys: list[Rekey]) -> list[Rekey]:
+    """Write the new ids; return the rekeys that changed a row.
+
+    The UPDATE is guarded by the old id, so a row re-keyed since the plan was
+    read (a scrape, a second run) is not counted as done.
+    """
+    changed = []
+    for rekey in rekeys:
+        cursor.execute(
+            "UPDATE animals SET external_id = %s, adoption_url = %s WHERE id = %s AND external_id = %s",
+            (rekey.new_id, rekey.adoption_url, rekey.animal_id, rekey.old_id),
+        )
+        if cursor.rowcount == 1:
+            changed.append(rekey)
+    return changed
+
+
+def _listed_dogs() -> tuple[str, list[dict]]:
     from scrapers.pets_in_turkey.petsinturkey_scraper import PetsInTurkeyScraper
 
     scraper = PetsInTurkeyScraper()
     scraper.session_manager = None
-    return scraper.collect_data()
+    return scraper.listing_url, scraper.collect_data()
 
 
 def main() -> int:
@@ -123,8 +140,8 @@ def main() -> int:
     parser.add_argument("--apply", action="store_true", help="Write the changes (default is a dry run)")
     args = parser.parse_args()
 
-    listed = _listed_dogs()
-    logger.info("listing: %s dogs on %s", len(listed), "https://www.petsinturkey.org/dogs")
+    listing_url, listed = _listed_dogs()
+    logger.info("listing: %s dogs on %s", len(listed), listing_url)
     logger.info("target: %s", "production (RAILWAY_DATABASE_URL)" if os.getenv("RAILWAY_DATABASE_URL") else f"local ({DB_CONFIG.get('database')})")
 
     with _connect() as conn:
@@ -146,15 +163,14 @@ def main() -> int:
             return 0
 
         with conn.cursor() as cursor:
-            for rekey in plan.rekeys:
-                cursor.execute(
-                    "UPDATE animals SET external_id = %s, adoption_url = %s WHERE id = %s AND external_id = %s",
-                    (rekey.new_id, rekey.adoption_url, rekey.animal_id, rekey.old_id),
-                )
+            changed = apply_rekeys(cursor, plan.rekeys)
         conn.commit()
 
-    logger.info("Re-keyed %s rows", len(plan.rekeys))
-    return 0
+    missed = [rekey for rekey in plan.rekeys if rekey not in changed]
+    for rekey in missed:
+        logger.warning("NOT re-keyed %s %s: its external_id is no longer %s; re-run the dry run", rekey.animal_id, rekey.name, rekey.old_id)
+    logger.info("Re-keyed %s of %s planned rows", len(changed), len(plan.rekeys))
+    return 1 if missed else 0
 
 
 if __name__ == "__main__":

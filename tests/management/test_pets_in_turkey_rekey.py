@@ -1,8 +1,9 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 
-from management.pets_in_turkey_rekey import Rekey, plan_rekeys
+from management.pets_in_turkey_rekey import Rekey, apply_rekeys, plan_rekeys
 
 PAGE = "https://www.petsinturkey.org/dogs/"
 
@@ -78,3 +79,19 @@ class TestPlanRekeys:
         plan = plan_rekeys([_row(1, "Alfie", sex="Male"), _row(2, "Aliza")], [_listed("aliza", "Aliza")])
 
         assert [row["name"] for row in plan.unlisted] == ["Alfie"]
+
+
+@pytest.mark.unit
+class TestApplyRekeys:
+    def test_counts_only_the_rows_actually_changed(self):
+        """A row re-keyed between the dry run and --apply matches no row and isn't counted."""
+        cursor = MagicMock()
+        type(cursor).rowcount = property(lambda self: [1, 0][cursor.execute.call_count - 1])
+        rekeys = [Rekey(1, "Aliza", "pit-old-1", "pit-aliza", PAGE + "aliza"), Rekey(2, "Mona", "pit-old-2", "pit-mona-2", PAGE + "mona-2")]
+
+        changed = apply_rekeys(cursor, rekeys)
+
+        assert [rekey.animal_id for rekey in changed] == [1]
+        sql, params = cursor.execute.call_args_list[0].args
+        assert "slug" not in sql.replace("external_id", "")
+        assert params == ("pit-aliza", PAGE + "aliza", 1, "pit-old-1")
