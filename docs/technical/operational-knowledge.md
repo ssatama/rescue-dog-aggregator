@@ -124,24 +124,25 @@ insert and looked like a build failure. Every synced table now gets its
 sequence reset; the manual remedy is
 `SELECT setval('<table>_id_seq', (SELECT MAX(id) FROM <table>));`.
 
-**Config as Code stops working 2026-12-01.** Railway stops reading
-`railway.json` / `railway.api.json`, and services fall back to dashboard
-values. The API's dashboard start command is `python api/main.py`, which
-imports and exits, so **production goes down** unless the start command is
-changed to `bash start.sh` first. Also lost: `healthcheckPath`,
-`overlapSeconds`, `watchPatterns` (the deploy-race fix below). The IaC
-migration was blocked on 2026-08-25: `railway config pull` emits invalid JS
-and `railway config migrate` drops the healthcheck. Re-check the importer
-before trying again.
+**Railway settings live in `.railway/railway.ts` (IaC, #728).** It replaced
+`railway.json` / `railway.api.json`, which Railway stops reading on
+2026-12-01. It declares only our two services (`partial =
+"rescue-dog-aggregator"`); Postgres, Browserless and rescuedogs-mcp are outside
+it. Variables are unmanaged, so the file never sees secrets. To change a
+setting: edit the file, `cd .railway && pnpm install` once for the SDK, then
+`railway config plan` and `railway config apply`. Pushing the file alone
+changes nothing on Railway.
 
-**The dashboard drifts from the config files.** Config files override the
-dashboard and Railway never writes back, so every service has a hidden second
-set of values. #366 assumed `restartPolicyType: ON_FAILURE` was the default;
-the cron's dashboard said `NEVER`, and the change flipped it (fixed in #367).
-Read the live value with `railway config pull` before adding any key to
-`railway*.json`. `railway.json` is shared with the cron, which serves no HTTP,
-so a `healthcheckPath` there hangs cron deploys; the API has its own
-`railway.api.json`.
+- `railway config migrate` only finds `railway.json`; it missed the API's
+  custom path `railway.api.json`, so the API service was written by hand.
+- `railway config migrate status` reported "no services read Config as
+  Code" while both did (the build logs showed Nixpacks and the API's
+  `/health` check). Trust the build logs.
+- Apply before `railway config migrate cutover`: cutover clears the config
+  path and redeploys, and the API's old dashboard start command,
+  `python api/main.py`, imports and exits, so production goes down.
+- The cron serves no HTTP, so it must not get a `healthcheck` (it would hang
+  its deploys). It keeps `restartPolicyType: NEVER` (#367).
 
 **Migrations are manual.** `start.sh` never runs Alembic, whatever
 `docs/guides/deployment.md` suggests. Apply a migration to production
