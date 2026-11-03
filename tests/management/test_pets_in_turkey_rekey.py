@@ -1,34 +1,97 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 
-from management.pets_in_turkey_rekey import plan_rekeys
+from management.pets_in_turkey_rekey import Rekey, apply_rekeys, plan_rekeys
 
-BARNEY = "https://static.wixstatic.com/media/3da926_396bf19072fa4b8a9fef8f8d83f06775~mv2.jpeg"
-BARNEY_ID = "pit-396bf19072fa4b8a9fef8f8d83f06775"
+PAGE = "https://www.petsinturkey.org/dogs/"
 
 
-def _row(animal_id, external_id, seen, photo=BARNEY, active=False):
-    return {"id": animal_id, "name": "Barney", "external_id": external_id, "original_image_url": photo, "last_seen_at": datetime(2026, *seen), "active": active}
+def _row(animal_id, name, sex="Female", external_id=None, active=True, seen=(10, 26)):
+    return {
+        "id": animal_id,
+        "name": name,
+        "sex": sex,
+        "external_id": external_id or f"pit-old-{animal_id}",
+        "adoption_url": "https://www.petsinturkey.org/dogs",
+        "active": active,
+        "last_seen_at": datetime(2026, *seen),
+    }
+
+
+def _listed(slug, name, sex="Female"):
+    return {"external_id": f"pit-{slug}", "name": name, "sex": sex, "adoption_url": PAGE + slug}
 
 
 @pytest.mark.unit
 class TestPlanRekeys:
-    def test_the_most_recently_seen_row_with_the_photo_takes_the_new_id(self):
-        # Barney was re-created when "Mixed Breed" became "Mix" (production, 2025-09-04)
-        rows = [_row(3931, "pit-barney-mixed-breed", (1, 1)), _row(4932, "pit-barney-mix", (9, 26), active=True)]
+    def test_an_active_row_takes_its_dogs_page_slug_and_link(self):
+        plan = plan_rekeys([_row(10187, "Aliza")], [_listed("aliza", "Aliza")])
 
-        [rekey] = plan_rekeys(rows)
+        assert plan.rekeys == [Rekey(10187, "Aliza", "pit-old-10187", "pit-aliza", PAGE + "aliza")]
+        assert plan.new_dogs == []
+        assert plan.ambiguous == []
 
-        assert (rekey.animal_id, rekey.old_id, rekey.new_id) == (4932, "pit-barney-mix", BARNEY_ID)
+    def test_the_slug_can_differ_from_the_name(self):
+        plan = plan_rekeys([_row(1, "Mona")], [_listed("mona-2", "Mona")])
+
+        assert [(r.animal_id, r.new_id) for r in plan.rekeys] == [(1, "pit-mona-2")]
+
+    def test_names_match_ignoring_case_and_spacing(self):
+        plan = plan_rekeys([_row(1, "Mr  Bean", sex="Male")], [_listed("mr-bean", "mr bean", sex="Male")])
+
+        assert [r.animal_id for r in plan.rekeys] == [1]
+
+    def test_an_inactive_row_is_never_revived(self):
+        """Chester was last seen in July; a same-named dog now is a new row, not his old page."""
+        plan = plan_rekeys([_row(7874, "Chester", sex="Male", active=False)], [_listed("chester", "Chester", sex="Male")])
+
+        assert plan.rekeys == []
+        assert [dog["external_id"] for dog in plan.new_dogs] == ["pit-chester"]
+
+    def test_a_row_of_the_other_sex_is_not_the_dog(self):
+        plan = plan_rekeys([_row(1, "Teddy", sex="Female")], [_listed("teddy", "Teddy", sex="Male")])
+
+        assert plan.rekeys == []
+        assert [dog["name"] for dog in plan.new_dogs] == ["Teddy"]
+
+    def test_a_name_twice_on_either_side_is_left_for_a_human(self):
+        two_rows = plan_rekeys([_row(1, "Luna"), _row(2, "Luna")], [_listed("luna", "Luna")])
+        two_dogs = plan_rekeys([_row(1, "Luna")], [_listed("luna", "Luna"), _listed("luna-2", "Luna")])
+
+        for plan in (two_rows, two_dogs):
+            assert plan.rekeys == []
+            assert plan.ambiguous == ["Luna"]
+
+    def test_two_rows_of_one_name_are_told_apart_by_sex(self):
+        plan = plan_rekeys([_row(1, "Luna", sex="Female"), _row(2, "Luna", sex="Male")], [_listed("luna", "Luna", sex="Male")])
+
+        assert [r.animal_id for r in plan.rekeys] == [2]
 
     def test_already_keyed_rows_are_left_alone(self):
-        assert plan_rekeys([_row(1, BARNEY_ID, (9, 1))]) == []
+        plan = plan_rekeys([_row(1, "Aliza", external_id="pit-aliza")], [_listed("aliza", "Aliza")])
 
-    def test_a_new_id_already_held_by_another_row_is_not_reassigned(self):
-        rows = [_row(1, BARNEY_ID, (9, 1)), _row(2, "pit-barney-mix", (9, 2))]
+        assert plan.rekeys == []
+        assert plan.new_dogs == []
 
-        assert plan_rekeys(rows) == []
+    def test_active_rows_no_longer_listed_are_reported_and_left_to_go_stale(self):
+        plan = plan_rekeys([_row(1, "Alfie", sex="Male"), _row(2, "Aliza")], [_listed("aliza", "Aliza")])
 
-    def test_a_row_without_a_wix_photo_keeps_its_id(self):
-        assert plan_rekeys([_row(1, "pit-barney-mix", (9, 1), photo=None)]) == []
+        assert [row["name"] for row in plan.unlisted] == ["Alfie"]
+
+
+@pytest.mark.unit
+class TestApplyRekeys:
+    def test_counts_only_the_rows_actually_changed(self):
+        """A row re-keyed between the dry run and --apply matches no row and isn't counted."""
+        cursor = MagicMock()
+        type(cursor).rowcount = property(lambda self: [1, 0][cursor.execute.call_count - 1])
+        rekeys = [Rekey(1, "Aliza", "pit-old-1", "pit-aliza", PAGE + "aliza"), Rekey(2, "Mona", "pit-old-2", "pit-mona-2", PAGE + "mona-2")]
+
+        changed = apply_rekeys(cursor, rekeys)
+
+        assert [rekey.animal_id for rekey in changed] == [1]
+        sql, params = cursor.execute.call_args_list[0].args
+        assert "slug" not in sql.replace("external_id", "")
+        assert params == ("pit-aliza", PAGE + "aliza", 1, "pit-old-1")
