@@ -112,6 +112,30 @@ class TestAnimalRescueBosniaScraper(ScraperTestBase):
         assert result["age_text"] is not None
 
     @patch("requests.get")
+    def test_description_found_without_about_heading(self, mock_get, scraper):
+        """Some pages (e.g. /boby/) put the story straight after the property block (#756)."""
+        mock_html = """
+        <html><body>
+            <h1>Boby</h1>
+            <div class="entry-content">
+                <h2>Short description</h2>
+                <p>Breed: Mix<br>Gender: Male<br>Date of birth: December 2025</p>
+                <div class="wp-block-buttons"><a href="/contact/">I am interested</a></div>
+                <p>We found Boby and his two sisters in July, living in an old, abandoned house.</p>
+            </div>
+            <footer><p>Theme by Out the Box</p></footer>
+        </body></html>
+        """
+        mock_response = Mock()
+        mock_response.content = mock_html.encode("utf-8")
+        mock_response.raise_for_status = Mock()
+        mock_get.return_value = mock_response
+
+        result = scraper.scrape_animal_details("https://www.animal-rescue-bosnia.org/boby/")
+
+        assert result["properties"]["description"] == "We found Boby and his two sisters in July, living in an old, abandoned house."
+
+    @patch("requests.get")
     def test_a_page_without_its_id_gives_no_external_id(self, mock_get, scraper):
         """The name is never the ID (#570): a renamed dog would be a new one."""
         mock_response = Mock(content=b"<html><body><h1>Ksenon Dog</h1><h2>Short description</h2><p>Breed: Mix<br>Gender: Male</p></body></html>")
