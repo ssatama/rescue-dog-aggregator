@@ -250,6 +250,11 @@ class AnimalRescueBosniaScraper(BaseScraper):
                     next_elem = next_elem.find_next_sibling()
 
                 description = " ".join(desc_parts)
+            else:
+                # Some pages (e.g. /boby/) have no About heading; the story is the content
+                # paragraphs other than the property block (#756).
+                desc_parts = [text for p in soup.select(".entry-content p") if p is not property_paragraph and (text := p.get_text().strip())]
+                description = " ".join(desc_parts) or None
 
             # Build result dictionary with proper structure for BaseScraper
             result = {
