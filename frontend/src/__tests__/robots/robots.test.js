@@ -33,16 +33,13 @@ describe("Static Robots.txt File", () => {
     expect(robotsTxtContent).toContain("User-agent: WhatsApp");
   });
 
-  test("should include AI and LLM crawlers", () => {
-    expect(robotsTxtContent).toContain("User-agent: GPTBot");
+  test("should include AI search and assistant crawlers", () => {
     expect(robotsTxtContent).toContain("User-agent: ChatGPT-User");
     // Current agent tokens; anthropic-ai and Claude-Web are retired (#446)
-    expect(robotsTxtContent).toContain("User-agent: ClaudeBot");
     expect(robotsTxtContent).toContain("User-agent: Claude-SearchBot");
     expect(robotsTxtContent).toContain("User-agent: OAI-SearchBot");
     expect(robotsTxtContent).not.toContain("User-agent: anthropic-ai");
     expect(robotsTxtContent).toContain("User-agent: PerplexityBot");
-    expect(robotsTxtContent).toContain("User-agent: CCBot");
   });
 
   test("should block only sensitive paths", () => {
@@ -228,11 +225,10 @@ describe("Robots.txt query-string crawl control", () => {
   const CRAWLERS = [
     "Googlebot",
     "Bingbot",
-    "GPTBot",
+    "OAI-SearchBot",
     "PerplexityBot",
     "ChatGPT-User",
-    "anthropic-ai",
-    "CCBot",
+    "Claude-SearchBot",
     "SomeUnknownBot",
   ];
 
@@ -250,6 +246,16 @@ describe("Robots.txt query-string crawl control", () => {
   test.each(CRAWLERS)("%s can still crawl the site root", (agent) => {
     expect(rulesFor(robotsTxtContent, agent)).toContain("allow:/");
   });
+
+  // Training crawlers send no visitors and used more of the Vercel Hobby
+  // quota than all humans combined (#762)
+  test.each(["GPTBot", "ClaudeBot", "CCBot", "Google-Extended", "meta-externalagent", "Bytespider", "Amazonbot"])(
+    "AI training crawler %s is fully blocked",
+    (agent) => {
+      const rules = rulesFor(robotsTxtContent, agent);
+      expect(rules).toEqual(["disallow:/"]);
+    },
+  );
 
   test("aggressive bots stay fully blocked", () => {
     expect(rulesFor(robotsTxtContent, "AhrefsBot")).toContain("disallow:/");
