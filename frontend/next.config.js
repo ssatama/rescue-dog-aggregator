@@ -227,19 +227,17 @@ const nextConfig = {
         pathname: '/**',
       }
     ],
-    // Resize via Cloudflare (/cdn-cgi/image/) instead of Vercel's metered
-    // optimizer — images.rescuedogs.me already does resizing and Accept-based
-    // format negotiation. See src/utils/cloudflareImageLoader.ts.
+    // Pre-generated WebP variants on R2 (320/640/1200), not a billed resizer:
+    // neither Cloudflare /cdn-cgi/image/ nor Vercel's optimizer (#761).
+    // See src/utils/r2ImageLoader.ts.
     loader: 'custom',
-    loaderFile: './src/utils/cloudflareImageLoader.ts',
+    loaderFile: './src/utils/r2ImageLoader.ts',
     minimumCacheTTL: 31536000,
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    // 384/512 and 1200 close the gaps a 2x or 3x phone fell through:
-    // a 171px card at 2x wants 342 and got 640; a 390px photo at 3x wants
-    // 1170 and got 1920 (#506).
-    deviceSizes: [640, 768, 1080, 1200, 1920],
-    imageSizes: [32, 64, 128, 256, 384, 512],
+    // Match the R2 variant widths, so srcset lists each variant once
+    deviceSizes: [640, 1200],
+    imageSizes: [320],
     unoptimized: false,
   },
 };

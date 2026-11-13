@@ -1,3 +1,4 @@
+import { r2VariantUrl, VARIANT_WIDTHS } from "../utils/r2ImageLoader";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { R2_CUSTOM_DOMAIN } from "../constants/imageConfig";
 
@@ -66,20 +67,11 @@ export function useLazyImage(
       if (!originalSrc || !enableProgressiveLoading) return {};
 
       if (originalSrc.includes(R2_CUSTOM_DOMAIN)) {
-        // For R2 images, use Cloudflare Images transformations for progressive loading
+        // The smallest pre-generated variant; no blur, which would need a
+        // billed Cloudflare transformation (#761)
         return {
-          lowQuality: originalSrc.includes("/cdn-cgi/image/")
-            ? originalSrc.replace(
-                /\/cdn-cgi\/image\/[^/]+\//,
-                "/cdn-cgi/image/w=50,q=20,f=auto/",
-              )
-            : `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=50,q=20,f=auto/${originalSrc.replace(`https://${R2_CUSTOM_DOMAIN}/`, "")}`,
-          blurPlaceholder: originalSrc.includes("/cdn-cgi/image/")
-            ? originalSrc.replace(
-                /\/cdn-cgi\/image\/[^/]+\//,
-                "/cdn-cgi/image/w=50,q=20,blur=300,f=auto/",
-              )
-            : `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=50,q=20,blur=300,f=auto/${originalSrc.replace(`https://${R2_CUSTOM_DOMAIN}/`, "")}`,
+          lowQuality: r2VariantUrl(originalSrc, VARIANT_WIDTHS[0]),
+          blurPlaceholder: undefined,
         };
       }
 

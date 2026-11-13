@@ -3,6 +3,9 @@ import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { getAdaptiveImageQuality } from "../../utils/networkUtils";
 
+const STATIC_BLUR =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
+
 function normalizeImageUrl(url: string | undefined | null): string | undefined {
   if (!url || typeof url !== "string") return url ?? undefined;
   if (url.startsWith("//")) {
@@ -57,6 +60,7 @@ const NextImage = React.memo(function NextImage({
 }: NextImageProps) {
   const [imageSrc, setImageSrc] = useState(normalizeImageUrl(src) || fallbackSrc);
   const [hasError, setHasError] = useState(false);
+  const [servingOriginal, setServingOriginal] = useState(false);
 
   const isR2Image = useMemo(() => {
     if (!imageSrc) return false;
@@ -78,44 +82,17 @@ const NextImage = React.memo(function NextImage({
     return getAdaptiveImageQuality().replace("q_", "").replace(",", "");
   }, [quality]);
 
-  const blurDataURL = useMemo(() => {
-    // Priority 1: Use database-stored blur URL if provided (best performance)
-    if (providedBlurDataURL && placeholder === "blur") {
-      return providedBlurDataURL;
-    }
-
-    // Priority 2: Skip blur for non-R2 images or fallback images
-    if (placeholder !== "blur" || !isR2Image || imageSrc === fallbackSrc) {
-      return "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
-    }
-
-    // Priority 3: Generate Cloudflare CDN blur URL (fallback)
-    try {
-      const url = new URL(imageSrc);
-      const domain = url.origin;
-      let imagePath = url.pathname;
-
-      if (imagePath.startsWith("/")) {
-        imagePath = imagePath.substring(1);
-      }
-
-      const params = [
-        "w_10",
-        "h_10",
-        "c_fill",
-        "q_30",
-        "f_jpg",
-        "e_blur:300",
-      ].join(",");
-
-      return `${domain}/cdn-cgi/image/${params}/${imagePath}`;
-    } catch {
-      // Priority 4: Default fallback blur placeholder
-      return "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==";
-    }
-  }, [providedBlurDataURL, placeholder, isR2Image, imageSrc, fallbackSrc]);
+  // A database-stored blur when there is one, else a static blur. A
+  // per-image blur from Cloudflare's resizer would be a billed
+  // transformation per photo (#761).
+  const blurDataURL = providedBlurDataURL && placeholder === "blur" ? providedBlurDataURL : STATIC_BLUR;
 
   const handleError = (error: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // A missing R2 variant: show the original once before the placeholder (#761)
+    if (!servingOriginal && isR2Image && imageSrc !== fallbackSrc) {
+      setServingOriginal(true);
+      return;
+    }
     if (!hasError && imageSrc !== fallbackSrc) {
       setHasError(true);
       setImageSrc(fallbackSrc);
@@ -235,6 +212,8 @@ const NextImage = React.memo(function NextImage({
     placeholder,
     blurDataURL: placeholder === "blur" ? blurDataURL : undefined,
     onError: handleError,
+    // Skips the loader: the original file, not a variant
+    unoptimized: servingOriginal,
     ...validDomProps,
   };
 

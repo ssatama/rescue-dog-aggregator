@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Image, { ImageProps } from "next/image";
-import { R2_CUSTOM_DOMAIN, R2_IMAGE_PATH } from "../../constants/imageConfig";
+import { R2_CUSTOM_DOMAIN } from "../../constants/imageConfig";
 
 interface FallbackImageProps extends Omit<ImageProps, "onError"> {
   fallbackSrc?: string;
@@ -11,15 +11,10 @@ interface FallbackImageProps extends Omit<ImageProps, "onError"> {
  * FallbackImage Component
  *
  * A robust image component that provides multiple fallback strategies:
- * 1. Primary: next/image through the site's loader (Cloudflare resizing for
- *    images.rescuedogs.me), so an R2 photo keeps its sized srcset (#680)
- * 2. Fallback 1: R2 URL with Cloudflare Image Resizing transformations
- * 3. Fallback 2: Direct R2 URL without transformations
- * 4. Fallback 3: Placeholder image or emoji
- *
- * This ensures images are always displayed, even when:
- * - Cloudflare transformations fail
- * - Original image is unavailable
+ * 1. Primary: next/image through the site's loader (pre-generated WebP
+ *    variants on images.rescuedogs.me), so an R2 photo keeps its srcset (#680)
+ * 2. Fallback 1: the original R2 file, unoptimized (a variant is missing)
+ * 3. Fallback 2: placeholder image or emoji
  */
 export const FallbackImage: React.FC<FallbackImageProps> = ({
   src,
@@ -38,64 +33,22 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [src]);
 
+  // The first try is a pre-generated variant through the loader. If that
+  // fails, the original R2 file (never a Cloudflare transformation, which is
+  // billed per image, #761); then the placeholder.
   const getR2FallbackUrl = useCallback(
     (originalUrl: string, level: number): string => {
+      if (level !== 1) return "";
       try {
         const url = new URL(originalUrl);
-
-        // If it's already an R2 URL
-        if (
-          url.hostname === R2_CUSTOM_DOMAIN ||
-          url.hostname.includes("r2.cloudflarestorage.com")
-        ) {
-          if (level === 1) {
-            // Try with Cloudflare transformations if not already applied
-            if (!url.pathname.includes("/cdn-cgi/image/")) {
-              const imagePath = url.pathname;
-              // Use conservative transformations for reliability
-              return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=800,q=80,f=auto${imagePath}`;
-            } else {
-              // If already has transformations, skip to removing them
-              const match = url.pathname.match(
-                /\/cdn-cgi\/image\/[^/]+(\/.+)$/,
-              );
-              if (match && match[1]) {
-                return `https://${R2_CUSTOM_DOMAIN}${match[1]}`;
-              }
-            }
-          } else if (level === 2) {
-            // Remove transformations, use direct R2 URL
-            if (url.pathname.includes("/cdn-cgi/image/")) {
-              const match = url.pathname.match(
-                /\/cdn-cgi\/image\/[^/]+(\/.+)$/,
-              );
-              if (match && match[1]) {
-                return `https://${R2_CUSTOM_DOMAIN}${match[1]}`;
-              }
-            }
-            return originalUrl;
-          }
-        } else {
-          // For non-R2 images, try to find if we have an R2 version
-          // This assumes images are mirrored to R2 with a predictable pattern
-          const pathMatch = originalUrl.match(
-            /\/([^/]+\.(jpg|jpeg|png|webp|gif))$/i,
-          );
-          if (pathMatch && level === 1) {
-            // Try R2 with transformations
-            return `https://${R2_CUSTOM_DOMAIN}/cdn-cgi/image/w=800,q=80,f=auto/${R2_IMAGE_PATH}/${pathMatch[1]}`;
-          } else if (pathMatch && level === 2) {
-            // Try direct R2 URL
-            return `https://${R2_CUSTOM_DOMAIN}/${R2_IMAGE_PATH}/${pathMatch[1]}`;
-          }
+        if (url.hostname !== R2_CUSTOM_DOMAIN && !url.hostname.includes("r2.cloudflarestorage.com")) {
+          return "";
         }
-      } catch (error) {
-        console.warn("Failed to generate R2 fallback URL:", error);
-        // For malformed URLs, return null to indicate no fallback available
+        const match = url.pathname.match(/\/cdn-cgi\/image\/[^/]+(\/.+)$/);
+        return match ? `${url.origin}${match[1]}` : originalUrl;
+      } catch {
         return "";
       }
-
-      return originalUrl;
     },
     [],
   );
@@ -114,9 +67,11 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
 
       // Progressive fallback strategy
       if (fallbackLevel === 0) {
-        // First failure: Try R2 with Cloudflare transformations
+        // First failure: the original R2 file
         const r2Url = getR2FallbackUrl(String(src), 1);
-        if (r2Url && r2Url !== String(src) && r2Url !== "") {
+        // May be the same URL as src: this time unoptimized, so the original
+        // file rather than a variant
+        if (r2Url) {
           setImageSrc(r2Url);
           setFallbackLevel(1);
           return;
@@ -161,7 +116,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
   );
 
   // A fallback URL is already the exact one to load; the first try goes
-  // through the loader, which sizes R2 photos on Cloudflare
+  // through the loader, which picks a pre-generated R2 variant
   const shouldBypassNextOptimization = fallbackLevel > 0;
 
   if (fallbackLevel === 3 && fallbackSrc === "/placeholder_dog.svg") {
