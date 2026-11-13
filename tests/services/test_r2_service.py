@@ -236,111 +236,27 @@ class TestR2ServiceUpload:
 class TestR2ServiceOptimization:
     """Test R2Service optimization and URL generation"""
 
-    def test_get_optimized_url_with_r2_url(self):
-        """Test URL optimization for R2 URLs"""
-        with patch.dict(
-            "os.environ",
-            {
-                "R2_ACCOUNT_ID": "test_account_id",
-                "R2_ACCESS_KEY_ID": "test_access_key",
-                "R2_SECRET_ACCESS_KEY": "test_secret",
-                "R2_BUCKET_NAME": "test_bucket",
-                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
-                "R2_CUSTOM_DOMAIN": "https://images.example.com",
-            },
-        ):
-            R2Service._reset_config_cache()  # Reset cache for test
-            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
-            transformation_options = {"width": 400, "height": 300}
+    @pytest.mark.parametrize(
+        ("options", "variant"),
+        [
+            ({"width": 64, "height": 64, "fit": "crop"}, "dog_abc123_w320.webp"),
+            ({"width": 400, "height": 300, "fit": "cover", "gravity": "north"}, "dog_abc123_w640.webp"),
+            ({"width": 640}, "dog_abc123_w640.webp"),
+            ({"width": 2000, "quality": 90}, "dog_abc123_w1200.webp"),
+        ],
+    )
+    def test_get_optimized_url_points_at_the_nearest_variant(self, options, variant):
+        """No on-demand Cloudflare transformation: each one is billed (#761)."""
+        with patch.dict("os.environ", {"R2_CUSTOM_DOMAIN": "https://images.example.com"}):
+            url = R2Service.get_optimized_url("https://images.example.com/rescue_dogs/org/dog_abc123.jpg", options)
+        assert url == f"https://images.example.com/rescue_dogs/org/{variant}"
+        assert "cdn-cgi" not in url
 
-            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
-
-            # Should use Cloudflare Images transformation format
-            assert "/cdn-cgi/image/" in optimized_url
-            assert "w_400,h_300" in optimized_url
-
-    def test_get_optimized_url_with_gravity(self):
-        """Test URL optimization with gravity parameter for smart cropping"""
-        with patch.dict(
-            "os.environ",
-            {
-                "R2_ACCOUNT_ID": "test_account_id",
-                "R2_ACCESS_KEY_ID": "test_access_key",
-                "R2_SECRET_ACCESS_KEY": "test_secret",
-                "R2_BUCKET_NAME": "test_bucket",
-                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
-                "R2_CUSTOM_DOMAIN": "https://images.example.com",
-            },
-        ):
-            R2Service._reset_config_cache()
-            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
-
-            # Test with gravity=auto for smart cropping
-            transformation_options = {
-                "width": 400,
-                "height": 400,
-                "fit": "cover",
-                "gravity": "auto",
-            }
-            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
-            assert "/cdn-cgi/image/" in optimized_url
-            assert "w_400,h_400" in optimized_url
-            assert "c_cover" in optimized_url
-            assert "g_auto" in optimized_url
-
-    def test_get_optimized_url_with_face_gravity(self):
-        """Test URL optimization with face gravity for focusing on faces"""
-        with patch.dict(
-            "os.environ",
-            {
-                "R2_ACCOUNT_ID": "test_account_id",
-                "R2_ACCESS_KEY_ID": "test_access_key",
-                "R2_SECRET_ACCESS_KEY": "test_secret",
-                "R2_BUCKET_NAME": "test_bucket",
-                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
-                "R2_CUSTOM_DOMAIN": "https://images.example.com",
-            },
-        ):
-            R2Service._reset_config_cache()
-            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
-
-            # Test with gravity=face for face detection
-            transformation_options = {
-                "width": 300,
-                "height": 300,
-                "fit": "cover",
-                "gravity": "face",
-            }
-            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
-            assert "/cdn-cgi/image/" in optimized_url
-            assert "g_face" in optimized_url
-
-    def test_get_optimized_url_with_north_gravity(self):
-        """Test URL optimization with north gravity for top-focused cropping"""
-        with patch.dict(
-            "os.environ",
-            {
-                "R2_ACCOUNT_ID": "test_account_id",
-                "R2_ACCESS_KEY_ID": "test_access_key",
-                "R2_SECRET_ACCESS_KEY": "test_secret",
-                "R2_BUCKET_NAME": "test_bucket",
-                "R2_ENDPOINT": "https://test.r2.cloudflarestorage.com",
-                "R2_CUSTOM_DOMAIN": "https://images.example.com",
-            },
-        ):
-            R2Service._reset_config_cache()
-            r2_url = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
-
-            # Test with gravity=north for top bias
-            transformation_options = {
-                "width": 400,
-                "height": 300,
-                "fit": "cover",
-                "gravity": "north",
-            }
-            optimized_url = R2Service.get_optimized_url(r2_url, transformation_options)
-            assert "/cdn-cgi/image/" in optimized_url
-            assert "g_north" in optimized_url
+    def test_get_optimized_url_without_a_width_keeps_the_original(self):
+        with patch.dict("os.environ", {"R2_CUSTOM_DOMAIN": "images.example.com"}):
+            original = "https://images.example.com/rescue_dogs/org/dog_abc123.jpg"
+            assert R2Service.get_optimized_url(original, {"quality": 90}) == original
+            assert R2Service.get_optimized_url(original) == original
 
     def test_get_optimized_url_with_non_r2_url(self):
         """Test URL optimization for non-R2 URLs"""
