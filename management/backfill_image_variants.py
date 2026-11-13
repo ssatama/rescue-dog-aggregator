@@ -52,8 +52,8 @@ def referenced_keys(database_url: str, domain: str) -> list[str]:
     with psycopg2.connect(database_url) as conn, conn.cursor() as cursor:
         cursor.execute(_URLS_SQL, (f"{prefix}%",))
         urls = [row[0] for row in cursor.fetchall()]
-    # Strip any query string; the key is the path
-    return [url[len(prefix) :].split("?")[0] for url in urls if "/cdn-cgi/" not in url]
+    # Stored URLs are built straight from keys, so the rest of the URL is the key
+    return [url[len(prefix) :] for url in urls if "/cdn-cgi/" not in url]
 
 
 def backfill_one(s3, bucket: str, key: str) -> str:
@@ -69,7 +69,8 @@ def backfill_one(s3, bucket: str, key: str) -> str:
         if e.response["Error"]["Code"] in ("404", "NoSuchKey"):
             return "missing"
         raise
-    return "created" if R2Service.upload_variants(s3, bucket, key, body) else "failed"
+    # upload_variants logs why; an undecodable original fails the same way on every run
+    return "created" if R2Service.upload_variants(s3, bucket, key, body) else "unusable"
 
 
 def main() -> int:
@@ -110,7 +111,7 @@ def main() -> int:
                 logger.info(f"{done}/{len(keys)} {counts}")
 
     logger.info(f"Done: {counts}")
-    return 1 if counts.get("failed") else 0
+    return 1 if counts.get("failed") else 0  # "unusable" originals don't fail the run
 
 
 if __name__ == "__main__":

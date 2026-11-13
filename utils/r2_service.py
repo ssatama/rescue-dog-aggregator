@@ -22,6 +22,7 @@ from PIL import UnidentifiedImageError
 from utils.image_variants import (
     VARIANT_CACHE_CONTROL,
     VARIANT_CONTENT_TYPE,
+    VARIANT_WIDTHS,
     make_variants,
     nearest_variant_width,
     variant_key,
@@ -283,6 +284,7 @@ class R2Service:
             try:
                 s3_client.head_object(Bucket=bucket_name, Key=image_key)
                 logger.debug(f"Image already exists in R2 (SHA-256): {image_key}")
+                R2Service.ensure_variants(s3_client, bucket_name, image_key)
                 return R2Service._build_custom_domain_url(image_key), True
             except ClientError as e:
                 if e.response["Error"]["Code"] != "404":
@@ -426,6 +428,7 @@ class R2Service:
         try:
             metadata = s3_client.head_object(Bucket=bucket_name, Key=image_key).get("Metadata", {})
             if metadata.get("width") and metadata.get("height"):
+                cls.ensure_variants(s3_client, bucket_name, image_key)
                 return {"url": r2_url, "original_url": image_url, "width": int(metadata["width"]), "height": int(metadata["height"])}
             # Stored by the hero upload, which records no size: measure it, but
             # don't write the same key again (R2 allows one write per key a second)
@@ -521,6 +524,28 @@ class R2Service:
         except Exception as e:
             logger.warning(f"Could not store image variants for {image_key}: {e}")
             return False
+
+    @staticmethod
+    def ensure_variants(s3_client, bucket_name: str, image_key: str) -> bool:
+        """Create the variants of an original already on R2 if they are missing:
+        one stored before variants existed, or whose variant upload failed.
+        One HEAD when they exist. Never raises."""
+        try:
+            s3_client.head_object(Bucket=bucket_name, Key=variant_key(image_key, VARIANT_WIDTHS[-1]))
+            return True
+        except ClientError as e:
+            if e.response.get("Error", {}).get("Code") not in ("404", "NoSuchKey"):
+                logger.warning(f"Could not check variants of {image_key}: {e}")
+                return False
+        except Exception as e:
+            logger.warning(f"Could not check variants of {image_key}: {e}")
+            return False
+        try:
+            body = s3_client.get_object(Bucket=bucket_name, Key=image_key)["Body"].read()
+        except Exception as e:
+            logger.warning(f"Could not read {image_key} to make its variants: {e}")
+            return False
+        return R2Service.upload_variants(s3_client, bucket_name, image_key, body)
 
     @staticmethod
     def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:

@@ -83,3 +83,33 @@ def test_backfill_creates_missing_variants_and_reports_missing_originals():
 
     s3.get_object.side_effect = _client_error("NoSuchKey")
     assert backfill_one(s3, "bucket", "rescue_dogs/org/gone.jpg") == "missing"
+
+
+def test_png_logos_with_trns_transparency_stay_transparent():
+    out = BytesIO()
+    img = Image.new("RGB", (100, 100), (255, 255, 255))
+    img.save(out, format="PNG", transparency=(255, 255, 255))
+    assert Image.open(BytesIO(make_variants(out.getvalue())[320])).mode == "RGBA"
+
+
+def test_colour_profile_is_kept():
+    from PIL import ImageCms
+
+    profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    out = BytesIO()
+    Image.new("RGB", (400, 300), "tan").save(out, format="JPEG", icc_profile=profile)
+    assert Image.open(BytesIO(make_variants(out.getvalue())[320])).info.get("icc_profile") == profile
+
+
+def test_ensure_variants_only_heads_when_they_exist():
+    s3 = MagicMock()
+    assert R2Service.ensure_variants(s3, "bucket", "rescue_dogs/org/rex_1.jpg")
+    s3.get_object.assert_not_called()
+
+
+def test_ensure_variants_creates_missing_ones_from_the_stored_original():
+    s3 = MagicMock()
+    s3.head_object.side_effect = _client_error("404")
+    s3.get_object.return_value = {"Body": BytesIO(_jpeg(900, 600))}
+    assert R2Service.ensure_variants(s3, "bucket", "rescue_dogs/org/rex_1.jpg")
+    assert s3.put_object.call_count == len(VARIANT_WIDTHS)

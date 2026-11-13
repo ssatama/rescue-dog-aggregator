@@ -36,8 +36,10 @@ def make_variants(image_bytes: bytes) -> dict[int, bytes]:
     is stored at its own size under every larger width's key, so every key
     the frontend can ask for exists."""
     with PILImage.open(BytesIO(image_bytes)) as source:
+        icc_profile = source.info.get("icc_profile")
         img = ImageOps.exif_transpose(source)
-        has_alpha = img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info)
+        # tRNS transparency (P, L or RGB PNGs, common for logos) counts too
+        has_alpha = img.mode in ("RGBA", "LA", "PA") or "transparency" in img.info
         img = img.convert("RGBA" if has_alpha else "RGB")
 
         variants: dict[int, bytes] = {}
@@ -47,6 +49,7 @@ def make_variants(image_bytes: bytes) -> dict[int, bytes]:
                 height = max(1, round(img.height * width / img.width))
                 resized = img.resize((width, height), PILImage.Resampling.LANCZOS)
             out = BytesIO()
-            resized.save(out, format="WEBP", quality=WEBP_QUALITY, method=4)
+            # Keep the colour profile: Display-P3 phone photos look washed out without it
+            resized.save(out, format="WEBP", quality=WEBP_QUALITY, method=4, icc_profile=icc_profile)
             variants[width] = out.getvalue()
         return variants
