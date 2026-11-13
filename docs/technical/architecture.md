@@ -259,11 +259,18 @@ See `docs/technical/scraper-architecture.md` for detailed scraper documentation.
 
 **FallbackImage Component** (multi-level resilience):
 
-1. next/image through the custom loader (`src/utils/cloudflareImageLoader.ts`), which sizes R2 photos with Cloudflare `/cdn-cgi/image/`
-2. Cloudflare R2 with transforms (`/cdn-cgi/image/`)
-3. Direct R2 URL (no transforms)
-4. Local placeholder (`/placeholder_dog.svg`)
-5. Emoji fallback (🐕)
+1. next/image through the custom loader (`src/utils/r2ImageLoader.ts`), which serves the pre-generated WebP variant of an R2 photo (`<key>_w{320,640,1200}.webp`)
+2. The original R2 file, unoptimized (a variant is missing)
+3. Local placeholder (`/placeholder_dog.svg`)
+4. Emoji fallback (🐕)
+
+Variants are written next to each original when it is uploaded
+(`utils/image_variants.py`, `R2Service.upload_variants`), and
+`ensure_variants` creates missing ones whenever a scrape sees a photo already
+stored. `management/backfill_image_variants.py` covers everything referenced
+from the database. A photo hardcoded in the frontend needs its variants made
+by hand (`R2Service.ensure_variants`). Nothing uses Cloudflare's
+`/cdn-cgi/image/` resizing: it is billed per transformation (#761).
 
 Config: `R2_CUSTOM_DOMAIN=images.rescuedogs.me`, `R2_IMAGE_PATH=rescue_dogs`
 

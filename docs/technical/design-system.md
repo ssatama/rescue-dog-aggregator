@@ -89,10 +89,13 @@ aspect, framing, some tiny or blurry), so design for the worst case.
 
 ### Sizes and the width ladder
 
-`frontend/next.config.js` sets the widths the loader may request:
-`deviceSizes` 640, 768, 1080, 1200, 1920 and `imageSizes` 32-512. 384/512 and
-1200 exist for 2x and 3x phones: a 171px card at 2x wants 342 (it used to get
-640), and a 390px photo at 3x wants 1170 (it used to get 1920) (#506).
+Photos are served as pre-generated WebP variants, 320, 640 and 1200px wide
+(#761). `frontend/next.config.js` sets `deviceSizes` 640, 1200 and
+`imageSizes` 320 to match, and the loader (`src/utils/r2ImageLoader.ts`) picks
+the smallest variant at least as wide as the browser asks for: a 171px card at
+2x gets 640, and a 390px photo at 3x gets 1200. A new width means changing
+`VARIANT_WIDTHS` in `utils/image_variants.py` and the loader together, then
+re-running the backfill.
 
 Every `sizes` string lives in `frontend/src/constants/imageSizes.ts` and must
 match the grid it is used in. `CATALOG_CARD` follows `DOG_GRID`'s 2/3/4
