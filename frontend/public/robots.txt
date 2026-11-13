@@ -6,8 +6,9 @@
 # splitting them into per-agent groups would silently exempt each named
 # crawler from the Disallow rules below.
 
-# === SEARCH ENGINES, SOCIAL PREVIEWS, AI CRAWLERS, AND EVERYONE ELSE ===
+# === SEARCH ENGINES, SOCIAL PREVIEWS, AI SEARCH/ASSISTANTS, AND EVERYONE ELSE ===
 # Full access apart from the sensitive and low-value paths listed below.
+# AI training crawlers are blocked further down.
 User-agent: Googlebot
 User-agent: Googlebot-Image
 User-agent: Bingbot
@@ -18,17 +19,12 @@ User-agent: Twitterbot
 User-agent: LinkedInBot
 User-agent: WhatsApp
 User-agent: Pinterest
-User-agent: GPTBot
 User-agent: ChatGPT-User
 User-agent: OAI-SearchBot
-User-agent: ClaudeBot
 User-agent: Claude-SearchBot
 User-agent: Claude-User
 User-agent: PerplexityBot
 User-agent: Perplexity-User
-User-agent: Applebot-Extended
-User-agent: CCBot
-User-agent: Google-Extended
 User-agent: *
 Allow: /
 
@@ -50,6 +46,28 @@ Disallow: /private/
 # adding anything indexable. Clean /dogs and /dogs/<slug> URLs stay crawlable.
 Disallow: /dogs?*
 Disallow: /dogs/*?*
+
+# === AI TRAINING CRAWLERS - Blocked (#762) ===
+# They collect training data rather than send visitors. They used more of the
+# Vercel Hobby quota than every human visitor combined (meta-externalagent
+# alone made ~50K requests a week). A Vercel firewall rule returns 403 to
+# these same user agents for crawlers that ignore this file. AI search and
+# user-triggered agents (OAI-SearchBot, ChatGPT-User, Claude-SearchBot,
+# Claude-User, PerplexityBot) stay allowed above.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: CCBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: meta-externalagent
+User-agent: Bytespider
+User-agent: Amazonbot
+User-agent: cohere-ai
+User-agent: Diffbot
+User-agent: ImagesiftBot
+User-agent: omgili
+User-agent: Timpibot
+Disallow: /
 
 # === AGGRESSIVE BOTS - Block with Rate Limit ===
 User-agent: AhrefsBot
