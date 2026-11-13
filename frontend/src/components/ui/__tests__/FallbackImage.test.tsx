@@ -75,26 +75,29 @@ describe("FallbackImage", () => {
   });
 
   describe("Fallback Mechanism", () => {
-    it("falls back to R2 with Cloudflare transformations on first error", async () => {
-      const { rerender } = render(
-        <FallbackImage
-          src="https://example.com/dog.jpg"
-          alt="Test Dog"
-          width={300}
-          height={200}
-        />,
-      );
+    it("falls back to the original R2 file, unoptimized, when the variant fails (#761)", async () => {
+      render(<FallbackImage src="https://images.rescuedogs.me/rescue_dogs/dog.jpg" alt="Test Dog" width={300} height={200} />);
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-
-      // Simulate image load error
       fireEvent.error(img);
 
       await waitFor(() => {
-        expect(img).toHaveAttribute(
-          "src",
-          "https://images.rescuedogs.me/cdn-cgi/image/w=800,q=80,f=auto/rescue_dogs/dog.jpg",
-        );
+        expect(img).toHaveAttribute("data-unoptimized", "true");
+      });
+      expect(img).toHaveAttribute("src", "https://images.rescuedogs.me/rescue_dogs/dog.jpg");
+      expect(img.getAttribute("src")).not.toContain("cdn-cgi");
+    });
+
+    it("never asks Cloudflare to transform a non-R2 image; it shows the placeholder", async () => {
+      render(
+        <FallbackImage src="https://example.com/dog.jpg" alt="Test Dog" width={300} height={200} fallbackSrc="/custom-placeholder.svg" />,
+      );
+
+      const img = screen.getByRole("img", { name: "Test Dog" });
+      fireEvent.error(img);
+
+      await waitFor(() => {
+        expect(img).toHaveAttribute("src", "/custom-placeholder.svg");
       });
     });
 
@@ -121,31 +124,18 @@ describe("FallbackImage", () => {
       });
     });
 
-    it("falls back to placeholder image on third error", async () => {
+    it("falls back to the placeholder when the original fails too", async () => {
       render(
-        <FallbackImage
-          src="https://example.com/dog.jpg"
-          alt="Test Dog"
-          width={300}
-          height={200}
-          fallbackSrc="/custom-placeholder.svg"
-        />,
+        <FallbackImage src="https://images.rescuedogs.me/rescue_dogs/dog.jpg" alt="Test Dog" width={300} height={200} fallbackSrc="/custom-placeholder.svg" />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
-
-      // Simulate multiple errors
-      fireEvent.error(img); // First error
+      fireEvent.error(img);
       await waitFor(() => {
-        expect(img.getAttribute("src")).toContain("cdn-cgi/image");
+        expect(img).toHaveAttribute("data-unoptimized", "true");
       });
 
-      fireEvent.error(img); // Second error
-      await waitFor(() => {
-        expect(img.getAttribute("src")).not.toContain("cdn-cgi/image");
-      });
-
-      fireEvent.error(img); // Third error
+      fireEvent.error(img);
       await waitFor(() => {
         expect(img).toHaveAttribute("src", "/custom-placeholder.svg");
       });
@@ -205,15 +195,9 @@ describe("FallbackImage", () => {
       });
     });
 
-    it("falls back from an r2.cloudflarestorage.com URL to the custom domain", async () => {
-      render(
-        <FallbackImage
-          src="https://bucket.r2.cloudflarestorage.com/rescue_dogs/dog.jpg"
-          alt="Test Dog"
-          width={300}
-          height={200}
-        />,
-      );
+    it("falls back from an r2.cloudflarestorage.com URL to that original, unoptimized", async () => {
+      const src = "https://bucket.r2.cloudflarestorage.com/rescue_dogs/dog.jpg";
+      render(<FallbackImage src={src} alt="Test Dog" width={300} height={200} />);
 
       const img = screen.getByRole("img", { name: "Test Dog" });
       expect(img).not.toHaveAttribute("data-unoptimized");
@@ -221,12 +205,9 @@ describe("FallbackImage", () => {
       fireEvent.error(img);
 
       await waitFor(() => {
-        expect(img).toHaveAttribute(
-          "src",
-          "https://images.rescuedogs.me/cdn-cgi/image/w=800,q=80,f=auto/rescue_dogs/dog.jpg",
-        );
+        expect(img).toHaveAttribute("data-unoptimized", "true");
       });
-      expect(img).toHaveAttribute("data-unoptimized", "true");
+      expect(img).toHaveAttribute("src", src);
     });
   });
 
@@ -256,35 +237,24 @@ describe("FallbackImage", () => {
   describe("Source URL Changes", () => {
     it("resets fallback level when src prop changes", async () => {
       const { rerender } = render(
-        <FallbackImage
-          src="https://example.com/dog1.jpg"
-          alt="Test Dog"
-          width={300}
-          height={200}
-        />,
+        <FallbackImage src="https://images.rescuedogs.me/rescue_dogs/dog.jpg" alt="Test Dog" width={300} height={200} />,
       );
 
       const img = screen.getByRole("img", { name: "Test Dog" });
 
-      // Trigger error and fallback
       fireEvent.error(img);
       await waitFor(() => {
-        expect(img.getAttribute("src")).toContain("cdn-cgi/image");
+        expect(img).toHaveAttribute("data-unoptimized", "true");
       });
 
-      // Change src prop
       rerender(
-        <FallbackImage
-          src="https://example.com/dog2.jpg"
-          alt="Test Dog"
-          width={300}
-          height={200}
-        />,
+        <FallbackImage src="https://images.rescuedogs.me/rescue_dogs/dog2.jpg" alt="Test Dog" width={300} height={200} />,
       );
 
       await waitFor(() => {
-        expect(img).toHaveAttribute("src", "https://example.com/dog2.jpg");
+        expect(img).toHaveAttribute("src", "https://images.rescuedogs.me/rescue_dogs/dog2.jpg");
       });
+      expect(img).not.toHaveAttribute("data-unoptimized");
     });
   });
 
@@ -306,7 +276,7 @@ describe("FallbackImage", () => {
     it("bypasses optimization after fallback", async () => {
       render(
         <FallbackImage
-          src="https://example.com/dog.jpg"
+          src="https://images.rescuedogs.me/rescue_dogs/dog.jpg"
           alt="Test Dog"
           width={300}
           height={200}

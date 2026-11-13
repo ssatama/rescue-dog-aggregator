@@ -21,6 +21,7 @@ jest.mock("next/image", () => {
       className,
       loading,
       fetchPriority,
+      unoptimized,
       ...rest
     } = props;
 
@@ -63,6 +64,7 @@ jest.mock("next/image", () => {
         data-placeholder={placeholder}
         data-blur-data-url={blurDataURL}
         data-sizes={sizes}
+        data-unoptimized={unoptimized ? "true" : undefined}
         {...validDomProps}
       />
     );
@@ -195,9 +197,15 @@ describe("NextImage", () => {
 
       const image = screen.getByTestId("optimized-image");
 
-      // Simulate image error
+      // First error: a missing R2 variant, so the original file once (#761)
       fireEvent.error(image);
+      await waitFor(() => {
+        expect(image).toHaveAttribute("data-unoptimized", "true");
+      });
+      expect(onError).not.toHaveBeenCalled();
 
+      // Second error: the placeholder
+      fireEvent.error(image);
       await waitFor(() => {
         expect(image).toHaveAttribute("src", "/placeholder_dog.svg");
       });
@@ -211,7 +219,11 @@ describe("NextImage", () => {
 
       const image = screen.getByTestId("optimized-image");
 
-      // First error - switches to fallback
+      // First errors: the original, then the placeholder
+      fireEvent.error(image);
+      await waitFor(() => {
+        expect(image).toHaveAttribute("data-unoptimized", "true");
+      });
       fireEvent.error(image);
 
       await waitFor(() => {
@@ -285,16 +297,17 @@ describe("NextImage", () => {
   });
 
   describe("Blur Placeholder", () => {
-    it("generates blur placeholder for R2 images", () => {
+    it("uses a static blur placeholder for R2 images", () => {
       render(<NextImage {...defaultProps} placeholder="blur" />);
 
       const image = screen.getByTestId("optimized-image");
       expect(image).toHaveAttribute("data-placeholder", "blur");
       expect(image).toHaveAttribute("data-blur-data-url");
 
+      // A static blur: a per-image blur from Cloudflare is billed (#761)
       const blurDataURL = image.getAttribute("data-blur-data-url");
-      expect(blurDataURL).toContain("images.rescuedogs.me");
-      expect(blurDataURL).toContain("cdn-cgi/image");
+      expect(blurDataURL).toMatch(/^data:image\/jpeg;base64,/);
+      expect(blurDataURL).not.toContain("cdn-cgi");
     });
 
     it("uses default blur for non-R2 images", () => {
