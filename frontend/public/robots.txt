@@ -53,7 +53,9 @@ Disallow: /dogs/*?*
 # alone made ~50K requests a week). A Vercel firewall rule returns 403 to
 # these same user agents for crawlers that ignore this file. AI search and
 # user-triggered agents (OAI-SearchBot, ChatGPT-User, Claude-SearchBot,
-# Claude-User, PerplexityBot) stay allowed above.
+# Claude-User, PerplexityBot, Perplexity-User) stay allowed above.
+# Google-Extended and Amazonbot also feed Gemini grounding and Alexa answers;
+# that reach is given up deliberately.
 User-agent: GPTBot
 User-agent: ClaudeBot
 User-agent: CCBot
@@ -63,9 +65,11 @@ User-agent: meta-externalagent
 User-agent: Bytespider
 User-agent: Amazonbot
 User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
 User-agent: Diffbot
 User-agent: ImagesiftBot
 User-agent: omgili
+User-agent: omgilibot
 User-agent: Timpibot
 Disallow: /
 
