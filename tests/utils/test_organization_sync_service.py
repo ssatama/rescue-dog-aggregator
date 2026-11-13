@@ -249,7 +249,7 @@ class TestDisablingARescueRetiresItsDogs:
             patch.object(service, "should_update_organization", return_value=drifted),
             patch.object(service, "update_organization"),
             patch.object(service, "retire_dogs", return_value=["rex-1"]) as retire_dogs,
-            patch.object(service, "_live_dog_slugs", return_value=["live-1"]),
+            patch("utils.organization_sync_service.execute_query", return_value=[{"slug": "live-1"}]),
             patch.object(service, "_purge_dog_pages") as purge,
         ):
             service.sync_single_organization(_make_config(enabled=enabled), {"Test Org": db_org})
@@ -263,6 +263,11 @@ class TestDisablingARescueRetiresItsDogs:
         purged = [call.args[0] for call in purge.call_args_list]
         assert (["live-1"] in purged) == drifted
         assert (["rex-1"] in purged) == (not enabled)
+
+    def test_a_failed_dog_lookup_does_not_fail_the_sync(self):
+        service = OrganizationSyncService(logo_service=NullLogoUploadService())
+        with patch("utils.organization_sync_service.execute_query", side_effect=RuntimeError("pool down")):
+            service._purge_live_dog_pages(42)
 
     def test_purging_dog_pages_never_raises(self):
         with patch("services.revalidation_client.invalidate_sync", side_effect=RuntimeError("down")) as invalidate:

@@ -330,12 +330,18 @@ class OrganizationSyncService:
             logger.info(f"Retired {retired} dogs of disabled organization '{org_name}'")
         return list(result["slugs"]) if result else []
 
-    def _live_dog_slugs(self, org_id: int) -> list[str]:
-        rows = execute_query(
-            "SELECT slug FROM animals WHERE organization_id = %s AND active AND slug IS NOT NULL",
-            (org_id,),
-        )
-        return [row["slug"] for row in rows or []]
+    def _purge_live_dog_pages(self, org_id: int) -> None:
+        """Purge the pages of a rescue's live dogs. Never raises: a failed
+        purge must not fail the sync."""
+        try:
+            rows = execute_query(
+                "SELECT slug FROM animals WHERE organization_id = %s AND active AND slug IS NOT NULL",
+                (org_id,),
+            )
+        except Exception as e:
+            logger.warning(f"Could not list dogs of organization {org_id} to purge: {e}")
+            return
+        self._purge_dog_pages([row["slug"] for row in rows or []])
 
     @staticmethod
     def _purge_dog_pages(slugs: list[str]) -> None:
@@ -427,7 +433,7 @@ class OrganizationSyncService:
                     self.update_organization(db_org.id, config)
                     # Dog pages embed the rescue (name, logo, ships_to badge) and
                     # are only refreshed by a per-slug purge (#759)
-                    self._purge_dog_pages(self._live_dog_slugs(db_org.id))
+                    self._purge_live_dog_pages(db_org.id)
                 else:
                     logger.debug(f"Organization '{config.name}' is up to date")
                 # Every sync, not only the one that disables it: idempotent, and a
