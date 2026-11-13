@@ -19,6 +19,14 @@ from botocore.exceptions import BotoCoreError, ClientError
 from PIL import Image as PILImage
 from PIL import UnidentifiedImageError
 
+from utils.image_variants import (
+    VARIANT_CACHE_CONTROL,
+    VARIANT_CONTENT_TYPE,
+    make_variants,
+    nearest_variant_width,
+    variant_key,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -343,6 +351,7 @@ class R2Service:
             )
 
             logger.info(f"Successfully uploaded image to R2: {image_key}")
+            R2Service.upload_variants(s3_client, bucket_name, image_key, response.content)
             # Reset consecutive failures on success
             with R2Service._state_lock:
                 R2Service._consecutive_failures = 0
@@ -448,6 +457,7 @@ class R2Service:
                     CacheControl="public, max-age=86400, s-maxage=604800",
                     Metadata={**metadata, "original_url": _ascii_url(image_url), "width": str(width), "height": str(height)},
                 )
+                cls.upload_variants(s3_client, bucket_name, image_key, response.content)
                 return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
 
             # R2 has no per-bucket write limit, only one write per second per
@@ -469,6 +479,7 @@ class R2Service:
                     },
                 },
             )
+            cls.upload_variants(s3_client, bucket_name, image_key, response.content)
             cls.track_upload_success()
             return {"url": r2_url, "original_url": image_url, "width": width, "height": height}
         except ClientError as e:
@@ -491,71 +502,51 @@ class R2Service:
             return None
 
     @staticmethod
-    def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:
+    def upload_variants(s3_client, bucket_name: str, image_key: str, image_bytes: bytes) -> bool:
+        """Store the WebP variants of an original next to it (#761).
+
+        Never raises: a photo without variants still has its original, which
+        the frontend falls back to.
         """
-        Get optimized URL using Cloudflare Images transformations.
+        try:
+            for width, data in make_variants(image_bytes).items():
+                s3_client.put_object(
+                    Bucket=bucket_name,
+                    Key=variant_key(image_key, width),
+                    Body=data,
+                    ContentType=VARIANT_CONTENT_TYPE,
+                    CacheControl=VARIANT_CACHE_CONTROL,
+                )
+            return True
+        except Exception as e:
+            logger.warning(f"Could not store image variants for {image_key}: {e}")
+            return False
 
-        Args:
-            r2_url: R2 image URL
-            transformation_options: Dict with width, height, fit, etc.
+    @staticmethod
+    def get_optimized_url(r2_url: str, transformation_options: dict | None = None) -> str:
+        """URL of the pre-generated variant closest to the requested width (#761).
 
-        Returns:
-            str: Optimized URL or original URL if not R2 URL
+        Cloudflare's on-demand transformations are not used: each one is
+        billed. Height, fit, quality and gravity options are ignored; crops
+        happen in CSS (object-fit). Non-R2 URLs and calls without a width
+        return the URL unchanged.
         """
         if not r2_url or not R2Service._is_r2_url(r2_url):
             return r2_url
 
-        if not R2Service.is_configured():
-            logger.debug("R2 not configured, returning original URL")
+        width = (transformation_options or {}).get("width")
+        custom_domain = os.getenv("R2_CUSTOM_DOMAIN", "").rstrip("/")
+        if not width or not custom_domain:
             return r2_url
 
-        try:
-            # For R2 URLs, use Cloudflare Images transformation format
-            custom_domain = os.getenv("R2_CUSTOM_DOMAIN", "").rstrip("/")
-            if not custom_domain:
-                return r2_url
-
-            # Extract image path from URL
-            if custom_domain in r2_url:
-                image_path = r2_url.replace(custom_domain + "/", "")
-            else:
-                return r2_url
-
-            # Build transformation parameters
-            if transformation_options:
-                params = []
-                if "width" in transformation_options:
-                    params.append(f"w_{transformation_options['width']}")
-                if "height" in transformation_options:
-                    params.append(f"h_{transformation_options['height']}")
-                if "fit" in transformation_options:
-                    # Map fit options to Cloudflare Images format
-                    fit_mapping = {
-                        "fill": "c_fill",
-                        "fit": "c_fit",
-                        "crop": "c_crop",
-                        "scale": "c_scale",
-                        "cover": "c_cover",
-                    }
-                    cloudflare_fit = fit_mapping.get(transformation_options["fit"], "c_fill")
-                    params.append(cloudflare_fit)
-                if "quality" in transformation_options:
-                    params.append(f"q_{transformation_options['quality']}")
-                if "gravity" in transformation_options:
-                    # Add gravity parameter for smart cropping
-                    params.append(f"g_{transformation_options['gravity']}")
-
-                # Add format optimization
-                params.append("f_auto")
-
-                transform_string = ",".join(params)
-                return f"{custom_domain}/cdn-cgi/image/{transform_string}/{image_path}"
-
+        if not custom_domain.startswith(("http://", "https://")):
+            custom_domain = f"https://{custom_domain}"
+        prefix = f"{custom_domain}/"
+        if not r2_url.startswith(prefix):
             return r2_url
 
-        except Exception as e:
-            logger.error(f"Error generating optimized URL for {r2_url}: {e}")
-            return r2_url
+        key = r2_url[len(prefix) :]
+        return f"{prefix}{variant_key(key, nearest_variant_width(int(width)))}"
 
     @staticmethod
     def get_status() -> dict:

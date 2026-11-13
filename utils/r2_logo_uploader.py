@@ -96,7 +96,7 @@ class R2OrganizationLogoUploader:
                 if not success or not upload_result:
                     raise OrganizationLogoUploadError(f"Failed to upload logo for {org_id}")
 
-            # Generate URLs for different sizes using Cloudflare Images transformations
+            # Point each size preset at the nearest pre-generated variant (#761)
             urls = {}
             for preset_name, transformations in cls.PRESETS.items():
                 if preset_name == "original":
@@ -183,6 +183,7 @@ class R2OrganizationLogoUploader:
                 ContentType=content_type,
                 Metadata={"type": "organization_logo", "organization_id": org_id},
             )
+            R2Service.upload_variants(s3_client, bucket_name, r2_key, file_content)
 
             # Build the public URL
             r2_url = R2Service._build_custom_domain_url(r2_key)
