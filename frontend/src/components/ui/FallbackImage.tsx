@@ -41,7 +41,7 @@ export const FallbackImage: React.FC<FallbackImageProps> = ({
       if (level !== 1) return "";
       try {
         const url = new URL(originalUrl);
-        if (url.hostname !== R2_CUSTOM_DOMAIN && !url.hostname.includes("r2.cloudflarestorage.com")) {
+        if (url.hostname !== R2_CUSTOM_DOMAIN && !url.hostname.endsWith(".r2.cloudflarestorage.com")) {
           return "";
         }
         const match = url.pathname.match(/\/cdn-cgi\/image\/[^/]+(\/.+)$/);
