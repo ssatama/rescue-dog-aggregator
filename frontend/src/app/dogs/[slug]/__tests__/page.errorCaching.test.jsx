@@ -1,5 +1,5 @@
 /**
- * The dog detail route is ISR-cached for `revalidate` (48h). A render that
+ * The dog detail route is ISR-cached for `revalidate` (30 days). A render that
  * silently produced a page with no dog in it would be cached for that whole
  * window, so a momentary API failure became a permanently broken page.
  * Production symptom: 6 of 10 sampled available dogs served an ~84KB shell

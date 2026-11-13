@@ -154,8 +154,36 @@ interface AnimalQueryParams {
   status?: string;
 }
 
+type FetchCacheOptions = { revalidate: number; tags: string[] };
+
+const LISTING_CACHE: FetchCacheOptions = { revalidate: 86400, tags: ["animals"] };
+const BREED_STATS_CACHE: FetchCacheOptions = { revalidate: 604800, tags: ["breed-stats"] };
+
+/**
+ * Dog detail pages regenerate at their shortest fetch revalidate, and are
+ * purged by every tag any of their fetches carries. Each content change already
+ * purges exactly its own page by slug tag (new, updated, retired, reactivated,
+ * profiled), so the time window is only a safety net. It has to be long: the
+ * ~11K dog pages (most of them retired) were re-rendered on every crawler hit
+ * after expiry, which was 87% of the site's ISR writes (#759).
+ */
+export const DOG_PAGE_REVALIDATE = 2592000; // 30 days
+
+/**
+ * For the extras a dog page shows (similar dogs, the breed link). They must
+ * not carry the listing tags ("animals", "breed-stats"): every scrape purges
+ * those, which would expire all dog pages at once (#759).
+ */
+export const DOG_PAGE_EXTRAS_CACHE: FetchCacheOptions = {
+  revalidate: DOG_PAGE_REVALIDATE,
+  tags: ["dog-page-extras"],
+};
+
 export const getAnimals = cache(
-  async (params: AnimalQueryParams = {}): Promise<Dog[]> => {
+  async (
+    params: AnimalQueryParams = {},
+    cacheOptions: FetchCacheOptions = LISTING_CACHE,
+  ): Promise<Dog[]> => {
     const queryParams = new URLSearchParams();
 
     if (params.limit) queryParams.append("limit", String(params.limit));
@@ -195,10 +223,7 @@ export const getAnimals = cache(
     const url = `${API_URL}/api/animals/?${queryParams.toString()}`;
 
     const response = await fetchWithRetry(url, {
-      next: {
-        revalidate: 86400,
-        tags: ["animals"],
-      },
+      next: cacheOptions,
       headers: {
         "Content-Type": "application/json",
       },
@@ -383,12 +408,11 @@ export const getStatistics = cache(
 );
 
 export const getBreedStats = cache(
-  async (): Promise<BreedStats> => {
+  async (
+    cacheOptions: FetchCacheOptions = BREED_STATS_CACHE,
+  ): Promise<BreedStats> => {
     const response = await fetchWithRetry(`${API_URL}/api/animals/breeds/stats`, {
-      next: {
-        revalidate: 604800,
-        tags: ["breed-stats"],
-      },
+      next: cacheOptions,
       headers: {
         "Content-Type": "application/json",
       },
@@ -663,7 +687,7 @@ interface EnhancedContent {
 }
 
 export const getEnhancedDogContent = cache(
-  async (animalId: number | string | null): Promise<EnhancedContent | null> => {
+  async (animalId: number | string | null, slug?: string): Promise<EnhancedContent | null> => {
     if (!animalId) return null;
 
     try {
@@ -675,8 +699,10 @@ export const getEnhancedDogContent = cache(
           "Content-Type": "application/json",
         },
         next: {
-          revalidate: 172800,
-          tags: ["enhanced", `animal-enhanced-${animalId}`],
+          revalidate: DOG_PAGE_REVALIDATE,
+          // The slug tag lets a dog's own purge (e.g. after profiling) refresh
+          // this too; nothing purges the other two (#759)
+          tags: ["enhanced", `animal-enhanced-${animalId}`, ...(slug ? [slug] : [])],
         },
       });
 
@@ -735,7 +761,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
   try {
     const response = await fetchWithRetry(`${API_URL}/api/animals/${slug}`, {
       next: {
-        revalidate: 172800,
+        revalidate: DOG_PAGE_REVALIDATE,
         tags: ["animal", slug],
       },
       headers: {
@@ -761,7 +787,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
     const animal = transformApiDogToDog(parsed);
 
     try {
-      const enhanced = await getEnhancedDogContent(parsed.id);
+      const enhanced = await getEnhancedDogContent(parsed.id, slug);
       if (enhanced) {
         return {
           ...animal,

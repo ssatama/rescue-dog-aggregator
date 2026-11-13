@@ -268,10 +268,30 @@ purging bare `"animal"` invalidates all detail pages. ISR writes ≈ reads is
 the signature. Lengthening `revalidate` can't help against a purge (#205
 tried); scope purges to changed slugs (#315).
 
+**Dog pages must not carry listing tags (#759).** A page is purged by every tag
+any of its fetches carries. The similar-dogs fetch used `getAnimals` (tag
+`"animals"`, 24h) and the breed link used `getBreedStats` (`"breed-stats"`).
+Every scrape purges both, so all ~11K dog pages (1.6K live, the rest retired)
+expired on every scrape and at least daily, and each crawler hit re-rendered
+one: 87% of ISR writes, ~1.4M units a month. Dog page fetches now use
+`DOG_PAGE_EXTRAS_CACHE` (tag `"dog-page-extras"`) and the 30-day
+`DOG_PAGE_REVALIDATE`; changes reach the page through the per-slug purge.
+Check with `vercel metrics vercel.isr_operation.write_units -p
+rescue-dog-aggregator -s 7d --group-by route`.
+
+**Vercel Hobby quota (epic #758).** rescuedogs and Berlin Sun Seeker share one
+Hobby account. Going over a limit pauses the projects instead of billing them;
+the tight limits are ISR writes (200K units of 8 KB a month), Active CPU (4 h)
+and Fast Origin Transfer (10 GB). A firewall rule on both projects ("Deny AI
+training crawlers", user-agent regex) returns 403 to GPTBot, ClaudeBot, CCBot,
+meta-externalagent, Bytespider, Amazonbot and similar training crawlers. In
+November 2026 `meta-externalagent` alone made twice as many requests as all
+human visitors. Search and assistant agents are not blocked.
+
 **`/api/revalidate` expires tags at once** (`{ expire: 0 }`, #735). It used
 `"max"`, which is stale-while-revalidate: the page and its fetch share the
 slug tag, so the request after a purge rebuilt the page from the still-stale
-fetch and cached that for the 48h window. Retired dogs (`robby-12114`) kept a
+fetch and cached that for the whole revalidate window. Retired dogs (`robby-12114`) kept a
 live, indexable listing for 8+ days that way, and stale detection didn't purge
 them at all until #735. The scrapers purge a dog's slug when it is added,
 updated, reactivated or retired; the adoption check's status changes and the
