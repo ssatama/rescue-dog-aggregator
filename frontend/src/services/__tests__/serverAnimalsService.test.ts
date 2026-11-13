@@ -13,6 +13,8 @@ import {
   getListCounts,
   getMixedBreedPageData,
   clearCache,
+  DOG_PAGE_EXTRAS_CACHE,
+  DOG_PAGE_REVALIDATE,
 } from "../serverAnimalsService";
 import { reportError } from "../../utils/logger";
 
@@ -53,6 +55,36 @@ describe("Server Animals Service", () => {
       }),
     );
     expect(result).toMatchObject(mockResponse);
+  });
+
+  // Every scrape purges the listing tags; a dog page whose fetches carried them
+  // would expire with all ~11K others on each scrape (#759).
+  describe("dog page caching", () => {
+    const LISTING_TAGS = ["animals", "breed-stats"];
+    const nextOptionsOfLastCall = () => (fetch as jest.Mock).mock.calls.at(-1)[1].next;
+
+    it("caches similar dogs and the breed lookup under the dog page window, without listing tags", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [] });
+      await getAnimals({ limit: 5 }, DOG_PAGE_EXTRAS_CACHE);
+      expect(nextOptionsOfLastCall()).toEqual({ revalidate: DOG_PAGE_REVALIDATE, tags: ["dog-page-extras"] });
+
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+      await getBreedStats.orFallback(DOG_PAGE_EXTRAS_CACHE);
+      expect(nextOptionsOfLastCall()).toEqual(DOG_PAGE_EXTRAS_CACHE);
+      expect(DOG_PAGE_EXTRAS_CACHE.tags.some((tag) => LISTING_TAGS.includes(tag))).toBe(false);
+    });
+
+    it("caches the dog itself for the dog page window under its slug tag", async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ id: 1, name: "Rex", slug: "rex-1" }) });
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [] });
+      await getAnimalBySlug("rex-1");
+      // The dog, then its enhanced content: both are part of the page
+      for (const [, init] of (fetch as jest.Mock).mock.calls) {
+        expect(init.next.revalidate).toBe(DOG_PAGE_REVALIDATE);
+        expect(init.next.tags).not.toContain("animals");
+      }
+      expect((fetch as jest.Mock).mock.calls[0][1].next.tags).toContain("rex-1");
+    });
   });
 
   it("falls back to an empty array on API errors, when asked to", async () => {
