@@ -248,7 +248,9 @@ class TestDisablingARescueRetiresItsDogs:
         with (
             patch.object(service, "should_update_organization", return_value=drifted),
             patch.object(service, "update_organization"),
-            patch.object(service, "retire_dogs") as retire_dogs,
+            patch.object(service, "retire_dogs", return_value=["rex-1"]) as retire_dogs,
+            patch.object(service, "_live_dog_slugs", return_value=["live-1"]),
+            patch.object(service, "_purge_dog_pages") as purge,
         ):
             service.sync_single_organization(_make_config(enabled=enabled), {"Test Org": db_org})
 
@@ -256,6 +258,17 @@ class TestDisablingARescueRetiresItsDogs:
             retire_dogs.assert_not_called()
         else:
             retire_dogs.assert_called_once_with(42, "Test Org")
+
+        # Dog pages carry no listing tags, so a rescue change must purge them by slug (#759)
+        purged = [call.args[0] for call in purge.call_args_list]
+        assert (["live-1"] in purged) == drifted
+        assert (["rex-1"] in purged) == (not enabled)
+
+    def test_purging_dog_pages_never_raises(self):
+        with patch("services.revalidation_client.invalidate_sync", side_effect=RuntimeError("down")) as invalidate:
+            OrganizationSyncService._purge_dog_pages(["rex-1"])
+        invalidate.assert_called_once_with(tags=["rex-1"])
+        OrganizationSyncService._purge_dog_pages([])
 
 
 @pytest.mark.database
@@ -274,10 +287,10 @@ def test_retiring_marks_the_dogs_no_longer_listed_and_logs_the_count(caplog):
     with psycopg2.connect(**get_database_config()) as conn, conn.cursor() as cursor:
         cursor.execute("SELECT status, active FROM animals WHERE organization_id = 901")
         rows = cursor.fetchall()
-    assert retired == len(rows) > 0
+    assert len(retired) == len(rows) > 0
     assert set(rows) == {("unknown", False)}
-    assert f"Retired {retired} dogs" in caplog.text
-    assert service.retire_dogs(901, "Mock Test Org") == 0
+    assert f"Retired {len(retired)} dogs" in caplog.text
+    assert service.retire_dogs(901, "Mock Test Org") == []
 
 
 @pytest.mark.database

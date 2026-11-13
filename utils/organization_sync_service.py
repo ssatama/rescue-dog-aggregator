@@ -305,10 +305,11 @@ class OrganizationSyncService:
         self._sync_service_regions(org_id, config)
         self._sync_organization_logo(org_id, config)
 
-    def retire_dogs(self, org_id: int, org_name: str) -> int:
+    def retire_dogs(self, org_id: int, org_name: str) -> list[str]:
         """Mark a disabled rescue's dogs no longer listed, as stale detection would (#630).
 
         Nothing scrapes a disabled rescue, so nothing else would retire them.
+        Returns the retired dogs' slugs, so their pages can be purged.
         """
         result = execute_command(
             """
@@ -317,16 +318,37 @@ class OrganizationSyncService:
                 SET status = CASE WHEN status IN ('adopted', 'reserved') THEN status ELSE 'unknown' END,
                     active = false
                 WHERE organization_id = %s AND (active OR status = 'available')
-                RETURNING 1
+                RETURNING slug
             )
-            SELECT COUNT(*) AS retired FROM retired
+            SELECT COUNT(*) AS retired, COALESCE(array_agg(slug) FILTER (WHERE slug IS NOT NULL), '{}') AS slugs
+            FROM retired
             """,
             (org_id,),
         )
         retired = result["retired"] if result else 0
         if retired:
             logger.info(f"Retired {retired} dogs of disabled organization '{org_name}'")
-        return retired
+        return list(result["slugs"]) if result else []
+
+    def _live_dog_slugs(self, org_id: int) -> list[str]:
+        rows = execute_query(
+            "SELECT slug FROM animals WHERE organization_id = %s AND active AND slug IS NOT NULL",
+            (org_id,),
+        )
+        return [row["slug"] for row in rows or []]
+
+    @staticmethod
+    def _purge_dog_pages(slugs: list[str]) -> None:
+        """Purge these dogs' detail pages. Dog pages carry no listing tags, so an
+        organization change reaches them only this way (#759). Never raises."""
+        if not slugs:
+            return
+        try:
+            from services.revalidation_client import invalidate_sync
+
+            invalidate_sync(tags=slugs)
+        except Exception as e:
+            logger.warning(f"Could not purge {len(slugs)} dog pages: {e}")
 
     def _sync_service_regions(self, org_id: int, config: OrganizationConfig) -> None:
         """Sync service regions for organization."""
@@ -403,12 +425,15 @@ class OrganizationSyncService:
 
                 if self.should_update_organization(db_org, config):
                     self.update_organization(db_org.id, config)
+                    # Dog pages embed the rescue (name, logo, ships_to badge) and
+                    # are only refreshed by a per-slug purge (#759)
+                    self._purge_dog_pages(self._live_dog_slugs(db_org.id))
                 else:
                     logger.debug(f"Organization '{config.name}' is up to date")
                 # Every sync, not only the one that disables it: idempotent, and a
                 # retire that failed once is retried
                 if not config.enabled:
-                    self.retire_dogs(db_org.id, config.name)
+                    self._purge_dog_pages(self.retire_dogs(db_org.id, config.name))
                 return SyncResult(db_org.id, config.id, False, True)
             else:
                 # Organization doesn't exist

@@ -183,6 +183,7 @@ async function fetchBreedPageSlug(dog: Dog): Promise<string | null> {
   const { getBreedStats, DOG_PAGE_EXTRAS_CACHE } = await import("../../../services/serverAnimalsService");
   const stats = await getBreedStats.orFallback(DOG_PAGE_EXTRAS_CACHE);
   // On a failed stats request the breed stays plain text until the page revalidates
+  // (up to 30 days, or the next purge of this dog; accepted in #759)
   const hasPage = getIndexableBreeds(stats?.qualifying_breeds).some((b) => b.breed_slug === dog.breed_slug);
   return hasPage ? dog.breed_slug : null;
 }
@@ -209,7 +210,7 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
     } catch (error) {
       reportError(error, { context: "DogDetailPageAsync", slug: resolvedParams.slug });
       // This route is ISR-cached for `revalidate`, so rendering a page without
-      // its dog would cache the failure for 48 hours. Fail the render instead:
+      // its dog would cache the failure for the whole revalidate window. Fail the render instead:
       // the next request retries rather than serving a permanent empty shell.
       throw error;
     }

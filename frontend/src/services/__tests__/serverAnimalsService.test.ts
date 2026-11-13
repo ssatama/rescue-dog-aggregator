@@ -83,7 +83,10 @@ describe("Server Animals Service", () => {
         expect(init.next.revalidate).toBe(DOG_PAGE_REVALIDATE);
         expect(init.next.tags).not.toContain("animals");
       }
-      expect((fetch as jest.Mock).mock.calls[0][1].next.tags).toContain("rex-1");
+      // Both carry the slug, so the per-dog purge refreshes the enhanced text too
+      for (const [, init] of (fetch as jest.Mock).mock.calls) {
+        expect(init.next.tags).toContain("rex-1");
+      }
     });
   });
 

@@ -687,7 +687,7 @@ interface EnhancedContent {
 }
 
 export const getEnhancedDogContent = cache(
-  async (animalId: number | string | null): Promise<EnhancedContent | null> => {
+  async (animalId: number | string | null, slug?: string): Promise<EnhancedContent | null> => {
     if (!animalId) return null;
 
     try {
@@ -700,7 +700,9 @@ export const getEnhancedDogContent = cache(
         },
         next: {
           revalidate: DOG_PAGE_REVALIDATE,
-          tags: ["enhanced", `animal-enhanced-${animalId}`],
+          // The slug tag lets a dog's own purge (e.g. after profiling) refresh
+          // this too; nothing purges the other two (#759)
+          tags: ["enhanced", `animal-enhanced-${animalId}`, ...(slug ? [slug] : [])],
         },
       });
 
@@ -785,7 +787,7 @@ export const getAnimalBySlug = cache(async (slug: string): Promise<DogWithLlm | 
     const animal = transformApiDogToDog(parsed);
 
     try {
-      const enhanced = await getEnhancedDogContent(parsed.id);
+      const enhanced = await getEnhancedDogContent(parsed.id, slug);
       if (enhanced) {
         return {
           ...animal,
