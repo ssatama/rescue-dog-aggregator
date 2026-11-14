@@ -117,6 +117,18 @@ fresh browser. Retry from scratch, never salvage partial pages: partial
 results let stale detection mark unseen dogs as gone. The deeper lever is a
 session `timeout` param in `playwright_browser_service._build_ws_url`.
 
+**Browserless sleeps between runs (2026-11-14).** Idle all week, it was the
+biggest line on the Railway bill (~0.57 GB held 24/7, ~$6 of ~$12 usage), so
+Railway Serverless is on for it (dashboard setting; Browserless is outside
+`.railway/railway.ts`). It sleeps after ~10 minutes without outbound traffic
+and any request wakes it. A cold boot outlasts the CDP connect's own retry,
+so the cron calls `PlaywrightBrowserService.wait_until_ready()` once per run
+(not in the per-org children): it polls `/json/version` for at most ~3 minutes
+and logs "Browserless ready after N attempt(s)", or "rejected the token" on a
+401/403 (a stale `BROWSERLESS_WS_ENDPOINT` after a rotation, not a sleep
+problem). If the first org of a run fails to connect, look there first;
+turning Serverless off restores the old always-on behaviour.
+
 **Sequence desync after syncs.** `services/railway/sync.py` inserts explicit
 ids, which doesn't advance pkey sequences. Unreset, the next insert collides
 (`duplicate key ... _pkey`); on 2026-07-02 this killed every `scrape_logs`
