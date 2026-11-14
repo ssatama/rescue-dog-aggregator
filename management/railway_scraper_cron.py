@@ -44,6 +44,7 @@ from config import enable_world_class_scraper_logging, get_database_config  # no
 from management.breed_commands import fetch_breed_rows  # noqa: E402
 from management.breed_reconciliation import reconcile  # noqa: E402
 from scrapers.sentry_integration import add_scrape_breadcrumb, init_scraper_sentry  # noqa: E402
+from services.playwright_browser_service import PlaywrightBrowserService  # noqa: E402
 from utils.birth_dates import REFRESH_AGES_SQL  # noqa: E402
 from utils.db_connection import (  # noqa: E402
     create_database_config_from_env,
@@ -359,6 +360,9 @@ def main():
     if shutdown_requested:
         logger.warning("Shutdown requested before scraping started")
         sys.exit(1)
+
+    # Browserless sleeps between runs; wake it before the first scraper connects.
+    PlaywrightBrowserService().wait_until_ready()
 
     if args.org:
         result = run_single_scraper(runner, args.org)
