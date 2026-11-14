@@ -9,6 +9,7 @@ disable-model-invocation: true
 Follow AGENTS.md (branches, conventional commits, pre-commit checks). Every merge to main deploys to production on Vercel and Railway.
 
 1. **Baseline**: on an up-to-date main, run ruff check/format, `uv run pytest -m "not browser"`, and in frontend/ run tsc, lint and jest. Check https://api.rescuedogs.me/health, active dog counts per org (Postgres MCP, flag any org at 0), and 5 random dog pages for real content. Check the last 3 scraper cron runs on the Railway service `thriving-appreciation`.
+   - **Browserless sleeps between runs** (#771). Each of those runs should log `Browserless ready after N attempt(s)` near the start. `rejected the token` means a stale `BROWSERLESS_WS_ENDPOINT`. A Browserless connect failure on a later org means it fell asleep mid-run (the longest gap between browser orgs was ~5 of the 10 idle minutes). Its memory, via the Railway MCP `get-service-metrics` over 168h, should be near zero outside the 15:00 UTC runs.
 2. **Sentry** (org sampo-cr, EU region, projects python-fastapi and javascript-nextjs): issues new or regressed in the last 7 days. For each actionable one, open a GitHub issue and a fix PR (failing test first).
 3. **Search visibility (Bing)**: query the Bing Webmaster API, `https://ssl.bing.com/webmaster/api.svc/json/<Method>?siteUrl=https%3A%2F%2Frescuedogs.me%2F&apikey=$BING_WEBMASTER_API_KEY` (key from `.env`, never print it; the site is registered as the apex, not www). Report:
    - `GetFeeds`: `sitemap_index.xml` status is Success and was crawled within the last week.
