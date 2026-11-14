@@ -122,9 +122,11 @@ biggest line on the Railway bill (~0.57 GB held 24/7, ~$6 of ~$12 usage), so
 Railway Serverless is on for it (dashboard setting; Browserless is outside
 `.railway/railway.ts`). It sleeps after ~10 minutes without outbound traffic
 and any request wakes it. A cold boot outlasts the CDP connect's own retry,
-so the cron calls `PlaywrightBrowserService.wait_until_ready()` first: it
-polls `/json/version` for up to ~2 minutes and logs "Browserless ready after
-N attempt(s)". If the first org of a run fails to connect, look there first;
+so the cron calls `PlaywrightBrowserService.wait_until_ready()` once per run
+(not in the per-org children): it polls `/json/version` for at most ~3 minutes
+and logs "Browserless ready after N attempt(s)", or "rejected the token" on a
+401/403 (a stale `BROWSERLESS_WS_ENDPOINT` after a rotation, not a sleep
+problem). If the first org of a run fails to connect, look there first;
 turning Serverless off restores the old always-on behaviour.
 
 **Sequence desync after syncs.** `services/railway/sync.py` inserts explicit

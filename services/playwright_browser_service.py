@@ -13,6 +13,7 @@ import os
 import random
 import threading
 import time
+import urllib.error
 import urllib.request
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -194,14 +195,15 @@ class PlaywrightBrowserService:
 
         return url
 
-    def wait_until_ready(self, attempts: int = 24, interval: float = 5.0) -> bool:
+    def wait_until_ready(self, attempts: int = 12, interval: float = 5.0) -> bool:
         """Block until Browserless answers, waking it if Railway put it to sleep.
 
         Browserless sleeps between cron runs (Railway Serverless). The first
         request wakes it, but a cold boot takes longer than the CDP connect's
         own retries (one 2s backoff), so the cron waits here once before
-        scraping. Returns False after about two minutes without an answer and
-        lets the scrapers try anyway. Local mode has nothing to wake.
+        scraping. Gives up after at most ~3 minutes (12 x 10s timeout + 5s
+        pause), or at once if the token is rejected, and returns False so the
+        scrapers still try. Local mode has nothing to wake.
         """
         if not self.is_remote_mode:
             return True
@@ -209,20 +211,25 @@ class PlaywrightBrowserService:
         parts = urlsplit(self._build_ws_url())
         scheme = {"wss": "https", "ws": "http"}.get(parts.scheme, parts.scheme)
         url = urlunsplit((scheme, parts.netloc, parts.path.rstrip("/") + "/json/version", parts.query, ""))
+        endpoint = redact_endpoint(self._endpoint)
 
+        reason = "no attempt made"
         for attempt in range(1, attempts + 1):
             try:
-                with urllib.request.urlopen(url, timeout=10) as response:
-                    if response.status == 200:
-                        logger.info(f"Browserless ready after {attempt} attempt(s)")
-                        return True
-                    reason = f"HTTP {response.status}"
-            except OSError as e:  # URLError, HTTPError and timeouts are all OSErrors
+                with urllib.request.urlopen(url, timeout=10):
+                    logger.info(f"Browserless ready after {attempt} attempt(s)")
+                    return True
+            except urllib.error.HTTPError as e:  # urlopen raises for every non-2xx answer
+                if e.code in (401, 403):
+                    logger.error(f"Browserless rejected the token (HTTP {e.code}): {endpoint}")
+                    return False
+                reason = f"HTTP {e.code}"
+            except OSError as e:  # URLError and timeouts while it boots
                 reason = type(e).__name__
             if attempt < attempts:
                 time.sleep(interval)
 
-        logger.warning(f"Browserless did not answer after {attempts} attempts ({reason}): {redact_endpoint(self._endpoint)}")
+        logger.warning(f"Browserless did not answer after {attempts} attempts ({reason}): {endpoint}")
         return False
 
     async def create_browser(self, options: PlaywrightOptions | None = None) -> PlaywrightResult:

@@ -15,10 +15,14 @@ SECRET = "s3cr3t-browserless-token"
 ENDPOINT = f"wss://browserless-production.up.railway.app?token={SECRET}"
 
 
-def ok_response(status: int = 200) -> MagicMock:
-    response = MagicMock(status=status)
+def ok_response() -> MagicMock:
+    response = MagicMock(status=200)
     response.__enter__.return_value = response
     return response
+
+
+def http_error(code: int) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError("https://browserless", code, "error", {}, None)
 
 
 @pytest.fixture
@@ -66,6 +70,21 @@ class TestWaitUntilReady:
         assert "did not answer" in caplog.text
         assert SECRET not in caplog.text
 
-    def test_a_non_200_answer_is_not_ready(self, service, stub_clock):
-        with patch("urllib.request.urlopen", return_value=ok_response(503)):
-            assert service().wait_until_ready(attempts=2) is False
+    def test_a_server_error_keeps_polling(self, service, stub_clock):
+        with patch("urllib.request.urlopen", side_effect=[http_error(503), ok_response()]) as urlopen:
+            assert service().wait_until_ready() is True
+        assert urlopen.call_count == 2
+
+    @pytest.mark.parametrize("code", [401, 403])
+    def test_a_rejected_token_stops_at_once(self, service, stub_clock, caplog, code):
+        with patch("urllib.request.urlopen", side_effect=http_error(code)) as urlopen:
+            assert service().wait_until_ready() is False
+        assert urlopen.call_count == 1
+        assert stub_clock.calls == []
+        assert "rejected the token" in caplog.text
+        assert SECRET not in caplog.text
+
+    def test_zero_attempts_returns_false_instead_of_crashing(self, service):
+        with patch("urllib.request.urlopen") as urlopen:
+            assert service().wait_until_ready(attempts=0) is False
+        urlopen.assert_not_called()

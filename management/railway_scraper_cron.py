@@ -362,7 +362,9 @@ def main():
         sys.exit(1)
 
     # Browserless sleeps between runs; wake it before the first scraper connects.
-    PlaywrightBrowserService().wait_until_ready()
+    # Once per run: batch children (--result-file) find it already awake.
+    if not args.result_file:
+        PlaywrightBrowserService().wait_until_ready()
 
     if args.org:
         result = run_single_scraper(runner, args.org)
