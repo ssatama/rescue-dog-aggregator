@@ -129,6 +129,20 @@ and logs "Browserless ready after N attempt(s)", or "rejected the token" on a
 problem). If the first org of a run fails to connect, look there first;
 turning Serverless off restores the old always-on behaviour.
 
+- The setting reaches only a **fresh** deployment. A redeploy (CLI, MCP or
+  dashboard "Redeploy") reuses the old deployment's snapshot, which still has
+  `sleepApplication: false`; Browserless stayed awake for 40 minutes that way.
+  Deploy the template commit instead: `railway api 'mutation {
+  serviceInstanceDeployV2(serviceId: "3022fc56-2c98-4d07-8162-df7c7b1b547a",
+  environmentId: "cf725ca4-10aa-4dfc-95d6-2028086460d3", commitSha:
+  "de69db7b7976932c2a2e1dee2cbbbd336df144b6") }'`. Check with `railway
+  deployment list --service Browserless --json` (`meta.serviceManifest.deploy.sleepApplication`).
+- `railway deployment list --service Browserless` shows `SLEEPING` while it
+  sleeps. Measured 2026-11-14: asleep ~10 minutes after the last request, and
+  the first request after that answered 200 in 3.8s.
+- Each `/json/version` call launches a Chromium briefly, and Chromium talks
+  to Google, which restarts the idle timer. Don't poll it to check sleep.
+
 **Sequence desync after syncs.** `services/railway/sync.py` inserts explicit
 ids, which doesn't advance pkey sequences. Unreset, the next insert collides
 (`duplicate key ... _pkey`); on 2026-07-02 this killed every `scrape_logs`
