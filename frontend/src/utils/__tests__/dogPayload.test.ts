@@ -55,3 +55,22 @@ describe("forCard", () => {
     expect(card.primary_image_url).toBe(dog.primary_image_url);
   });
 });
+
+describe("forCard keeps what the card shows", () => {
+  it("keeps the 'Lives with' facts companionAnswer reads", () => {
+    const withFacts = {
+      ...dog,
+      properties: { description: "x", good_with_cats: "yes", good_with_dogs: true },
+      dog_profiler_data: { ...dog.dog_profiler_data, good_with_cats: "yes", confidence_scores: { good_with_cats: 0.9 } },
+    } as unknown as Dog;
+    const card = forCard(withFacts);
+    expect(card.properties).toEqual({ good_with_cats: "yes", good_with_dogs: true });
+    expect(card.dog_profiler_data?.good_with_cats).toBe("yes");
+    expect(card.dog_profiler_data?.confidence_scores).toEqual({ good_with_cats: 0.9 });
+  });
+
+  it("handles a dog with no properties, organization or profile", () => {
+    const bare = { id: 2, name: "Rex", slug: "rex-2" } as Dog;
+    expect(forCard(bare)).toEqual(bare);
+  });
+});
