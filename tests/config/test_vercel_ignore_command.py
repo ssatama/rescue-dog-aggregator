@@ -15,7 +15,8 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = pytest.mark.unit
+# Runs git and sh in temp repos, so not "unit" (pure logic, no I/O).
+pytestmark = pytest.mark.integration
 
 FRONTEND = Path(__file__).parents[2] / "frontend"
 IGNORE_COMMAND = json.loads((FRONTEND / "vercel.json").read_text())["ignoreCommand"]
@@ -84,9 +85,7 @@ def test_dependabot_previews_still_skip(repo):
 
 
 def test_other_previews_build(repo):
-    previous = git(repo, "rev-parse", "HEAD")
-    commit(repo, "api.py")
-    assert not skips_build(repo, VERCEL_ENV="preview", VERCEL_GIT_COMMIT_REF="feat/x", VERCEL_GIT_PREVIOUS_SHA=previous)
+    assert not skips_build(repo, VERCEL_ENV="preview", VERCEL_GIT_COMMIT_REF="feat/x")
 
 
 def test_production_fetches_previous_sha_missing_from_shallow_clone(repo, tmp_path_factory):
@@ -101,3 +100,8 @@ def test_production_fetches_previous_sha_missing_from_shallow_clone(repo, tmp_pa
 
 def test_ignore_command_fits_vercel_schema_limit():
     assert len(IGNORE_COMMAND) <= 256
+
+
+def test_production_redeploy_of_deployed_commit_builds(repo):
+    head = git(repo, "rev-parse", "HEAD")
+    assert not skips_build(repo, VERCEL_ENV="production", VERCEL_GIT_PREVIOUS_SHA=head)
