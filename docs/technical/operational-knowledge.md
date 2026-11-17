@@ -264,7 +264,16 @@ On 2026-09-26 38 such rows (oldest 2025-07-30) were closed as `error` with
 
 ## Deploys and caching (Vercel)
 
-**Vercel and Railway deploy on the same push to main.** A prerender failing
+**Vercel builds production only when `frontend/` changed** since the last
+successful production deploy (`frontend/scripts/vercel-ignore-build.sh`,
+#786; `ignoreCommand` is capped at 256 characters, which broke #780). Each new deployment starts the dog pages' ISR cache cold, so a
+backend-only deploy cost ~100K ISR write units (#781). Consequences: a
+changed Vercel env var (e.g. a rotated `REVALIDATION_TOKEN`) needs a dashboard
+Redeploy of the deployment marked Current (a redeploy of a skipped commit
+is skipped again), and a backend change that breaks the API shape the frontend reads
+no longer fails a prerender; it surfaces when pages re-render.
+
+**Vercel and Railway can deploy on the same push to main.** A prerender failing
 with "HTTP 502" usually means the API container was mid-swap, not a broken
 dog or commit; check `railway deployment list --service
 rescue-dog-aggregator` first. Fixed in #366 (fetch retry in
