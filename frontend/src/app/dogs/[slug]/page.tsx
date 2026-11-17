@@ -16,6 +16,7 @@ import { getIndexableBreeds } from "@/utils/indexableBreeds";
 import { clampDescription, clampTitle } from "@/utils/seoMeta";
 import { getCountryName } from "@/utils/countryNames";
 import { dogCountry, pickSimilarDogs, similarDogsQuery, SIMILAR_CANDIDATES } from "@/utils/dogFacts";
+import { forCard, withoutProfilerInternals } from "@/utils/dogPayload";
 
 const STATIC_PARAMS_LIMIT = 500;
 
@@ -175,7 +176,7 @@ async function fetchSimilarDogs(dog: Dog): Promise<Dog[] | undefined> {
   const similar = pickSimilarDogs(dog, await getAnimals.orFallback({ ...query, limit: SIMILAR_CANDIDATES, offset: 0 }, DOG_PAGE_EXTRAS_CACHE));
   // The fallback is [], the same as "none". Pass nothing then, so
   // the client fetches and decides, rather than caching an empty section for the ISR window.
-  return similar.length > 0 ? similar : undefined;
+  return similar.length > 0 ? similar.map(forCard) : undefined;
 }
 
 async function fetchBreedPageSlug(dog: Dog): Promise<string | null> {
@@ -234,7 +235,7 @@ export async function DogDetailPageAsync(props: DogDetailPageProps): Promise<Rea
     <Layout>
       <Suspense fallback={<DogDetailSkeleton />}>
         <DogDetailClient
-          initialDog={initialDog}
+          initialDog={initialDog && withoutProfilerInternals(initialDog)}
           initialSimilarDogs={initialSimilarDogs}
           breedPageSlug={breedPageSlug}
         />
