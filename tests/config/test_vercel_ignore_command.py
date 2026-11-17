@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 IGNORE_COMMAND = json.loads((Path(__file__).parents[2] / "frontend" / "vercel.json").read_text())["ignoreCommand"]
 
 
@@ -85,6 +87,5 @@ def test_production_fetches_previous_sha_missing_from_shallow_clone(repo, tmp_pa
     commit(repo, "api.py")
     clone = tmp_path_factory.mktemp("clone") / "repo"
     git(clone.parent, "clone", "-q", "--depth=1", f"file://{repo}", str(clone))
-    git(clone, "config", "uploadpack.allowReachableSHA1InWant", "true")
     git(repo, "config", "uploadpack.allowReachableSHA1InWant", "true")
     assert skips_build(clone, VERCEL_ENV="production", VERCEL_GIT_PREVIOUS_SHA=previous)

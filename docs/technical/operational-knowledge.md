@@ -268,8 +268,8 @@ On 2026-09-26 38 such rows (oldest 2025-07-30) were closed as `error` with
 successful production deploy (`ignoreCommand` in `frontend/vercel.json`,
 #780). Each new deployment starts the dog pages' ISR cache cold, so a
 backend-only deploy cost ~100K ISR write units (#781). Consequences: a
-changed Vercel env var (e.g. a rotated `REVALIDATION_TOKEN`) needs a manual
-redeploy, and a backend change that breaks the API shape the frontend reads
+changed Vercel env var (e.g. a rotated `REVALIDATION_TOKEN`) needs a dashboard
+Redeploy, and a backend change that breaks the API shape the frontend reads
 no longer fails a prerender; it surfaces when pages re-render.
 
 **Vercel and Railway can deploy on the same push to main.** A prerender failing
