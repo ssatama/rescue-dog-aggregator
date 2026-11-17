@@ -1,5 +1,8 @@
 """frontend/vercel.json ignoreCommand: exit 0 skips the Vercel build.
 
+Vercel rejects a vercel.json whose ignoreCommand is over 256 characters, so the
+logic lives in frontend/scripts/vercel-ignore-build.sh.
+
 Each production deploy starts the dog pages' ISR cache cold, so a deploy for a
 backend-only commit costs tens of thousands of ISR write units (#758).
 """
@@ -14,7 +17,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-IGNORE_COMMAND = json.loads((Path(__file__).parents[2] / "frontend" / "vercel.json").read_text())["ignoreCommand"]
+FRONTEND = Path(__file__).parents[2] / "frontend"
+IGNORE_COMMAND = json.loads((FRONTEND / "vercel.json").read_text())["ignoreCommand"]
+SCRIPT = FRONTEND / "scripts" / "vercel-ignore-build.sh"
 
 
 # A clean environment: a GIT_DIR exported by a git hook must not redirect the fixture's commits.
@@ -44,6 +49,9 @@ def commit(repo: Path, path: str) -> None:
 
 
 def skips_build(repo: Path, **env: str) -> bool:
+    # Run as Vercel does, from frontend/, with the script where the command expects it.
+    (repo / "frontend" / "scripts").mkdir(exist_ok=True)
+    shutil.copy(SCRIPT, repo / "frontend" / "scripts" / SCRIPT.name)
     result = subprocess.run(["sh", "-c", IGNORE_COMMAND], cwd=repo / "frontend", env={**GIT_ENV, **env})
     return result.returncode == 0
 
@@ -89,3 +97,7 @@ def test_production_fetches_previous_sha_missing_from_shallow_clone(repo, tmp_pa
     git(clone.parent, "clone", "-q", "--depth=1", f"file://{repo}", str(clone))
     git(repo, "config", "uploadpack.allowReachableSHA1InWant", "true")
     assert skips_build(clone, VERCEL_ENV="production", VERCEL_GIT_PREVIOUS_SHA=previous)
+
+
+def test_ignore_command_fits_vercel_schema_limit():
+    assert len(IGNORE_COMMAND) <= 256

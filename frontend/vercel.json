@@ -1,4 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"preview\" ] && [ \"${VERCEL_GIT_COMMIT_REF#dependabot/}\" != \"$VERCEL_GIT_COMMIT_REF\" ] || { [ \"$VERCEL_ENV\" = \"production\" ] && [ -n \"$VERCEL_GIT_PREVIOUS_SHA\" ] && { git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null || git fetch -q --depth=1 origin \"$VERCEL_GIT_PREVIOUS_SHA\"; } && git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- . ; }"
+  "ignoreCommand": "sh scripts/vercel-ignore-build.sh"
 }
