@@ -18,18 +18,38 @@ export function withoutProfilerInternals<T extends Dog>(dog: T): T {
   return { ...dog, dog_profiler_data: profile };
 }
 
-/** A dog as DogCard uses it: cards never show descriptions or social links. */
+// Exactly what DogCard reads (summary, "where", "Lives with" facts, photo,
+// link, adoptable badge). Similar dogs are server-rendered into every dog
+// page, and anything else they carry is written to ISR on each render (#781).
+const CARD_FIELDS = [
+  "id", "name", "slug", "sex", "primary_image_url",
+  "breed", "primary_breed", "standardized_breed", "age_min_months", "age_text",
+] as const satisfies readonly (keyof Dog)[];
+const CARD_ORG_FIELDS = ["name", "slug", "country", "ships_to"] as const;
+const LIVES_WITH = ["good_with_children", "good_with_dogs", "good_with_cats"] as const;
+
+function pick<T extends object, K extends keyof T>(obj: T, keys: readonly K[]): Pick<T, K> {
+  const out = {} as Pick<T, K>;
+  for (const key of keys) if (obj[key] !== undefined) out[key] = obj[key];
+  return out;
+}
+
+/** A dog as DogCard uses it, and nothing more. */
 export function forCard(dog: Dog): Dog {
-  const { description: _description, ...slim } = withoutProfilerInternals(dog);
-  if (slim.properties) {
-    const { description: _scraped, ...properties } = slim.properties;
-    slim.properties = properties;
+  const card: Dog = pick(dog, CARD_FIELDS);
+  if (dog.organization) card.organization = pick(dog.organization, CARD_ORG_FIELDS);
+  if (dog.properties) {
+    const properties = pick(dog.properties, LIVES_WITH);
+    if (Object.keys(properties).length) card.properties = properties;
   }
-  if (slim.organization) {
-    const { social_media: _social, ...organization } = slim.organization as typeof slim.organization & {
-      social_media?: unknown;
-    };
-    slim.organization = organization;
+  const profile = dog.dog_profiler_data;
+  if (profile) {
+    const slim: NonNullable<Dog["dog_profiler_data"]> = pick(profile, LIVES_WITH);
+    if (profile.confidence_scores) {
+      const scores = pick(profile.confidence_scores, LIVES_WITH);
+      if (Object.keys(scores).length) slim.confidence_scores = scores;
+    }
+    if (Object.keys(slim).length) card.dog_profiler_data = slim;
   }
-  return slim;
+  return card;
 }

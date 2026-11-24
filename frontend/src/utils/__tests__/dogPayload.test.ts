@@ -44,18 +44,6 @@ describe("withoutProfilerInternals", () => {
   });
 });
 
-describe("forCard", () => {
-  it("drops descriptions and social links, which cards never show", () => {
-    const card = forCard(dog) as Dog & { organization: Record<string, unknown> };
-    expect(card.description).toBeUndefined();
-    expect(card.properties).toEqual({ size: "Medium" });
-    expect(card.organization).toEqual({ name: "Rescue", slug: "rescue", ships_to: ["DE"] });
-    expect(card.dog_profiler_data?.source_references).toBeUndefined();
-    expect(card.dog_profiler_data?.confidence_scores).toEqual({ energy_level: 0.9 });
-    expect(card.primary_image_url).toBe(dog.primary_image_url);
-  });
-});
-
 describe("forCard keeps what the card shows", () => {
   it("keeps the 'Lives with' facts companionAnswer reads", () => {
     const withFacts = {
