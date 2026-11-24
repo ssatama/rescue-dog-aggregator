@@ -3,6 +3,7 @@ import { logger, reportError } from "./logger";
 import { parseApiError, formatErrorMessage } from "./errorHandler";
 import { getApiUrl } from "./apiConfig";
 import { isRailwayFallback } from "./railwayFallback";
+import { fetchWithRetry } from "./serverFetch";
 
 export function stripNulls(value: unknown): unknown {
   if (value === null) return undefined;
@@ -53,7 +54,13 @@ export async function fetchApi(
   };
 
   try {
-    const response = await fetch(url, fetchOptions);
+    // On the server (prerender and ISR) retry like the dog and breed pages do:
+    // one connection reset on an organization page failed a whole build. The
+    // browser keeps a plain fetch, so a caller's abort signal is never replaced.
+    const response =
+      typeof window === "undefined"
+        ? await fetchWithRetry(url, fetchOptions)
+        : await fetch(url, fetchOptions);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
