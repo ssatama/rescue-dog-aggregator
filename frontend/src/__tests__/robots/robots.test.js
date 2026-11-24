@@ -257,6 +257,12 @@ describe("Robots.txt query-string crawl control", () => {
     },
   );
 
+  // Meta AI search indexer: ~69% of dog-page ISR reads for almost no
+  // visitors, so its Meta AI citations are given up to fit the free plan
+  test("meta-webindexer is fully blocked", () => {
+    expect(rulesFor(robotsTxtContent, "meta-webindexer")).toEqual(["disallow:/"]);
+  });
+
   test("aggressive bots stay fully blocked", () => {
     expect(rulesFor(robotsTxtContent, "AhrefsBot")).toContain("disallow:/");
     expect(rulesFor(robotsTxtContent, "SemrushBot")).toContain("disallow:/");
