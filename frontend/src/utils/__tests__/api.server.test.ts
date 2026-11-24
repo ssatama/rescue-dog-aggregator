@@ -12,7 +12,8 @@ describe("get() on the server", () => {
 
   afterEach(() => {
     global.fetch = realFetch;
-    process.env.NEXT_PHASE = realPhase;
+    if (realPhase === undefined) delete process.env.NEXT_PHASE;
+    else process.env.NEXT_PHASE = realPhase;
   });
 
   it("retries a network error while prerendering", async () => {
@@ -26,5 +27,15 @@ describe("get() on the server", () => {
 
     await expect(get("/api/organizations/tsv")).resolves.toEqual({ slug: "tsv" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a write", async () => {
+    process.env.NEXT_PHASE = "phase-production-build";
+    const fetchMock = jest.fn().mockRejectedValue(new TypeError("fetch failed"));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const { post } = await import("../api");
+    await expect(post("/api/things", { a: 1 })).rejects.toThrow("fetch failed");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

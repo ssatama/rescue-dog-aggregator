@@ -57,8 +57,10 @@ export async function fetchApi(
     // On the server (prerender and ISR) retry like the dog and breed pages do:
     // one connection reset on an organization page failed a whole build. The
     // browser keeps a plain fetch, so a caller's abort signal is never replaced.
+    // Only GETs: a retried write could apply twice.
+    const isGet = (fetchOptions.method ?? "GET").toUpperCase() === "GET";
     const response =
-      typeof window === "undefined"
+      typeof window === "undefined" && isGet
         ? await fetchWithRetry(url, fetchOptions)
         : await fetch(url, fetchOptions);
 
