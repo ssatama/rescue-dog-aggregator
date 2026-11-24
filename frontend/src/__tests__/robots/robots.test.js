@@ -257,10 +257,10 @@ describe("Robots.txt query-string crawl control", () => {
     },
   );
 
-  // Meta AI search indexer: ~69% of dog-page ISR reads for almost no
-  // visitors, so its Meta AI citations are given up to fit the free plan
-  test("meta-webindexer is fully blocked", () => {
-    expect(rulesFor(robotsTxtContent, "meta-webindexer")).toEqual(["disallow:/"]);
+  // Meta AI search and Petal Search crawlers: most dog-page ISR reads and
+  // renders for almost no visitors, given up to fit the free plan
+  test.each(["meta-webindexer", "PetalBot"])("%s is fully blocked", (agent) => {
+    expect(rulesFor(robotsTxtContent, agent)).toEqual(["disallow:/"]);
   });
 
   test("aggressive bots stay fully blocked", () => {

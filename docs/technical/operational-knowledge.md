@@ -322,8 +322,9 @@ and Fast Origin Transfer (10 GB). A firewall rule on both projects ("Deny AI
 training crawlers", user-agent regex) returns 403 to GPTBot, ClaudeBot, CCBot,
 meta-externalagent, Bytespider, Amazonbot and similar training crawlers. In
 November 2026 `meta-externalagent` alone made twice as many requests as all
-human visitors. `meta-webindexer` (Meta AI search) is blocked the same way:
-it made ~69% of dog-page ISR reads for almost no visitors. Other search and
+human visitors. `meta-webindexer` (Meta AI search) and `PetalBot` are blocked
+the same way: they caused ~69% of dog-page ISR reads and ~76% of dog-page
+renders (cold misses, each ~7 write units) for almost no visitors. Other search and
 assistant agents are not blocked.
 
 **`/api/revalidate` expires tags at once** (`{ expire: 0 }`, #735). It used
