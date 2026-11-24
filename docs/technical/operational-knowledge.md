@@ -315,13 +315,16 @@ Check with `vercel metrics vercel.isr_operation.write_units -p
 rescue-dog-aggregator -s 7d --group-by route`.
 
 **Vercel Hobby quota (epic #758).** rescuedogs and Berlin Sun Seeker share one
-Hobby account. Going over a limit pauses the projects instead of billing them;
-the tight limits are ISR writes (200K units of 8 KB a month), Active CPU (4 h)
+Vercel account, on Pro as of November 2026; the goal is to move back to the
+free Hobby plan, where going over a limit pauses both projects instead of
+billing them. The tight Hobby limits are ISR writes (200K units of 8 KB a month), Active CPU (4 h)
 and Fast Origin Transfer (10 GB). A firewall rule on both projects ("Deny AI
 training crawlers", user-agent regex) returns 403 to GPTBot, ClaudeBot, CCBot,
 meta-externalagent, Bytespider, Amazonbot and similar training crawlers. In
 November 2026 `meta-externalagent` alone made twice as many requests as all
-human visitors. Search and assistant agents are not blocked.
+human visitors. `meta-webindexer` (Meta AI search) is blocked the same way:
+it made ~69% of dog-page ISR reads for almost no visitors. Other search and
+assistant agents are not blocked.
 
 **`/api/revalidate` expires tags at once** (`{ expire: 0 }`, #735). It used
 `"max"`, which is stale-while-revalidate: the page and its fetch share the
