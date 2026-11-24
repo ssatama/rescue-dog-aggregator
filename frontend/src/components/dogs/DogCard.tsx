@@ -224,6 +224,9 @@ function LivesWith({ facts }: { facts: Fact[] }): React.ReactElement | null {
   );
 }
 
+// Server-rendered similar dogs reach this card through forCard
+// (utils/dogPayload.ts), which keeps only the fields read here: a new field
+// must be added there too.
 function DogCard({
   dog,
   size = "grid",
